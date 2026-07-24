@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 TDrive Automação - MVP V2</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .container { background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 700px; width: 100%; padding: 40px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; color: #333; margin-bottom: 10px; }
+        .header .subtitle { color: #666; font-size: 14px; }
+        .status { display: flex; align-items: center; gap: 10px; padding: 12px; background: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 5px; margin-bottom: 25px; font-size: 14px; color: #2e7d32; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; }
+        textarea { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 14px; resize: vertical; min-height: 150px; }
+        textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        .example { margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 5px; font-size: 12px; color: #666; border-left: 3px solid #667eea; }
+        .button-group { display: flex; gap: 10px; margin-top: 25px; }
+        button { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .btn-process { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-process:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3); }
+        .btn-clear { background: #f0f0f0; color: #333; }
+        .btn-clear:hover { background: #e0e0e0; }
+        .results { margin-top: 25px; padding: 20px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid #667eea; display: none; }
+        .results.show { display: block; }
+        .result-item { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #e0e0e0; }
+        .result-label { font-weight: 600; color: #667eea; font-size: 13px; }
+        .result-value { color: #333; font-family: 'Courier New', monospace; font-size: 14px; }
+        .status-message { margin-top: 15px; padding: 12px; border-radius: 5px; font-size: 14px; }
+        .status-message.success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .status-message.error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+        .status-message.loading { background: #e3f2fd; color: #1565c0; border-left: 4px solid #2196f3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 TDrive Automação</h1>
+            <p class="subtitle">Preenche Fandi automaticamente em segundos</p>
+        </div>
+
+        <div class="status">✅ Servidor online e pronto!</div>
+
+        <div class="form-group">
+            <label for="dataInput">Cole aqui os dados do cliente:</label>
+            <textarea id="dataInput" placeholder="Exemplo: João Silva, CPF 123.456.789-00, data 15/03/1990, celular 11 98765-4321, valor 85000, km 45000"></textarea>
+            <div class="example"><strong>Formatos aceitos:</strong> CPF (com ou sem pontos), data (DD/MM/YYYY), celular, valores numéricos</div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn-process" id="processBtn">⚡ Processar e Preencher</button>
+            <button class="btn-clear" id="clearBtn">Limpar</button>
+        </div>
+
+        <div class="results" id="results">
+            <div id="identifiedData"></div>
+            <div id="statusMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        function extractDataFromText(text) {
+            const data = {
+                cpf: null,
+                nome: null,
+                data_nascimento: null,
+                celular: null,
+                valor: null,
+                km: null
+            };
+
+            const cpfMatch = text.match(/(\d{3}\.?\d{3}\.?\d{3}-?\d{2})/);
+            if (cpfMatch) {
+                data.cpf = cpfMatch[0].replace(/\D/g, '');
+            }
+
+            const nameMatch = text.match(/([A-Z][a-záéíóúãõàâ]+(?:\s+[A-Z][a-záéíóúãõàâ]+)+)/);
+            if (nameMatch) {
+                data.nome = nameMatch[0];
+            }
+
+            const dateMatch = text.match(/(\d{2}[\/\-]\d{2}[\/\-]\d{4})/);
+            if (dateMatch) {
+                const date = dateMatch[0];
+                const parts = date.split(/[\/-]/);
+                if (parts.length === 3) {
+                    data.data_nascimento = `${parts[0]}/${parts[1]}/${parts[2]}`;
+                }
+            }
+
+            const phoneMatch = text.match(/(?:\(?\d{2}\)?[\s\-]?\d{4,5}[\s\-]?\d{4})/);
+            if (phoneMatch) {
+                data.celular = phoneMatch[0].replace(/\D/g, '');
+                if (data.celular.length === 11) {
+                    data.celular = `(${data.celular.substring(0, 2)}) ${data.celular.substring(2, 7)}-${data.celular.substring(7)}`;
+                }
+            }
+
+            const valorMatch = text.match(/valor[:\s]+(\d{1,3}(?:\.\d{3})*|\d+)/i);
+            if (valorMatch) {
+                data.valor = valorMatch[1].replace(/\./g, '');
+            }
+
+            const kmMatch = text.match(/km[:\s]+(\d{1,3}(?:\.\d{3})*|\d+)/i);
+            if (kmMatch) {
+                data.km = kmMatch[1].replace(/\./g, '');
+            }
+
+            return data;
+        }
+
+        function validateData(data) {
+            const errors = [];
+            if (!data.cpf || data.cpf.length !== 11) errors.push('CPF');
+            if (!data.nome) errors.push('Nome');
+            if (!data.data_nascimento) errors.push('Data');
+            if (!data.celular) errors.push('Celular');
+            if (!data.valor) errors.push('Valor');
+            if (!data.km) errors.push('KM');
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
+
+        async function sendToFandi(data) {
+            const response = await fetch('/api/preencherFandi', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            return await response.json();
+        }
+
+        document.getElementById('processBtn').addEventListener('click', async function() {
+            const textarea = document.getElementById('dataInput');
+            const inputText = textarea.value.trim();
+            const resultsDiv = document.getElementById('results');
+            const identifiedDiv = document.getElementById('identifiedData');
+            const statusDiv = document.getElementById('statusMessage');
+
+            if (!inputText) {
+                statusDiv.innerHTML = '<div class="status-message error">❌ Por favor, cole os dados primeiro!</div>';
+                resultsDiv.classList.add('show');
+                return;
+            }
+
+            const data = extractDataFromText(inputText);
+
+            let identifiedHTML = '<strong style="color: #667eea; margin-bottom: 10px; display: block;">✅ Dados Identificados:</strong>';
+            for (const [key, value] of Object.entries(data)) {
+                if (value) {
+                    const label = key.replace(/_/g, ' ').toUpperCase();
+                    identifiedHTML += `<div class="result-item"><div class="result-label">${label}</div><div class="result-value">${value}</div></div>`;
+                }
+            }
+            identifiedDiv.innerHTML = identifiedHTML;
+
+            const validation = validateData(data);
+            if (!validation.isValid) {
+                statusDiv.innerHTML = `<div class="status-message error">❌ Campos faltando: ${validation.errors.join(', ')}</div>`;
+                resultsDiv.classList.add('show');
+                return;
+            }
+
+            this.disabled = true;
+            statusDiv.innerHTML = '<div class="status-message loading">⏳ Enviando para Fandi...</div>';
+            resultsDiv.classList.add('show');
+
+            try {
+                const result = await sendToFandi(data);
+
+                if (result.success) {
+                    statusDiv.innerHTML = '<div class="status-message success">✅ Ficha preenchida com sucesso! Você será redirecionado...</div>';
+                    setTimeout(() => {
+                        window.open('https://jsl.fandi.com.br/operacao/cadastrar/financiada?Cna_Codigo=5&embed=fandi-one', '_blank');
+                    }, 2000);
+                } else {
+                    statusDiv.innerHTML = `<div class="status-message error">❌ Erro: ${result.message}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="status-message error">❌ Erro ao processar. Verifique se o servidor está online.</div>';
+            } finally {
+                this.disabled = false;
+            }
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('dataInput').value = '';
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('dataInput').focus();
+        });
+
+        document.getElementById('dataInput').focus();
+    </script>
+</body>
+</html>
