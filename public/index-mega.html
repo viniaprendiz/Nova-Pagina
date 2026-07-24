@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TDrive Pro - Automação Fandi + IA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .nav-tabs button {
+            flex: 1;
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tabs button:hover {
+            background: #efefef;
+            color: #667eea;
+        }
+
+        .nav-tabs button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== AUTOMAÇÃO ===== */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .card-value {
+            font-size: 1.3em;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* ===== CHAT ===== */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: #f9f9f9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            border-bottom-left-radius: 0;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 2px solid #ddd;
+            background: white;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .chat-input-area button {
+            padding: 12px 25px;
+        }
+
+        /* ===== RELATÓRIO ===== */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .report-table th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .report-table td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .report-table tr:hover {
+            background: #f5f5f5;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .link-btn {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9em;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .link-btn:hover {
+            background: #764ba2;
+        }
+
+        /* ===== DASHBOARD ===== */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filters input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state p {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                overflow-x: auto;
+            }
+
+            .nav-tabs button {
+                white-space: nowrap;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .message {
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 TDrive Pro</h1>
+            <p>Automação Inteligente de Fichas Fandi</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" data-tab="home">🏠 Home</button>
+            <button class="tab-btn" data-tab="automacao">⚙️ Automação</button>
+            <button class="tab-btn" data-tab="chat">💬 Chat IA</button>
+            <button class="tab-btn" data-tab="relatorio">📊 Relatório</button>
+            <button class="tab-btn" data-tab="dashboard">📈 Dashboard</button>
+        </div>
+
+        <div class="content">
+            <!-- HOME -->
+            <div id="home" class="tab-content active">
+                <h2>Bem-vindo ao TDrive Pro! 👋</h2>
+                <p style="margin-top: 20px; color: #666; line-height: 1.6;">
+                    <strong>TDrive Pro é sua plataforma inteligente para automação de fichas Fandi.</strong><br><br>
+                    
+                    Explore as funcionalidades:
+                </p>
+
+                <div class="cards">
+                    <div class="card">
+                        <div class="card-title">⚙️ Automação</div>
+                        <p>Cole os dados do cliente e deixe o sistema preencher o Fandi automaticamente. Economia de tempo: 10 minutos → 10 segundos!</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">💬 Chat IA</div>
+                        <p>Converse naturalmente com a IA. Diga "sobe a ficha de João" e ela faz tudo, entendendo o contexto!</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📊 Relatório</div>
+                        <p>Veja o status de cada ficha em tempo real: aprovada, em processamento, rejeitada, quantas parcelas.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-title">📈 Dashboard</div>
+                        <p>Histórico completo de fichas com filtros, buscas por CPF, status em Fandi/Gemac/etc.</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 40px; padding: 20px; background: #f0f7ff; border-left: 4px solid #667eea; border-radius: 8px;">
+                    <strong>🎯 Próximos Passos:</strong>
+                    <ul style="margin-top: 15px; margin-left: 20px;">
+                        <li>Clique em <strong>⚙️ Automação</strong> para começar a subir fichas</li>
+                        <li>Use <strong>💬 Chat IA</strong> para conversar naturalmente</li>
+                        <li>Monitore tudo em <strong>📈 Dashboard</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AUTOMAÇÃO -->
+            <div id="automacao" class="tab-content">
+                <h2>⚙️ Automação de Fichas</h2>
+
+                <div class="form-group">
+                    <label>Cole os dados do cliente:</label>
+                    <textarea id="dataInput" placeholder="Exemplo: João Silva, CPF 123.456.789-00, data 15/05/1990, celular 11 98765-4321, valor 85000, km 45000"></textarea>
+                    <small style="color: #999;">Suporta múltiplos formatos - o sistema entende tudo!</small>
+                </div>
+
+                <div id="automacaoAlert"></div>
+
+                <div class="buttons">
+                    <button class="btn-primary" onclick="processarAutomacao()">🚀 Processar e Preencher Fandi</button>
+                    <button class="btn-secondary" onclick="limparAutomacao()">🗑️ Limpar</button>
+                </div>
+
+                <div id="autoResult"></div>
+            </div>
+
+            <!-- CHAT IA -->
+            <div id="chat" class="tab-content">
+                <h2>💬 Chat IA Inteligente</h2>
+                <p style="color: #666; margin-bottom: 20px;">Converse naturalmente sobre suas fichas. Exemplos:</p>
+                <ul style="color: #666; margin-bottom: 20px;">
+                    <li>"Sobe a ficha do João Silva no Fandi"</li>
+                    <li>"Qual é o status da ficha de Maria?"</li>
+                    <li>"Quantas fichas foram aprovadas esse mês?"</li>
+                    <li>"Me mostra as fichas pendentes"</li>
+                </ul>
+
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message bot">
+                            Oi! Sou o assistente TDrive. Como posso te ajudar com as fichas hoje? 😊
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" placeholder="Digite sua mensagem..." onkeypress="if(event.key==='Enter') enviarChat()">
+                        <button class="btn-primary" onclick="enviarChat()">Enviar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RELATÓRIO -->
+            <div id="relatorio" class="tab-content">
+                <h2>📊 Relatório de Fichas</h2>
+
+                <div class="filters">
+                    <input type="text" id="filterCPF" placeholder="🔍 Filtrar por CPF..." onkeyup="filtrarRelatorio()">
+                    <input type="text" id="filterNome" placeholder="🔍 Filtrar por Nome..." onkeyup="filtrarRelatorio()">
+                    <select id="filterStatus" style="flex: 1;" onchange="filtrarRelatorio()">
+                        <option value="">Todos os Status</option>
+                        <option value="subida">✓ Subida</option>
+                        <option value="processamento">⏳ Em Processamento</option>
+                        <option value="aprovada">✓ Aprovada</option>
+                        <option value="rejeitada">✗ Rejeitada</option>
+                    </select>
+                </div>
+
+                <table class="report-table" id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>CPF</th>
+                            <th>Nome</th>
+                            <th>Data</th>
+                            <th>Valor</th>
+                            <th>Fandi</th>
+                            <th>Gemac</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #999;">
+                                📋 Nenhuma ficha enviada ainda. Comece em ⚙️ Automação!
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="tab-content">
+                <h2>📈 Dashboard Executivo</h2>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalFichas">0</div>
+                        <div class="stat-label">Total de Fichas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="fichasAprovadas">0</div>
+                        <div class="stat-label">Fichas Aprovadas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="fichasProcessamento">0</div>
+                        <div class="stat-label">Em Processamento</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalValor">R$ 0</div>
+                        <div class="stat-label">Valor Total</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">📋 Histórico Completo</h3>
+                <div class="filters">
+                    <input type="text" id="dashboardSearch" placeholder="🔍 Buscar por CPF ou Nome..." onkeyup="filtrarDashboard()">
+                </div>
+
+                <table class="report-table" id="dashboardTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>CPF</th>
+                            <th>Nome</th>
+                            <th>Valor</th>
+                            <th>KM</th>
+                            <th>Status Fandi</th>
+                            <th>Status Gemac</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #999;">
+                                📊 Nenhum dado para exibir
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== NAVEGAÇÃO ENTRE ABAS =====
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active de todos
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                // Adiciona active ao clicado
+                btn.classList.add('active');
+                const tabId = btn.dataset.tab;
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // ===== REGEX PARA EXTRAIR DADOS =====
+        function extrairDados(texto) {
+            // CPF (com ou sem formatação)
+            const cpfMatch = texto.match(/(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{11})/);
+            const cpf = cpfMatch ? cpfMatch[1].replace(/\D/g, '') : null;
+
+            // Nome (pega até a próxima vírgula ou CPF)
+            const nomeMatch = texto.match(/^([a-záéíóúàâãõç\s]+)/i);
+            const nome = nomeMatch ? nomeMatch[1].trim() : null;
+
+            // Data (DD/MM/YYYY ou DD-MM-YYYY)
+            const dataMatch = texto.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})|(\d{1,2})-(\d{1,2})-(\d{4})/);
+            const data = dataMatch ? `${dataMatch[1] || dataMatch[4]}/${dataMatch[2] || dataMatch[5]}/${dataMatch[3] || dataMatch[6]}` : null;
+
+            // Celular
+            const celMatch = texto.match(/(\(?\d{2}\)?)\s?(\d{4,5})-?(\d{4})/);
+            const celular = celMatch ? `(${celMatch[1].replace(/\D/g, '')}) ${celMatch[2]}-${celMatch[3]}` : null;
+
+            // Valor (pega número depois de "valor")
+            const valorMatch = texto.match(/valor[:\s]+(\d+)/i);
+            const valor = valorMatch ? valorMatch[1] : null;
+
+            // KM (pega número depois de "km")
+            const kmMatch = texto.match(/km[:\s]+(\d+)/i);
+            const km = kmMatch ? kmMatch[1] : null;
+
+            return { cpf, nome, data, celular, valor, km };
+        }
+
+        // ===== AUTOMAÇÃO =====
+        function processarAutomacao() {
+            const texto = document.getElementById('dataInput').value;
+            if (!texto.trim()) {
+                mostrarAlert('automacaoAlert', 'Por favor, cole os dados do cliente', 'error');
+                return;
+            }
+
+            const dados = extrairDados(texto);
+
+            if (!dados.cpf || !dados.nome) {
+                mostrarAlert('automacaoAlert', '❌ Não consegui extrair CPF e Nome. Verifique o formato.', 'error');
+                return;
+            }
+
+            // Simular envio
+            let html = '<div class="alert alert-success" style="margin-top: 20px;">';
+            html += '<strong>✓ Dados Identificados e Prontos para Enviar!</strong><br><br>';
+            html += '<div class="cards">';
+            html += `<div class="card"><div class="card-title">CPF</div><div class="card-value">${dados.cpf}</div></div>`;
+            html += `<div class="card"><div class="card-title">NOME</div><div class="card-value">${dados.nome}</div></div>`;
+            html += `<div class="card"><div class="card-title">DATA</div><div class="card-value">${dados.data || '-'}</div></div>`;
+            html += `<div class="card"><div class="card-title">CELULAR</div><div class="card-value">${dados.celular || '-'}</div></div>`;
+            html += `<div class="card"><div class="card-title">VALOR</div><div class="card-value">R$ ${dados.valor || '-'}</div></div>`;
+            html += `<div class="card"><div class="card-title">KM</div><div class="card-value">${dados.km || '-'}</div></div>`;
+            html += '</div>';
+            html += '<br><strong>Status:</strong> 🚀 Enviando para Fandi...';
+            html += '</div>';
+
+            document.getElementById('autoResult').innerHTML = html;
+
+            // Simular envio real (sem o Chromium ainda)
+            setTimeout(() => {
+                let resultHtml = '<div class="alert alert-success" style="margin-top: 20px;">';
+                resultHtml += '<strong>✓ FICHA SUBIDA COM SUCESSO!</strong><br><br>';
+                resultHtml += '📋 A ficha foi enviada para:<br>';
+                resultHtml += '<strong>Fandi:</strong> ✓ Aguardando aprovação<br>';
+                resultHtml += '<strong>ID da Ficha:</strong> FANDI-' + dados.cpf.slice(-4) + '<br>';
+                resultHtml += '<a href="#" class="link-btn" style="margin-top: 10px; display: inline-block;">🔗 Acessar no Fandi</a>';
+                resultHtml += '</div>';
+                document.getElementById('autoResult').innerHTML += resultHtml;
+
+                // Adicionar ao relatório
+                adicionarAoRelatorio(dados);
+            }, 2000);
+        }
+
+        function limparAutomacao() {
+            document.getElementById('dataInput').value = '';
+            document.getElementById('autoResult').innerHTML = '';
+            document.getElementById('automacaoAlert').innerHTML = '';
+        }
+
+        // ===== CHAT IA =====
+        function enviarChat() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            // Adicionar mensagem do usuário
+            const messagesDiv = document.getElementById('chatMessages');
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = msg;
+            messagesDiv.appendChild(userMsg);
+            input.value = '';
+
+            // Simular resposta IA
+            setTimeout(() => {
+                const botMsg = document.createElement('div');
+                botMsg.className = 'message bot';
+
+                // Respostas inteligentes baseadas em keywords
+                if (msg.toLowerCase().includes('sobe') || msg.toLowerCase().includes('ficha')) {
+                    botMsg.textContent = '✓ Entendi! Vou preparar a ficha para envio. Você quer enviar no Fandi? (Acesse ⚙️ Automação para colar os dados)';
+                } else if (msg.toLowerCase().includes('status') || msg.toLowerCase().includes('aprovada')) {
+                    botMsg.textContent = '📊 Vou buscar o status das fichas. Verifique em 📊 Relatório para ver todos os status em tempo real!';
+                } else if (msg.toLowerCase().includes('quantas') || msg.toLowerCase().includes('total')) {
+                    botMsg.textContent = '📈 Tenho um dashboard completo com todas as estatísticas. Clique em 📈 Dashboard para ver!';
+                } else {
+                    botMsg.textContent = 'Entendi sua pergunta! 🤔 Você pode:\\n- Clicar em ⚙️ Automação para subir fichas\\n- Ver status em 📊 Relatório\\n- Acompanhar tudo em 📈 Dashboard';
+                }
+
+                messagesDiv.appendChild(botMsg);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 800);
+        }
+
+        // ===== RELATÓRIO =====
+        let todasAsFichas = [];
+
+        function adicionarAoRelatorio(dados) {
+            todasAsFichas.push({
+                cpf: dados.cpf,
+                nome: dados.nome,
+                data: dados.data || '-',
+                valor: dados.valor || '-',
+                statusFandi: 'Aguardando',
+                statusGemac: '-',
+                dataEnvio: new Date().toLocaleDateString('pt-BR')
+            });
+
+            atualizarRelatorio();
+        }
+
+        function atualizarRelatorio() {
+            const tbody = document.getElementById('reportBody');
+            if (todasAsFichas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">📋 Nenhuma ficha enviada ainda</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = todasAsFichas.map((ficha, idx) => `
+                <tr>
+                    <td>${ficha.cpf}</td>
+                    <td>${ficha.nome}</td>
+                    <td>${ficha.data}</td>
+                    <td>R$ ${ficha.valor}</td>
+                    <td><span class="status-badge status-pending">${ficha.statusFandi}</span></td>
+                    <td><span class="status-badge status-pending">${ficha.statusGemac}</span></td>
+                    <td><a href="#" class="link-btn" onclick="alert('Abrindo Fandi...'); return false;">🔗 Fandi</a></td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarRelatorio() {
+            // Implementar filtro se necessário
+        }
+
+        // ===== DASHBOARD =====
+        function atualizarDashboard() {
+            const total = todasAsFichas.length;
+            const aprovadas = todasAsFichas.filter(f => f.statusFandi === 'Aprovada').length;
+            const processamento = todasAsFichas.filter(f => f.statusFandi === 'Aguardando').length;
+            const totalValor = todasAsFichas.reduce((sum, f) => sum + (parseInt(f.valor) || 0), 0);
+
+            document.getElementById('totalFichas').textContent = total;
+            document.getElementById('fichasAprovadas').textContent = aprovadas;
+            document.getElementById('fichasProcessamento').textContent = processamento;
+            document.getElementById('totalValor').textContent = `R$ ${totalValor.toLocaleString('pt-BR')}`;
+
+            const tbody = document.getElementById('dashboardBody');
+            if (todasAsFichas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">📊 Nenhum dado para exibir</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = todasAsFichas.map(ficha => `
+                <tr>
+                    <td>${ficha.dataEnvio}</td>
+                    <td>${ficha.cpf}</td>
+                    <td>${ficha.nome}</td>
+                    <td>R$ ${ficha.valor}</td>
+                    <td>-</td>
+                    <td><span class="status-badge status-pending">${ficha.statusFandi}</span></td>
+                    <td><span class="status-badge status-error">${ficha.statusGemac}</span></td>
+                    <td><a href="#" class="link-btn" onclick="alert('Abrindo Fandi...'); return false;">🔗 Acessar</a></td>
+                </tr>
+            `).join('');
+        }
+
+        function filtrarDashboard() {
+            // Implementar busca se necessário
+        }
+
+        // ===== ALERT =====
+        function mostrarAlert(elementId, msg, tipo) {
+            const alert = document.getElementById(elementId);
+            alert.innerHTML = `<div class="alert alert-${tipo}">${msg}</div>`;
+        }
+
+        // ChatMessages auto-scroll
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
