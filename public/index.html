@@ -98,13 +98,11 @@
                 }
             }
 
-            const valorMatch = text.match(/valor[:\s]+(\d+(?:\.\d{3})*)/i);
-            if (valorMatch) {
+const valorMatch = text.match(/valor[:\s]+(\d+)/i);            if (valorMatch) {
                 data.valor = valorMatch[1].replace(/\./g, '');
             }
 
-            const kmMatch = text.match(/km[:\s]+(\d+(?:\.\d{3})*)/i);
-            if (kmMatch) {
+const kmMatch = text.match(/km[:\s]+(\d+)/i);            if (kmMatch) {
                 data.km = kmMatch[1].replace(/\./g, '');
             }
 
