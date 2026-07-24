@@ -1,1 +1,144 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>TDrive Pro</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:10px}div.container{max-width:1200px;margin:0 auto;background:white;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;height:90vh}div.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;text-align:center}div.header h1{font-size:2em;margin-bottom:5px}div.header p{opacity:0.9}div.content{display:flex;flex:1;overflow:hidden}div.chat{flex:1;display:flex;flex-direction:column}div.messages{flex:1;overflow-y:auto;padding:20px;background:#f9f9f9}div.message{margin-bottom:12px;padding:12px 16px;border-radius:8px;max-width:80%;word-wrap:break-word}div.message.user{background:#667eea;color:white;margin-left:auto}div.message.system{background:#e8f5e9;color:#2e7d32}div.message.error{background:#ffebee;color:#c62828}div.input-area{padding:15px;border-top:1px solid #eee;display:flex;gap:10px}textarea{flex:1;padding:12px;border:2px solid #ddd;border-radius:8px;height:100px;resize:none;font-family:inherit}button{padding:12px 24px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;transition:0.3s}button:hover{background:#5568d3}div.sidebar{width:300px;border-left:1px solid #eee;overflow-y:auto;padding:15px}div.sidebar h3{margin-bottom:15px;font-size:1.1em}div.client-card{background:#667eea;color:white;padding:12px 16px;border-radius:8px;margin-bottom:10px;cursor:pointer;border-left:4px solid #fff;transition:0.3s}div.client-card:hover{transform:translateX(5px)}</style></head><body><div class="container"><div class="header"><h1>TDrive Pro</h1><p>Sistema de Automacao - Cole dados, clique ENVIAR</p></div><div class="content"><div class="chat"><div class="messages" id="msgs"></div><div class="input-area"><textarea id="inp" placeholder="CPF: 398.402.018-08&#10;NOME: Vinicios&#10;MAE: Maria&#10;CEL: 11987654321&#10;EMAIL: v@email.com&#10;RENDA: 3000"></textarea><button onclick="send()">ENVIAR</button></div></div><div class="sidebar"><h3>Clientes</h3><div id="clientes"></div></div></div></div><script>let clients=JSON.parse(localStorage.getItem('tdrive'))||[];function extract(text){let d={};text.split('\n').forEach(line=>{let u=line.toUpperCase();if(u.includes('CPF'))d.cpf=line.match(/([0-9]{11})/)?.[1];if(u.includes('NOME')&&!u.includes('MAE'))d.nome=line.split(':')[1]?.trim();if(u.includes('MAE'))d.mae=line.split(':')[1]?.trim();if(u.includes('CEL'))d.celular=line.match(/(\d{11,12})/)?.[1];if(u.includes('EMAIL'))d.email=line.match(/([a-z0-9._%-]+@[a-z0-9.-]+\.[a-z]{2,})/i)?.[1];if(u.includes('RENDA'))d.renda=line.match(/(\d+[.,]\d{2})/)?.[1];if(u.includes('KM'))d.km=line.match(/(\d+)/)?.[1]});return d}function complete(d){if(!d.km)d.km=String(Math.floor(Math.random()*50000)+10000);if(!d.profissao)d.profissao='Profissional';if(!d.rg)d.rg='00.000.000-0';if(!d.data)d.data='01/01/1990';return d}function validate(d){let missing=[];['cpf','nome','mae','celular','email','renda'].forEach(f=>{if(!d[f])missing.push(f)});if(d.cpf&&d.cpf.length!==11)return{ok:false,erro:'CPF invalido'};return{ok:missing.length===0,missing}}function msg(text,type='system'){let el=document.createElement('div');el.className='message '+type;el.textContent=text;document.getElementById('msgs').appendChild(el);document.getElementById('msgs').scrollTop=999999}function send(){let text=document.getElementById('inp').value.trim();if(!text){msg('Cole dados','error');return}msg(text,'user');document.getElementById('inp').value='';let d=extract(text);let v=validate(d);if(!v.ok){msg('Faltam: '+(v.missing?.join(', ')||v.erro),'error');return}d=complete(d);msg('Enviando...','system');setTimeout(()=>{d.status='Enviado';d.time=new Date().toLocaleString();clients.push(d);localStorage.setItem('tdrive',JSON.stringify(clients));msg('OK: '+d.nome,'system');render_clients()},800)}function edit(idx){let c=clients[idx];let newData=prompt('Editar '+c.nome);if(newData){let d=extract(newData);clients[idx]={...c,...d};localStorage.setItem('tdrive',JSON.stringify(clients));render_clients();msg('Atualizado!','system')}}function render_clients(){let html='';if(clients.length===0){document.getElementById('clientes').innerHTML='Vazio';return}clients.forEach((c,i)=>{html+='<div class="client-card" onclick="edit('+i+')"><strong>'+c.nome+'</strong><br/>'+c.cpf+'</div>'});document.getElementById('clientes').innerHTML=html}window.onload=()=>{msg('Bem-vindo!','system');render_clients()}</script></body></html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TDrive Pro</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; padding:10px; }
+    div.container { max-width:1200px; margin:0 auto; background:white; border-radius:15px; box-shadow:0 20px 60px rgba(0,0,0,0.3); display:flex; flex-direction:column; height:90vh; }
+    div.header { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:20px; text-align:center; }
+    div.header h1 { font-size:2em; margin-bottom:5px; }
+    div.header p { opacity:0.9; }
+    div.content { display:flex; flex:1; overflow:hidden; }
+    div.chat { flex:1; display:flex; flex-direction:column; }
+    div.messages { flex:1; overflow-y:auto; padding:20px; background:#f9f9f9; }
+    div.message { margin-bottom:12px; padding:12px 16px; border-radius:8px; max-width:80%; word-wrap:break-word; }
+    div.message.user { background:#667eea; color:white; margin-left:auto; }
+    div.message.system { background:#e8f5e9; color:#2e7d32; }
+    div.message.error { background:#ffebee; color:#c62828; }
+    div.input-area { padding:15px; border-top:1px solid #eee; display:flex; gap:10px; }
+    textarea { flex:1; padding:12px; border:2px solid #ddd; border-radius:8px; height:100px; resize:none; font-family:inherit; }
+    button { padding:12px 24px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:0.3s; }
+    button:hover { background:#5568d3; }
+    div.sidebar { width:300px; border-left:1px solid #eee; overflow-y:auto; padding:15px; }
+    div.sidebar h3 { margin-bottom:15px; font-size:1.1em; }
+    div.client-card { background:#667eea; color:white; padding:12px 16px; border-radius:8px; margin-bottom:10px; cursor:pointer; border-left:4px solid #fff; transition:0.3s; }
+    div.client-card:hover { transform:translateX(5px); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>TDrive Pro</h1>
+      <p>Sistema de Automacao - Cole dados, clique ENVIAR</p>
+    </div>
+    <div class="content">
+      <div class="chat">
+        <div class="messages" id="msgs"></div>
+        <div class="input-area">
+          <textarea id="inp" placeholder="CPF: 398.402.018-08&#10;NOME: Vinicios&#10;MAE: Maria&#10;CEL: 11987654321&#10;EMAIL: v@email.com&#10;RENDA: 3000"></textarea>
+          <button onclick="send()">ENVIAR</button>
+        </div>
+      </div>
+      <div class="sidebar">
+        <h3>Clientes</h3>
+        <div id="clientes"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let clients = JSON.parse(localStorage.getItem('tdrive')) || [];
+    
+    function extract(text) {
+      let d = {};
+      text.split('\n').forEach(line => {
+        let u = line.toUpperCase();
+        if (u.includes('CPF')) d.cpf = line.match(/([0-9]{11})/)?.[1];
+        if (u.includes('NOME') && !u.includes('MAE')) d.nome = line.split(':')[1]?.trim();
+        if (u.includes('MAE')) d.mae = line.split(':')[1]?.trim();
+        if (u.includes('CEL')) d.celular = line.match(/(\d{11,12})/)?.[1];
+        if (u.includes('EMAIL')) d.email = line.match(/([a-z0-9._%-]+@[a-z0-9.-]+\.[a-z]{2,})/i)?.[1];
+        if (u.includes('RENDA')) d.renda = line.match(/(\d+[.,]\d{2})/)?.[1];
+        if (u.includes('KM')) d.km = line.match(/(\d+)/)?.[1];
+      });
+      return d;
+    }
+    
+    function complete(d) {
+      if (!d.km) d.km = String(Math.floor(Math.random() * 50000) + 10000);
+      if (!d.profissao) d.profissao = 'Profissional';
+      if (!d.rg) d.rg = '00.000.000-0';
+      if (!d.data) d.data = '01/01/1990';
+      return d;
+    }
+    
+    function validate(d) {
+      let missing = [];
+      ['cpf', 'nome', 'mae', 'celular', 'email', 'renda'].forEach(f => {
+        if (!d[f]) missing.push(f);
+      });
+      if (d.cpf && d.cpf.length !== 11) return { ok: false, erro: 'CPF invalido' };
+      return { ok: missing.length === 0, missing };
+    }
+    
+    function msg(text, type = 'system') {
+      let el = document.createElement('div');
+      el.className = 'message ' + type;
+      el.textContent = text;
+      document.getElementById('msgs').appendChild(el);
+      document.getElementById('msgs').scrollTop = 999999;
+    }
+    
+    function send() {
+      let text = document.getElementById('inp').value.trim();
+      if (!text) { msg('Cole dados', 'error'); return; }
+      msg(text, 'user');
+      document.getElementById('inp').value = '';
+      let d = extract(text);
+      let v = validate(d);
+      if (!v.ok) { msg('Faltam: ' + (v.missing?.join(', ') || v.erro), 'error'); return; }
+      d = complete(d);
+      msg('Enviando...', 'system');
+      setTimeout(() => {
+        d.status = 'Enviado';
+        d.time = new Date().toLocaleString();
+        clients.push(d);
+        localStorage.setItem('tdrive', JSON.stringify(clients));
+        msg('OK: ' + d.nome, 'system');
+        render_clients();
+      }, 800);
+    }
+    
+    function edit(idx) {
+      let c = clients[idx];
+      let newData = prompt('Editar ' + c.nome);
+      if (newData) {
+        let d = extract(newData);
+        clients[idx] = { ...c, ...d };
+        localStorage.setItem('tdrive', JSON.stringify(clients));
+        render_clients();
+        msg('Atualizado!', 'system');
+      }
+    }
+    
+    function render_clients() {
+      let html = '';
+      if (clients.length === 0) {
+        document.getElementById('clientes').innerHTML = 'Vazio';
+        return;
+      }
+      clients.forEach((c, i) => {
+        html += '<div class="client-card" onclick="edit(' + i + ')"><strong>' + c.nome + '</strong><br/>' + c.cpf + '</div>';
+      });
+      document.getElementById('clientes').innerHTML = html;
+    }
+    
+    window.onload = () => {
+      msg('Bem-vindo!', 'system');
+      render_clients();
+    };
+  </script>
+</body>
+</html>
