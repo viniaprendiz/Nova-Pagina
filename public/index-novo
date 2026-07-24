@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TDrive Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; flex-direction: column; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+    .header h1 { font-size: 32px; margin-bottom: 5px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    .container { flex: 1; display: flex; gap: 0; max-width: 1400px; margin: 0 auto; width: 100%; }
+    .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+    .chat-area { flex: 1; background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; display: flex; flex-direction: column; overflow-y: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .message { margin: 12px 0; padding: 12px 15px; border-radius: 8px; max-width: 70%; word-wrap: break-word; animation: slideIn 0.3s ease; line-height: 1.5; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .message.bot { background: #f0f0f0; color: #333; align-self: flex-start; border-left: 4px solid #667eea; }
+    .message.user { background: #667eea; color: white; align-self: flex-end; border-right: 4px solid #667eea; }
+    .message.success { background: #d4edda; color: #155724; align-self: flex-start; border-left: 4px solid #28a745; }
+    .message.warning { background: #fff3cd; color: #856404; align-self: flex-start; border-left: 4px solid #ffc107; }
+    .message.info { background: #d1ecf1; color: #0c5460; align-self: flex-start; border-left: 4px solid #17a2b8; }
+    .input-area { display: flex; gap: 10px; }
+    .input-area textarea { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 60px; }
+    .input-area button { padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }
+    .input-area button:hover { background: #5568d3; transform: translateY(-2px); }
+    .input-area button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .sidebar { width: 280px; background: white; border-left: 1px solid #eee; padding: 20px; display: flex; flex-direction: column; box-shadow: -2px 0 8px rgba(0,0,0,0.05); overflow-y: auto; }
+    .sidebar h2 { font-size: 18px; margin-bottom: 15px; color: #333; }
+    .client-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; border-radius: 6px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+    .client-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    .client-card strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .client-card small { display: block; opacity: 0.9; }
+    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; margin-top: 6px; font-weight: bold; }
+    .status-badge.pending { background: #fff3cd; color: #856404; }
+    .status-badge.submitted { background: #d1ecf1; color: #0c5460; }
+    .status-badge.success { background: #d4edda; color: #155724; }
+    .status-badge.error { background: #f8d7da; color: #721c24; }
+    .fandi-link { display: inline-block; margin-top: 6px; padding: 4px 8px; background: #28a745; color: white; text-decoration: none; border-radius: 4px; font-size: 11px; text-align: center; width: 100%; }
+    .fandi-link:hover { background: #218838; }
+    .loading { display: inline-block; width: 8px; height: 8px; background: #667eea; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    @media (max-width: 768px) {
+      .container { flex-direction: column; }
+      .sidebar { width: 100%; border-left: none; border-top: 1px solid #eee; max-height: 180px; order: 2; }
+      .main-content { order: 1; padding: 10px; }
+      .chat-area { margin-bottom: 10px; }
+      .message { max-width: 90%; }
+      .header h1 { font-size: 24px; }
+      .input-area { flex-direction: column; }
+      .input-area button { width: 100%; }
+    }
+  </style>
+</head>
