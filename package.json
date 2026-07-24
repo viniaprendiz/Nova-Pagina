@@ -1,8 +1,7 @@
 {
-  "type": "module",
   "name": "tdrive-automation",
   "version": "1.0.0",
-  "description": "TDrive Pro - Automation system",
+  "description": "TDrive Pro - Sistema de automação",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
