@@ -1,0 +1,37 @@
+🚀 DEPLOY - 3 PASSOS PARA COLOCAR FICHA AUTOMÁTICA NO AR
+
+PASSO 1: COPIAR CÓDIGO
+=======================
+Abra: https://github.com/viniaprendiz/Nova-Pagina/blob/main/fix-server.js
+Copie TODO o código (Ctrl+A, Ctrl+C)
+
+PASSO 2: EDITAR SERVER.JS
+==========================
+Abra: https://github.com/viniaprendiz/Nova-Pagina/blob/main/server.js
+Clique no botão de EDITAR (lápis)
+Procure por: "app.post('/api/submit-fandi'"
+Delete a FUNÇÃO INTEIRA (de app.post até o });
+Cole o código que copiou
+Escreva mensagem: "🔥 v5.4 - Ficha automática funcionando"
+Clique CONFIRMAR
+
+PASSO 3: RENDER AUTO-REDEPLOY
+==============================
+Aguarde 2 minutos
+Render detecta push automático
+Novo deploy acontece sozinho
+Site https://paginaexemplo.onrender.com ja tem o código novo
+
+TESTE
+======
+1. Acesse: https://paginaexemplo.onrender.com
+2. Cole dados (CPF: 281.453.458-04, Nome: Beto Pedro, etc)
+3. Clique "ENVIAR"
+4. Aguarde 5 segundos
+5. Acesse: https://jsl.fandi.com.br/operacao/monitor
+6. ✅ Ficha apareceu!
+
+ALTERNATIVA (se não conseguir colar)
+======================================
+Envie uma mensagem dizendo "ATIVA DEPLOY"
+Vou fazer tudo sozinho sem você precisar fazer nada!
