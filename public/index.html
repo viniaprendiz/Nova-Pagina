@@ -1,76 +1,276 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>TDrive Pro v2.0</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Segoe UI;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:20px}
-    .container{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 2fr;gap:20px}
-    .header{background:#fff;padding:30px;border-radius:8px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,.1);text-align:center;grid-column:1/-1}
-    .header h1{color:#667eea;font-size:2.5em}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin:20px 0}
-    .stat-box{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:8px;text-align:center}
-    .stat-box h3{font-size:2em}
-    .sidebar{background:#fff;padding:20px;border-radius:8px;position:sticky;top:20px}
-    .sidebar h2{color:#667eea;margin-bottom:15px}
-    .client-item{background:#f5f5f5;padding:10px;margin-bottom:10px;border-radius:5px;border-left:4px solid #667eea;cursor:pointer}
-    .main-content{background:#fff;padding:30px;border-radius:8px}
-    .chat-container{display:flex;flex-direction:column;height:600px}
-    .chat-messages{flex:1;overflow-y:auto;margin-bottom:20px;padding:15px;background:#f9f9f9;border-radius:5px}
-    .message{margin-bottom:15px;padding:12px;border-radius:5px}
-    .message.user{background:#667eea;color:#fff}
-    .message.success{background:#d4edda}
-    .message.error{background:#f8d7da}
-    textarea{width:100%;padding:12px;border:2px solid #ddd;border-radius:5px;resize:none;height:80px}
-    .btn{padding:12px 30px;border:none;border-radius:5px;cursor:pointer;font-weight:bold}
-    .btn-primary{background:#667eea;color:#fff}
-    .btn-success{background:#28a745;color:#fff}
-    .toast{position:fixed;top:20px;right:20px;padding:15px;border-radius:5px;color:#fff;display:none;z-index:1000}
-    .toast.success{background:#28a745}
-    .toast.show{display:block}
-    @media(max-width:900px){.container{grid-template-columns:1fr}}
-    </style>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TDrive Pro v4.0 - Automação Fandi</title>
+      <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body {
+                              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                              min-height: 100vh;
+                              padding: 20px;
+                              display: flex;
+                              justify-content: center;
+                              align-items: center;
+                }
+                .container {
+                              background: white;
+                              border-radius: 12px;
+                              box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                              max-width: 600px;
+                              width: 100%;
+                              padding: 40px;
+                }
+                h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+                .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+                .input-section { margin-bottom: 30px; }
+                label { display: block; color: #555; font-weight: 600; margin-bottom: 10px; }
+                textarea {
+                              width: 100%;
+                              height: 120px;
+                              padding: 12px;
+                              border: 2px solid #ddd;
+                              border-radius: 8px;
+                              font-family: monospace;
+                              font-size: 13px;
+                              resize: vertical;
+                              transition: border-color 0.3s;
+                }
+                textarea:focus { outline: none; border-color: #667eea; }
+                .btn {
+                              padding: 12px 24px;
+                              border: none;
+                              border-radius: 8px;
+                              font-size: 14px;
+                              font-weight: 600;
+                              cursor: pointer;
+                              transition: all 0.3s;
+                              margin-right: 10px;
+                              margin-top: 10px;
+                }
+                .btn-primary {
+                              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                              color: white;
+                }
+                .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+                .btn-secondary {
+                              background: #f0f0f0;
+                              color: #333;
+                }
+                .btn-secondary:hover { background: #e0e0e0; }
+                .btn-success {
+                              background: #10b981;
+                              color: white;
+                }
+                .btn-success:hover { background: #059669; }
+                .validation { margin-top: 15px; padding: 15px; border-radius: 8px; display: none; }
+                .validation.show { display: block; }
+                .validation-success { background: #ecfdf5; border-left: 4px solid #10b981; color: #047857; }
+                .validation-error { background: #fef2f2; border-left: 4px solid #ef4444; color: #b91c1c; }
+                .data-preview { background: #f9fafb; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 13px; }
+                .data-preview div { margin-bottom: 8px; }
+                .label-small { color: #999; font-weight: 600; font-size: 12px; }
+                .value-small { color: #333; font-weight: 500; }
+                .confirmation-section { display: none; margin-top: 30px; padding-top: 30px; border-top: 2px solid #eee; }
+                .confirmation-section.show { display: block; }
+                .success-message { background: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px; }
+                .success-message h2 { color: #047857; margin-bottom: 5px; }
+                .fandi-id { font-family: monospace; font-weight: 600; color: #667eea; background: #f3f4f6; padding: 8px 12px; border-radius: 4px; margin-top: 10px; }
+                .email-section { background: #f0f9ff; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; margin-top: 20px; }
+                .email-preview { background: white; padding: 15px; border: 1px solid #e5e7eb; border-radius: 6px; margin-top: 10px; font-size: 13px; }
+                .email-subject { background: #f3f4f6; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-weight: 600; }
+                .email-body { white-space: pre-wrap; word-wrap: break-word; color: #555; }
+                .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 8px; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                .hidden { display: none !important; }
+            </style>
   </head>
   <body>
-    <div class="header">
-      <h1>TDrive Pro v2.0 + Fandi</h1>
-    <div class="stats">
-    <div class="stat-box"><h3 id="total">0</h3><p>Fichas</p></div>div>
-    </div>div>
-    </div>div>
+        <div class="container">
+                  <h1>🚀 TDrive Pro v4.0</h1>
+                <p class="subtitle">Automação de Propostas Fandi</p>p>
+        
+                <div class="input-section">
+                            <label for="clientData">Cole os dados do cliente (qualquer formato):</label>label>
+                            <textarea id="clientData" placeholder="Ex:\nCPF: 281.453.458-04\nNome: Beto Pedro\nMãe: Maria Silva\nTelefone: (11) 99999-9999\nSalário: 5000\nCEP: 01310-100\nEndereço: Av. Paulista, 1000\nBairro: Bela Vista"></textarea>
+                            <button class="btn btn-primary" onclick="validateAndExtract()">📋 EXTRAIR E VALIDAR</button>button>
+                </div>div>
+        
+                <div id="validation" class="validation"></div>div>
+        
+                <div id="confirmation" class="confirmation-section">
+                            <div class="success-message">
+                                            <h2>✅ Dados Extraídos com Sucesso!</h2>
+                                            <div id="extractedData" class="data-preview"></div>div>
+                                            <button class="btn btn-primary" onclick="submitToFandi()">📤 ENVIAR PARA FANDI <span id="spinner"></span>span></button>button>
+                            </div>div>
+                </div>div>
+        
+                <div id="submitResult" class="confirmation-section"></div>div>
+        </div>div>
   
-  <div class="container">
-  <div class="sidebar">
-  <h2>Clientes</h2>
-  <div id="list"></div>div>
-  </div>div>
-  
-  <div class="main-content">
-  <div class="chat-container">
-  <div class="chat-messages" id="chat"></div>div>
-  <div style="display:flex;gap:10px">
-  <textarea id="input" placeholder="Cole dados do cliente..."></textarea>
-  <button class="btn btn-primary" onclick="extrair()">EXTRAIR</button>button>
-  </div>div>
-  </div>div>
-  </div>div>
-  </div>div>
-  
-  <div class="toast" id="toast"></div>div>
-  
-  <script>
-    let clientes=[];
-    function msg(t,tipo){const m=document.createElement('div');m.className='message '+tipo;m.textContent=t;document.getElementById('chat').appendChild(m);document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight}
-    async function extrair(){const texto=document.getElementById('input').value;if(!texto.trim()){alert('Cole dados!');return}msg('Analisando...','bot');try{const r=await fetch('/api/extract',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:texto})});const res=await r.json();if(res.validation.valid){msg('OK!','success');const d=document.createElement('div');d.style='background:#f5f5f5;padding:15px;margin:15px 0';d.innerHTML='CPF: '+res.data.cpf+'<br>Nome: '+res.data.nome+'<br>Email: '+res.data.email+'<br>Renda: '+res.data.renda;document.getElementById('chat').appendChild(d);const btn=document.createElement('button');btn.className='btn btn-success';btn.textContent='ENVIAR PARA FANDI';btn.onclick=function(){enviar(res.data)};document.getElementById('chat').appendChild(btn)}else{msg('Faltam: '+res.validation.missing.join(', '),'error')}}catch(e){msg('Erro: '+e.message,'error')}}
-    async function enviar(dados){msg('Enviando...','bot');try{const r=await fetch('/api/submit-fandi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dados)});const res=await r.json();if(res.success){msg('Enviado! ID: '+res.fandi_id,'success');clientes.push(Object.assign({},dados,{fandi_id:res.fandi_id}));localStorage.setItem('clientes',JSON.stringify(clientes));document.getElementById('total').textContent=clientes.length;atualizar();document.getElementById('input').value=''}else{msg('Erro: '+res.message,'error')}}catch(e){msg('Erro: '+e.message,'error')}}
-    function atualizar(){const lista=document.getElementById('list');lista.innerHTML='';for(let c of clientes){const d=document.createElement('div');d.className='client-item';d.innerHTML='<strong>'+c.nome+'</strong><br><small>'+c.cpf+'</small>';lista.appendChild(d)}}
-    window.addEventListener('DOMContentLoaded',function(){const saved=localStorage.getItem('clientes');if(saved){clientes=JSON.parse(saved);atualizar();document.getElementById('total').textContent=clientes.length}msg('Bem-vindo ao TDrive Pro v2.0!','bot');msg('Cole dados do cliente','bot')})
+      <script>
+                // Extração e validação de dados        function validateAndExtract() {
+                    const input = document.getElementById('clientData').value;
+                    const validation = document.getElementById('validation');
+                    const confirmation = document.getElementById('confirmation');
+                    const extractedData = document.getElementById('extractedData');
+
+                    // Regex patterns for data extraction            const patterns = {
+                        cpf: /cpf[:\s]+(\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11})/i,
+                                          name: /nome[:\s]+([a-záéíóúàâãõç\s]+)/i,
+                        mother: /mãe[:\s]+([a-záéíóúàâãõç\s]+)/i,
+                        phone: /telefone[:\s]+([\d\s\(\)-]+)/i,
+                                          salary: /salário[:\s]+(\d+(?:[.,]\d{2})?)/i,
+                        cep: /cep[:\s]+(\d{5}-\d{3}|\d{8})/i,
+                        address: /endereço[:\s]+([^\n]+)/i,
+                                          neighborhood: /bairro[:\s]+([^\n]+)/i,
+                        email: /email[:\s]+([\w.-]+@[\w.-]+\.\w+)/i
+        };
+
+                    // Extract data            const extracted = {};
+                    for (const [key, pattern] of Object.entries(patterns)) {
+                                      const match = input.match(pattern);
+                                      extracted[key] = match ? match[1].trim() : '';
+                    }
+
+                    // Validate required fields            const required = ['cpf', 'name', 'mother', 'phone', 'salary', 'cep', 'address', 'neighborhood'];
+                    const missing = required.filter(field => !extracted[field]);
+
+                    if (missing.length > 0) {
+                                      validation.className = 'validation show validation-error';
+                                      validation.innerHTML = `<strong>❌ Campos Faltando:</strong> ${missing.join(', ')}`;
+                                      confirmation.classList.remove('show');
+                                      return;
+                    }
+
+                    // Success            validation.className = 'validation show validation-success';            validation.innerHTML = '<strong>✅ Todos os dados foram extraídos com sucesso!</strong>';            // Display extracted data            extractedData.innerHTML = `                <div><span class="label-small">CPF:</span> <span class="value-small">${extracted.cpf}</span></div>
+                        <div><span class="label-small">Nome:</span> <span class="value-small">${extracted.name}</span></div>
+                        <div><span class="label-small">Mãe:</span> <span class="value-small">${extracted.mother}</span></div>
+                        <div><span class="label-small">Telefone:</span> <span class="value-small">${extracted.phone}</span></div>
+                        <div><span class="label-small">Salário:</span> <span class="value-small">R$ ${extracted.salary}</span></div>
+                        <div><span class="label-small">CEP:</span> <span class="value-small">${extracted.cep}</span></div>
+                        <div><span class="label-small">Endereço:</span> <span class="value-small">${extracted.address}</span></div>
+                        <div><span class="label-small">Bairro:</span> <span class="value-small">${extracted.neighborhood}</span></div>
+                    `;
+
+                                confirmation.classList.add('show');
+                                            // Store extracted data            window.currentClient = extracted;            localStorage.setItem('lastClient', JSON.stringify(extracted));
+                                                    }
+
+                                                            // Submit to Fandi via backend        async function submitToFandi() {
+                                                                        if (!window.currentClient) return;
+
+                                                                                    const spinner = document.getElementById('spinner');
+                                                                                                const submitBtn = event.target;
+                                                                                                            spinner.innerHTML = '<span class="spinner"></span>';
+                                                                                                                        submitBtn.disabled = true;
+                                                                                                                        
+                                                                                                                                    try {
+                                                                                                                                                    const response = await fetch('/api/submit-fandi', {
+                                                                                                                                                                        method: 'POST',
+                                                                                                                                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                                                                                                                                                                body: JSON.stringify(window.currentClient)
+                                                                                                                                                                                                                                });
+                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                const result = await response.json();
+                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                if (result.success && result.fandiId) {
+                                                                                                                                                                                                                                                                                    showConfirmation(result.fandiId, window.currentClient);
+                                                                                                                                                                                                                                                                                                        localStorage.setItem('lastFandiId', result.fandiId);
+                                                                                                                                                                                                                                                                                                                            localStorage.setItem('lastSubmission', JSON.stringify({ fandiId: result.fandiId, client: window.currentClient, timestamp: new Date().toISOString() }));
+                                                                                                                                                                                                                                                                                                                                            } else {
+                                                                                                                                                                                                                                                                                                                                                                showError(result.error || 'Erro desconhecido');
+                                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                                                                                            } catch (error) {
+                                                                                                                                                                                                                                                                                                                                                                                                            showError(error.message);
+                                                                                                                                                                                                                                                                                                                                                                                                                        } finally {
+                                                                                                                                                                                                                                                                                                                                                                                                                                        spinner.innerHTML = '';
+                                                                                                                                                                                                                                                                                                                                                                                                                                                        submitBtn.disabled = false;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    function showConfirmation(fandiId, clientData) {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                const submitResult = document.getElementById('submitResult');
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            const monitorUrl = 'https://jsl.fandi.com.br/operacao/monitor';
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        const emailRecipients = 'marcelo.sinhorine@tdrive.com.br,eli.psilva@tdrive.com.br,feitoyota@automob.com.br';
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    const emailSubject = `Ficha enviada ao Fandi - ${fandiId}`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                const emailBody = `Olá,\n\nFicha do cliente foi enviada com sucesso para o Fandi.\n\nDados:\nNome: ${clientData.name}\nCPF: ${clientData.cpf}\nTelefone: ${clientData.phone}\nEndereço: ${clientData.address}, ${clientData.neighborhood}\n\nID Fandi: ${fandiId}\nMonitor: ${monitorUrl}\n\nAtenciosamente,\nTDrive Pro v4.0`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            submitResult.innerHTML = `
+                        <div class="success-message">
+                                          <h2>🎉 Ficha Enviada ao Fandi!</h2>
+                            <p>ID da Proposta:</p>
+                            <div class="fandi-id">${fandiId}</div>
+                      </div>
+                        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                          <a href="${monitorUrl}" target="_blank" class="btn btn-success">👁️ VER NO FANDI</a>
+                            <button class="btn btn-secondary" onclick="prepareEmail('${fandiId}', '${encodeURIComponent(emailSubject)}', '${encodeURIComponent(emailBody)}')">📧 PREPARAR EMAIL</button>
+                      </div>
+                        <div id="emailSection" class="hidden"></div>
+                    `;
+                                submitResult.classList.add('show');
+                                        }
+
+                                                function prepareEmail(fandiId, subject, body) {
+                                                            const emailSection = document.getElementById('emailSection');
+                                                                        const decodedSubject = decodeURIComponent(subject);
+                                                                                    const decodedBody = decodeURIComponent(body);
+                                                                                                const recipients = 'marcelo.sinhorine@tdrive.com.br,eli.psilva@tdrive.com.br,feitoyota@automob.com.br';
+
+                                                                                                            emailSection.classList.remove('hidden');
+                                                                                                                        emailSection.innerHTML = `
+                        <div class="email-section">
+                                          <h3>📧 Email Preparado</h3>
+                            <div class="email-preview">
+                                              <div style="margin-bottom: 10px;"><strong>Para:</strong> ${recipients}</div>
+                                              <div class="email-subject"><strong>Assunto:</strong> ${decodedSubject}</div>
+                                              <div class="email-body"><strong>Mensagem:</strong><br><br>${decodedBody}</div>
+                      </div>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                              <button class="btn btn-primary" onclick="copyEmail('${recipients}', '${subject}', '${body}')">📋 COPIAR EMAIL</button>
+                                <a href="mailto:${recipients}?subject=${subject}&body=${body}" class="btn btn-success">✉️ ENVIAR EMAIL</a>
+                      </div>
+                      </div>
+                    `;
+                            }
+
+                                    function copyEmail(recipients, subject, body) {
+                                                const decodedSubject = decodeURIComponent(subject);
+                                                            const decodedBody = decodeURIComponent(body);
+                                                                        const text = `Para: ${recipients}\nAssunto: ${decodedSubject}\n\n${decodedBody}`;
+                                                                                    navigator.clipboard.writeText(text).then(() => {
+                                                                                                    alert('Email copiado para a área de transferência!');
+                                                                                                                }).catch(() => {
+                                                                                                                                const textarea = document.createElement('textarea');
+                                                                                                                                                textarea.value = text;
+                                                                                                                                                                document.body.appendChild(textarea);
+                                                                                                                                                                                textarea.select();
+                                                                                                                                                                                                document.execCommand('copy');
+                                                                                                                                                                                                                document.body.removeChild(textarea);
+                                                                                                                                                                                                                                alert('Email copiado para a área de transferência!');
+                                                                                                                                                                                                                                            });
+                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                            function showError(error) {
+                                                                                                                                                                                                                                                                        const validation = document.getElementById('validation');
+                                                                                                                                                                                                                                                                                    validation.className = 'validation show validation-error';
+                                                                                                                                                                                                                                                                                                validation.innerHTML = `<strong>❌ Erro na Submissão:</strong> ${error}`;
+        }
+
+                // Load last submission on page load        window.addEventListener('load', () => {
+                    const lastSubmission = localStorage.getItem('lastSubmission');
+                    if (lastSubmission) {
+                                      const data = JSON.parse(lastSubmission);
+                                      console.log('Última submissão:', data);
+                    }
+        });
       </script>
   </body>
 </html>html>
-  </script></p></h1>
+      </script></h2></h1>
   </body>
-  </style></title>
+      </style></title>
   </head>
