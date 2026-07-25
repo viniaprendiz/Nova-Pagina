@@ -48,6 +48,37 @@ app.get('/', (req, res) => {
                                                                                                                                                                                                                                                                                       `);
 });
 
+// === ROTAS API v5.1 ===const fichas = {};
+
+app.post('/api/submit-fandi', (req, res) => {
+          try {
+                      const dados = req.body;
+                      if (!dados.cpf || !dados.name) return res.json({ success: false, message: 'Dados incompletos' });
+                      const crypto = require('crypto');
+                      const fandi_id = `PROP-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
+                      fichas[fandi_id] = { ...dados, fandi_id, createdAt: new Date(), status: 'enviada' };
+                      res.json({ success: true, fandi_id, message: 'Ficha enviada com sucesso', data: fichas[fandi_id] });
+          } catch(e) {
+                      res.json({ success: false, message: e.message });
+          }
+});
+
+app.get('/api/fichas', (req, res) => {
+          const lista = Object.values(fichas).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          res.json({ success: true, total: lista.length, fichas: lista });
+});
+
+app.get('/api/status/:fandi_id', (req, res) => {
+          const ficha = fichas[req.params.fandi_id];
+          if (!ficha) return res.status(404).json({ success: false, message: 'Ficha não encontrada' });
+          res.json({ success: true, ficha });
+});
+
+app.get('/health', (req, res) => {
+          res.json({ status: 'ok', version: '5.1', timestamp: new Date() });
+});
+
+
 app.listen(PORT, () => {
         console.log(`Servidor rodando na porta ${PORT}`);
 });
