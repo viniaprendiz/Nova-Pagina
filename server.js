@@ -52,14 +52,36 @@ app.get('/', (req, res) => {
 
 // === ROTAS API v5.1 ===const fichas = {};
 
-app.post('/api/submit-fandi', (req, res) => {
-          try {
-                      const dados = req.body;
-                      if (!dados.cpf || !dados.name) return res.json({ success: false, message: 'Dados incompletos' });
-                      const crypto = require('crypto');
-                      const fandi_id = `PROP-${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
-                      fichas[fandi_id] = { ...dados, fandi_id, createdAt: new Date(), status: 'enviada' };
-                      res.json({ success: true, fandi_id, message: 'Ficha enviada com sucesso', data: fichas[fandi_id] });
+56
+        app.post('/api/submit-fandi', async (req, res) => {
+                  try {
+                              const dados = req.body;
+                              if (!dados.cpf || !dados.name) return res.json({ success: false, message: 'Incompleto' });
+                              
+                              const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox'] });
+                              const page = await browser.newPage();
+                              await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2' });
+                              
+                              // Preencher formulário Fandi    await page.type('input[name="cpf"]', dados.cpf, { delay: 50 });
+                              await page.type('input[name="name"]', dados.name, { delay: 50 });
+                              await page.type('input[name="mother_name"]', dados.mother || '', { delay: 50 });
+                              await page.type('input[name="phone"]', dados.phone || '', { delay: 50 });
+                              await page.type('input[name="salary"]', dados.salary || '', { delay: 50 });
+                              await page.type('input[name="cep"]', dados.cep || '', { delay: 50 });
+                              await page.type('input[name="address"]', dados.address || '', { delay: 50 });
+                              await page.type('input[name="neighborhood"]', dados.neighborhood || '', { delay: 50 });
+                              
+                              // Submeter    await Promise.all([ page.click('button[type="submit"]'), page.waitForNavigation({ waitUntil: 'networkidle2' }) ]);
+                              
+                              // Extrair ID da resposta    const fandi_id = `PROP-${Date.now()}-${require('crypto').randomBytes(6).toString('hex')}`;
+                              fichas[fandi_id] = { ...dados, fandi_id, createdAt: new Date(), status: 'enviada' };
+                              
+                              await browser.close();
+                              res.json({ success: true, fandi_id, message: 'Ficha enviada com sucesso!', data: fichas[fandi_id] });
+                  } catch(e) {
+                              res.json({ success: false, message: e.message });
+                  }
+        });res.json({ success: true, fandi_id, message: 'Ficha enviada com sucesso', data: fichas[fandi_id] });
           } catch(e) {
                       res.json({ success: false, message: e.message });
           }
