@@ -6,6 +6,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+const fichas = {};
+
 app.get('/', (req, res) => {
         res.send(`
             <!DOCTYPE html>
