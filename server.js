@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const puppeteer = require('puppeteer');
 const crypto = require('crypto');
 
 const app = express();
