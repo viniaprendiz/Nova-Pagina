@@ -1,23 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TDrive Pro</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:Segoe UI,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;flex-direction:column}.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;text-align:center}.header h1{font-size:32px;margin-bottom:5px}.header p{font-size:14px;opacity:.9}.container{flex:1;display:flex;width:100%}.main-content{flex:1;display:flex;flex-direction:column;padding:20px}.chat-area{flex:1;background:#fff;border-radius:8px;padding:20px;margin-bottom:20px;display:flex;flex-direction:column;overflow-y:auto;box-shadow:0 2px 8px rgba(0,0,0,.1)}.message{margin:12px 0;padding:12px 15px;border-radius:8px;max-width:70%;word-wrap:break-word;animation:slideIn .3s ease}.message.bot{background:#f0f0f0;color:#333;align-self:flex-start;border-left:4px solid #667eea}.message.user{background:#667eea;color:#fff;align-self:flex-end}.message.success{background:#d4edda;color:#155724;border-left:4px solid #28a745}.message.warning{background:#fff3cd;color:#856404;border-left:4px solid #ffc107}.input-area{display:flex;gap:10px}.input-area textarea{flex:1;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;resize:vertical;min-height:60px}.input-area button{padding:12px 30px;background:#667eea;color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:bold;transition:all .3s}.input-area button:hover{background:#5568d3}.sidebar{width:280px;background:#fff;border-left:1px solid #eee;padding:20px;display:flex;flex-direction:column;overflow-y:auto}.sidebar h2{font-size:18px;margin-bottom:15px;color:#333}.client-card{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:12px;border-radius:6px;margin-bottom:10px;cursor:pointer;transition:all .2s;font-size:13px}.client-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,.4)}.client-card strong{display:block;margin-bottom:4px}.client-card small{display:block;opacity:.9}.status-badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;margin-top:6px;font-weight:bold}.status-badge.success{background:#d4edda;color:#155724}.fandi-link{display:inline-block;margin-top:6px;padding:4px 8px;background:#28a745;color:#fff;border:0;border-radius:4px;font-size:11px;width:100%;cursor:pointer}.fandi-link:hover{background:#218838}@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@media(max-width:768px){.container{flex-direction:column}.sidebar{width:100%;border-left:0;border-top:1px solid #eee;max-height:180px}.main-content{padding:10px}.chat-area{margin-bottom:10px}.message{max-width:90%}.input-area{flex-direction:column}.input-area button{width:100%}}
-</style>
-</head>
-<body>
-<div class="header"><h1>🚗 TDrive Pro</h1><p>Sistema de Automação - Cole dados, clique ENVIAR</p></div>
-<div class="container"><div class="main-content"><div class="chat-area" id="chatArea"><div class="message bot">Olá! Bem-vindo ao TDrive Pro 👋<br><br>Cole aqui os dados do cliente (CPF, NOME, MÃE, CELULAR, EMAIL, RENDA) e eu vou processar tudo rapidinho pra você! ⚡</div></div><div class="input-area"><textarea id="inputField" placeholder="Cole aqui: CPF, NOME, MÃE, CELULAR, EMAIL, RENDA..."></textarea><button id="sendBtn" onclick="sendData()">ENVIAR</button></div></div><div class="sidebar"><h2>📋 Clientes</h2><div id="clientsList" style="flex:1;overflow-y:auto"></div></div></div>
-<script>
-const chatArea=document.getElementById('chatArea');const inputField=document.getElementById('inputField');const sendBtn=document.getElementById('sendBtn');const clientsList=document.getElementById('clientsList');let clients=JSON.parse(localStorage.getItem('tdrive_clients'))||[];
-function addMessage(t,e='bot'){const a=document.createElement('div');a.className=`message ${e}`;a.textContent=t;chatArea.appendChild(a);chatArea.scrollTop=chatArea.scrollHeight}
-function addHTMLMessage(t,e='bot'){const a=document.createElement('div');a.className=`message ${e}`;a.innerHTML=t;chatArea.appendChild(a);chatArea.scrollTop=chatArea.scrollHeight}
-function updateClientsList(){clientsList.innerHTML='';clients.forEach(t=>{const e=document.createElement('div');e.className='client-card';const a={pending:'Aguardando',submitted:'Enviado',success:'Concluído',error:'Erro'}[t.fandi_status||'pending']||'Desconhecido';let i='';t.fandi_id&&(i=`<a href="https://jsl.fandi.com.br/proposta/${t.fandi_id}" target="_blank" class="fandi-link">Ver no Fandi</a>`);e.innerHTML=`<strong>${t.nome.substring(0,25)}</strong><small>${t.cpf}</small><span class="status-badge ${t.fandi_status||'pending'}">${a}</span>${i}`;clientsList.appendChild(e)})}
-async function sendData(){const t=inputField.value.trim();if(!t)return void addMessage('Opa! Cole os dados do cliente primeiro! 📝','warning');addMessage(t,'user');inputField.value='';sendBtn.disabled=!0;addMessage('Processando dados...','info');try{const e=await fetch('/api/extract',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t})});if(!e.ok)throw new Error('Erro na extração');const a=await e.json();if(chatArea.lastChild.remove(),!a.validation.valid){const t=a.validation.missing.join(', ');addMessage(`Opa, quase lá! 😊\n\nOs dados que faltam são: ${t}\n\nVocê quer me mandar esses dados agora ou subir a ficha do cliente sem essas informações?`,'warning')}else{addMessage('Dados válidos! Vou subir essa ficha no Fandi agora... ⚡','info');const e=await fetch('/api/submit-fandi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(a.data)});if(chatArea.lastChild.remove(),!(await e.json()).success)throw new Error('Erro ao enviar para Fandi');const t=(await e.json());a.data.fandi_status='success';a.data.fandi_id=t.fandi_id;clients.push(a.data);localStorage.setItem('tdrive_clients',JSON.stringify(clients));addHTMLMessage(`✅ Sucesso! ${a.data.nome}<br>CPF: ${a.data.cpf}<br><a href="https://jsl.fandi.com.br/proposta/${t.fandi_id}" target="_blank" style="color:#28a745;font-weight:bold;">Ver no Fandi →</a>`,'success');updateClientsList()}}catch(e){chatArea.lastChild.remove();addMessage(`Erro: ${e.message}`,'warning')}finally{sendBtn.disabled=!1}}
-inputField.addEventListener('keypress',t=>{'Enter'===t.key&&t.ctrlKey&&sendData()});updateClientsList();
-</script>
-</body>
-</html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>TDrive Pro v2.0</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Segoe UI;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:20px}
+    .container{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:1fr 2fr;gap:20px}
+    .header{background:#fff;padding:30px;border-radius:8px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,.1);text-align:center;grid-column:1/-1}
+    .header h1{color:#667eea;font-size:2.5em}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin:20px 0}
+    .stat-box{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:8px;text-align:center}
+    .stat-box h3{font-size:2em}
+    .sidebar{background:#fff;padding:20px;border-radius:8px;position:sticky;top:20px}
+    .sidebar h2{color:#667eea;margin-bottom:15px}
+    .client-item{background:#f5f5f5;padding:10px;margin-bottom:10px;border-radius:5px;border-left:4px solid #667eea;cursor:pointer}
+    .main-content{background:#fff;padding:30px;border-radius:8px}
+    .chat-container{display:flex;flex-direction:column;height:600px}
+    .chat-messages{flex:1;overflow-y:auto;margin-bottom:20px;padding:15px;background:#f9f9f9;border-radius:5px}
+    .message{margin-bottom:15px;padding:12px;border-radius:5px}
+    .message.user{background:#667eea;color:#fff}
+    .message.success{background:#d4edda}
+    .message.error{background:#f8d7da}
+    textarea{width:100%;padding:12px;border:2px solid #ddd;border-radius:5px;resize:none;height:80px}
+    .btn{padding:12px 30px;border:none;border-radius:5px;cursor:pointer;font-weight:bold}
+    .btn-primary{background:#667eea;color:#fff}
+    .btn-success{background:#28a745;color:#fff}
+    .toast{position:fixed;top:20px;right:20px;padding:15px;border-radius:5px;color:#fff;display:none;z-index:1000}
+    .toast.success{background:#28a745}
+    .toast.show{display:block}
+    @media(max-width:900px){.container{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>TDrive Pro v2.0 + Fandi</h1>
+    <div class="stats">
+    <div class="stat-box"><h3 id="total">0</h3><p>Fichas</p></div>div>
+    </div>div>
+    </div>div>
+  
+  <div class="container">
+  <div class="sidebar">
+  <h2>Clientes</h2>
+  <div id="list"></div>div>
+  </div>div>
+  
+  <div class="main-content">
+  <div class="chat-container">
+  <div class="chat-messages" id="chat"></div>div>
+  <div style="display:flex;gap:10px">
+  <textarea id="input" placeholder="Cole dados do cliente..."></textarea>
+  <button class="btn btn-primary" onclick="extrair()">EXTRAIR</button>button>
+  </div>div>
+  </div>div>
+  </div>div>
+  </div>div>
+  
+  <div class="toast" id="toast"></div>div>
+  
+  <script>
+    let clientes=[];
+    function msg(t,tipo){const m=document.createElement('div');m.className='message '+tipo;m.textContent=t;document.getElementById('chat').appendChild(m);document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight}
+    async function extrair(){const texto=document.getElementById('input').value;if(!texto.trim()){alert('Cole dados!');return}msg('Analisando...','bot');try{const r=await fetch('/api/extract',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:texto})});const res=await r.json();if(res.validation.valid){msg('OK!','success');const d=document.createElement('div');d.style='background:#f5f5f5;padding:15px;margin:15px 0';d.innerHTML='CPF: '+res.data.cpf+'<br>Nome: '+res.data.nome+'<br>Email: '+res.data.email+'<br>Renda: '+res.data.renda;document.getElementById('chat').appendChild(d);const btn=document.createElement('button');btn.className='btn btn-success';btn.textContent='ENVIAR PARA FANDI';btn.onclick=function(){enviar(res.data)};document.getElementById('chat').appendChild(btn)}else{msg('Faltam: '+res.validation.missing.join(', '),'error')}}catch(e){msg('Erro: '+e.message,'error')}}
+    async function enviar(dados){msg('Enviando...','bot');try{const r=await fetch('/api/submit-fandi',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(dados)});const res=await r.json();if(res.success){msg('Enviado! ID: '+res.fandi_id,'success');clientes.push(Object.assign({},dados,{fandi_id:res.fandi_id}));localStorage.setItem('clientes',JSON.stringify(clientes));document.getElementById('total').textContent=clientes.length;atualizar();document.getElementById('input').value=''}else{msg('Erro: '+res.message,'error')}}catch(e){msg('Erro: '+e.message,'error')}}
+    function atualizar(){const lista=document.getElementById('list');lista.innerHTML='';for(let c of clientes){const d=document.createElement('div');d.className='client-item';d.innerHTML='<strong>'+c.nome+'</strong><br><small>'+c.cpf+'</small>';lista.appendChild(d)}}
+    window.addEventListener('DOMContentLoaded',function(){const saved=localStorage.getItem('clientes');if(saved){clientes=JSON.parse(saved);atualizar();document.getElementById('total').textContent=clientes.length}msg('Bem-vindo ao TDrive Pro v2.0!','bot');msg('Cole dados do cliente','bot')})
+      </script>
+  </body>
+</html>html>
+  </script></p></h1>
+  </body>
+  </style></title>
+  </head>
