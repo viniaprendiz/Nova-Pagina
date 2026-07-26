@@ -1,4 +1,44 @@
-# CAMPANHAS DE WHATSAPP - TDRIVE (uso manual, sem automacao de envio)
+
+
+## MODELO 5 - Cliente aprovado / financiamento facil (gera confianca)
+Use para mostrar que o processo de aprovacao e rapido, sem citar dados do cliente.
+
+---
+✅ Aprovacao em poucos minutos! 
+
+Muita gente acha que financiar carro e complicado. Aqui na TDrive o processo e simples:
+1. Voce escolhe o carro
+2. 2. Simula o financiamento (sem compromisso)
+   3. 3. Manda seus dados
+      4. 4. A gente cuida do resto
+         5.
+         6. Testa agora: [LINK DO SITE TDRIVE]
+         7. ---
+         8.
+         9. ## MODELO 6 - Feriado/data comemorativa
+         10. Adapte a data (Dia das Maes, Black Friday, fim de ano, etc).
+         11.
+         12. ---
+         13. 🎉 [NOME DA DATA] chegando e a TDrive preparou condicoes especiais!
+         14.
+         15. Ate [DATA LIMITE], entrada facilitada em carros selecionados.
+         16.
+         17. Poucas unidades - simula agora: [LINK DO SITE TDRIVE]
+         18. ---
+         19.
+         20. ## Calendario semanal sugerido (1 post por dia, nunca mais que isso)
+         21. - Segunda: Modelo 1 (carro parado ha mais tempo / maior desconto)
+             - - Terca: Modelo 5 (aprovacao facil / confianca)
+               - - Quarta: sem post (deixa o grupo respirar)
+                 - - Quinta: Modelo 2 (prova social, se teve venda na semana)
+                   - - Sexta: Modelo 1 com outro carro, ou Modelo 6 se houver data comemorativa proxima
+                     - - Sabado: sem post
+                       - - Domingo: sem post
+                         - - Ultimos 5 dias do mes: pode usar Modelo 4 (urgencia de fim de mes) substituindo um dos posts acima
+                           -
+                           - ## Regra de ouro
+                           - Nunca poste mais de 1x por dia no mesmo grupo. Se tiver mais de um grupo (ex: "TDrive Ofertas 1" e "TDrive Ofertas 2"), pode postar a mesma oferta nos dois no mesmo dia - isso nao conta como excesso, sao publicos diferentes.
+                           - # CAMPANHAS DE WHATSAPP - TDRIVE (uso manual, sem automacao de envio)
 
 Este arquivo tem modelos prontos de mensagem para o Vinicios postar manualmente nos grupos de WhatsApp. NAO existe nenhum robo enviando essas mensagens automaticamente - isso e proposital: enviar mensagens em massa de forma automatizada por numero pessoal viola os Termos de Uso do WhatsApp e pode banir o numero, alem de ser considerado spam pelos clientes.
 
