@@ -41,6 +41,7 @@ a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;ba
 <a href="/">Enviar Ficha</a>
 <a href="/simulador.html">Simulador</a>
 <a href="/painel.html" class="on">Painel</a>
+<a href="/voz.html">Ditar</a>
 </div>
 
 <h2>Saude do sistema agora</h2>
@@ -64,13 +65,13 @@ var MODS=[
 {n:"Validacao de CPF e nome",s:"ok",d:"Bloqueia envio com CPF invalido ou incompleto antes de gastar tempo no Fandi.",l:"/",b:"Testar"},
 {n:"Anti-duplicidade",s:"ok",d:"Mesmo CPF enviado duas vezes em menos de 10 minutos e barrado.",l:"/",b:"Abrir"},
 {n:"Simulador com regua por CPF",s:"ok",d:"Regua colorida pela ENTRADA e pelo PERFIL do CPF. Perfil A abre toda verde, perfil E abre toda vermelha.",l:"/simulador.html",b:"Abrir simulador"},
-{n:"Ver no Fandi / Ver Email",s:"wip",d:"Botoes prontos na tela. O email abre pronto no Outlook e NUNCA e enviado sozinho. Falta rodar um caso real ponta a ponta.",l:"/",b:"Ver botoes"},
+{n:"Ver no Fandi / Ver Email",s:"ok",d:"Ja da para ver funcionando: clique em Ver demonstracao na tela de fichas. Cria uma ficha ficticia, abre a tela simulada do Fandi e o email pronto no Outlook. Nada e enviado sozinho.",l:"/",b:"Ver demonstracao"},
 {n:"Banco de dados Postgres",s:"ok",d:"Fichas gravadas no Postgres do Render. Plano gratuito expira em 25/08/2026 - trocar antes.",l:"/api/fichas",b:"Ver JSON"},
 {n:"Campanhas de WhatsApp",s:"ok",d:"Seis modelos de mensagem e calendario semanal prontos no repositorio. Envio e sempre manual, sem robo.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/CAMPANHAS-WHATSAPP.md",b:"Ver modelos"},
 {n:"Integracao NBS",s:"blk",d:"So responde dentro da rede da loja (IP interno). Depende do TI liberar um acesso oficial. Nao vamos contornar por fora.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
 {n:"Integracao Syonet",s:"blk",d:"Janela de acesso 12h-21h definida pela empresa. Depende do admin ampliar ou liberar API.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
 {n:"Area de assinaturas e funil",s:"wip",d:"Estrutura de planos, upsell e order bump pode ser montada. O gateway de pagamento tem que ser aberto por voce.",l:"#",b:""},
-{n:"Ditar por voz no celular",s:"wip",d:"Pagina de ditado pelo navegador do celular em construcao. Detalhes e limites no arquivo VOZ-E-MOBILE.md.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/VOZ-E-MOBILE.md",b:"Ler"}
+{n:"Ditar por voz no celular",s:"ok",d:"Abra no Chrome do celular, toque e fale. O texto sai transcrito, vira nota, WhatsApp, email ou ficha. Limites e caminhos no VOZ-E-MOBILE.md.",l:"/voz.html",b:"Abrir ditado"}
 ];
 var GERS=[
 {n:"Gerente de Objetivo",p:"Pergunta sempre: isso faz vender mais carro esta semana? Se a resposta for nao, a tarefa desce na fila. Prioridade atual: fazer o fluxo Fandi rodar ponta a ponta e colocar o simulador na mao do Humberto."},
