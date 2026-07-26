@@ -81,10 +81,12 @@ function formatarCep(s) {
 function formatarSalario(s) {
   const bruto = limpar(s).toLowerCase();
   if (!bruto) return '';
-  const mil = /(\d+(?:[.,]\d+)?)\s*mil/.exec(bruto);
+  // entende "4 mil", "4,5 mil" e tambem "4 mil e 500"
+  const mil = /(\d+(?:[.,]\d+)?)\s*mil(?:\s*e\s*(\d+))?/.exec(bruto);
   if (mil) {
     const n = parseFloat(mil[1].replace(',', '.'));
-    if (!isNaN(n)) return String(Math.round(n * 1000));
+    const resto = mil[2] ? parseInt(mil[2], 10) : 0;
+    if (!isNaN(n)) return String(Math.round(n * 1000) + (isNaN(resto) ? 0 : resto));
   }
   const so = bruto.replace(/[^\d,.]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
   const n2 = parseFloat(so);
@@ -234,7 +236,7 @@ async function interpretar(texto) {
     dados = {};
     CAMPOS.forEach(function (c) { dados[c] = ia.dados[c] || local[c] || ''; });
   } else if (ia.motivo === 'sem-chave') {
-    aviso = 'Modo local (regex). Para ficar mais esperto, crie a variavel ANTHROPIC_API_KEY no Render.';
+    aviso = 'Para ficar ainda mais esperto com frase solta, crie a variavel ANTHROPIC_API_KEY no Render.';
   } else {
     aviso = 'A Claude API nao respondeu (' + (ia.detalhe || ia.motivo) + '). Usei o modo local.';
   }
