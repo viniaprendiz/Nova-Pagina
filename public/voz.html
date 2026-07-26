@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ditar - TDrive PRO</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:22px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
+#mic{width:100%;padding:22px;border:0;border-radius:16px;background:var(--ac);color:#fff;font-size:19px;font-weight:800;cursor:pointer}
+#mic.rec{background:var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.72}}
+#txt{width:100%;height:230px;margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;line-height:1.55;resize:vertical;font-family:inherit;outline:none}
+.row{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+.row button,.row a{flex:1;min-width:130px;text-align:center;text-decoration:none;padding:12px;border-radius:11px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14px;font-weight:600;cursor:pointer}
+.row button:hover,.row a:hover{border-color:var(--ac)}
+.status{font-size:13px;color:var(--tx2);margin-top:10px;min-height:18px}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 10px}
+.notas div{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:13.5px;color:var(--tx2);margin-bottom:8px;line-height:1.5;white-space:pre-wrap}
+.notas small{display:block;color:#6f83a6;font-size:11px;margin-bottom:4px}
+.dica{font-size:12.5px;color:var(--tx2);line-height:1.65}
+.dica code{background:var(--card2);padding:2px 6px;border-radius:5px;color:#9cc2ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Ditar pelo celular</h1>
+<p class="lead">Abra esta pagina no Chrome do celular, toque no botao e fale. O texto aparece pronto para copiar, virar ficha, WhatsApp ou email.</p>
+<div class="abas">
+<a href="/">Enviar Ficha</a>
+<a href="/simulador.html">Simulador</a>
+<a href="/painel.html">Painel</a>
+<a href="/voz.html" class="on">Ditar</a>
+</div>
+
+<div class="card">
+<button id="mic">TOCAR E FALAR</button>
+<textarea id="txt" placeholder="O que voce falar aparece aqui. Da para editar antes de usar."></textarea>
+<div class="status" id="st"></div>
+<div class="row">
+<button onclick="copiar()">Copiar</button>
+<button onclick="salvar()">Salvar nota</button>
+<button onclick="limparTexto()">Limpar</button>
+</div>
+<div class="row">
+<a id="lZap" target="_blank">Mandar no WhatsApp</a>
+<a id="lMail" target="_blank">Abrir no email</a>
+<a href="/">Levar para a ficha</a>
+</div>
+</div>
+
+<div class="card">
+<h2>Modelo de ficha por voz</h2>
+<p class="dica">Fale nesta ordem que o sistema de fichas ja entende: <code>CPF</code>, <code>Nome</code>, <code>Mae</code>, <code>Telefone</code>, <code>Salario</code>, <code>CEP</code>, <code>Endereco</code>, <code>Bairro</code>. Diga a palavra e depois o valor. Exemplo: "cpf um dois tres... nome Joao da Silva... mae Maria da Silva".</p>
+<div class="row"><button onclick="modelo()">Colar modelo em branco</button></div>
+</div>
+
+<div class="card">
+<h2>Notas salvas neste aparelho</h2>
+<div class="notas" id="notas"></div>
+</div>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+var K="tdrive_notas_voz";
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+var rec=null,ligado=false,base="";
+function st(t){$("st").textContent=t}
+if(!SR){
+$("mic").disabled=true;
+$("mic").textContent="Este navegador nao reconhece voz";
+st("Use o Chrome no Android. No iPhone, use o microfone do proprio teclado dentro da caixa de texto.");
+}else{
+rec=new SR();
+rec.lang="pt-BR";rec.continuous=true;rec.interimResults=true;
+rec.onresult=function(e){
+var fim="",meio="";
+for(var i=e.resultIndex;i<e.results.length;i++){
+if(e.results[i].isFinal){fim+=e.results[i][0].transcript+" "}else{meio+=e.results[i][0].transcript}
+}
+if(fim){base=(base+" "+fim).replace(/\s+/g," ").trim()}
+$("txt").value=(base+" "+meio).trim();
+links();
+};
+rec.onerror=function(e){st("Erro no microfone: "+e.error+". Verifique a permissao do navegador.")};
+rec.onend=function(){if(ligado){try{rec.start()}catch(x){}}};
+$("mic").onclick=function(){
+if(ligado){ligado=false;rec.stop();$("mic").classList.remove("rec");$("mic").textContent="TOCAR E FALAR";st("Parado. Da para editar o texto acima.")}
+else{base=$("txt").value;ligado=true;try{rec.start()}catch(x){}
+$("mic").classList.add("rec");$("mic").textContent="OUVINDO... TOQUE PARA PARAR";st("Pode falar. O texto vai aparecendo sozinho.")}
+};
+}
+function links(){
+var t=encodeURIComponent($("txt").value);
+$("lZap").href="https://wa.me/?text="+t;
+$("lMail").href="mailto:?subject="+encodeURIComponent("Anotacao TDrive")+"&body="+t;
+}
+$("txt").addEventListener("input",function(){base=this.value;links()});
+function copiar(){
+var t=$("txt").value;
+if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){st("Copiado.")}).catch(function(){st("Nao consegui copiar, selecione na mao.")})}
+else{$("txt").select();document.execCommand("copy");st("Copiado.")}
+}
+function limparTexto(){$("txt").value="";base="";links();st("Limpo.")}
+function modelo(){
+$("txt").value="CPF: \nNome: \nMae: \nTelefone: \nSalario: \nCEP: \nEndereco: \nBairro: ";
+base=$("txt").value;links();st("Modelo colado. Preencha falando ou digitando.");
+}
+function lista(){try{return JSON.parse(localStorage.getItem(K)||"[]")}catch(e){return []}}
+function render(){
+var n=lista(),d=$("notas");
+if(!n.length){d.innerHTML='<div style="border:1px dashed #243352;background:transparent;text-align:center">Nenhuma nota salva ainda.</div>';return}
+d.innerHTML="";
+for(var i=n.length-1;i>=0;i--){
+var e=document.createElement("div");
+e.innerHTML='<small>'+n[i].q+'</small>';
+e.appendChild(document.createTextNode(n[i].t));
+d.appendChild(e);
+}
+}
+function salvar(){
+var t=$("txt").value.trim();
+if(!t){st("Nada para salvar.");return}
+var n=lista();n.push({t:t,q:new Date().toLocaleString("pt-BR")});
+localStorage.setItem(K,JSON.stringify(n.slice(-50)));
+render();st("Nota salva neste aparelho.");
+}
+links();render();
+</script>
+</body>
+</html>
