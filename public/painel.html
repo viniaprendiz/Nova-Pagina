@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel TDrive PRO</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:1020px;margin:0 auto;padding:18px 16px 70px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:28px 0 12px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h3{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card p{margin:0;font-size:13px;color:var(--tx2);line-height:1.55}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.ok{background:var(--grn)}.wip{background:var(--yel)}.blk{background:var(--red)}
+.tag{display:inline-block;margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--tx2)}
+.tag.ok{background:rgba(34,197,94,.13);color:#7ee2a8;border-color:rgba(34,197,94,.35)}
+.tag.wip{background:rgba(245,158,11,.13);color:#fbcd76;border-color:rgba(245,158,11,.35)}
+.tag.blk{background:rgba(239,68,68,.13);color:#f39a9a;border-color:rgba(239,68,68,.35)}
+a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;background:var(--ac);color:#fff;text-decoration:none;font-size:13px;font-weight:600}
+.ger{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ac);border-radius:12px;padding:14px;margin-bottom:10px}
+.ger b{font-size:14px}
+.ger p{margin:6px 0 0;font-size:13px;color:var(--tx2);line-height:1.6}
+.saude{display:flex;gap:14px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13.5px}
+.saude div b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);font-weight:600;margin-bottom:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Painel TDrive PRO</h1>
+<p class="lead">O que ja esta no ar, o que esta em obra e o que depende de alguem. Atualizado a cada deploy.</p>
+<div class="abas">
+<a href="/">Enviar Ficha</a>
+<a href="/simulador.html">Simulador</a>
+<a href="/painel.html" class="on">Painel</a>
+</div>
+
+<h2>Saude do sistema agora</h2>
+<div class="saude">
+<div><b>API de fichas</b><span id="sApi">checando...</span></div>
+<div><b>Tempo de resposta</b><span id="sMs">-</span></div>
+<div><b>Fichas no banco</b><span id="sTot">-</span></div>
+<div><b>Ultima checagem</b><span id="sHora">-</span></div>
+</div>
+
+<h2>Modulos</h2>
+<div class="cards" id="mods"></div>
+
+<h2>Gerentes de melhoria continua</h2>
+<div id="gers"></div>
+
+</div>
+<script>
+var MODS=[
+{n:"Envio de ficha (colar e subir)",s:"ok",d:"Cola os dados do cliente, o sistema separa nome/CPF/telefone, valida e registra. Ja funcionando.",l:"/",b:"Abrir"},
+{n:"Validacao de CPF e nome",s:"ok",d:"Bloqueia envio com CPF invalido ou incompleto antes de gastar tempo no Fandi.",l:"/",b:"Testar"},
+{n:"Anti-duplicidade",s:"ok",d:"Mesmo CPF enviado duas vezes em menos de 10 minutos e barrado.",l:"/",b:"Abrir"},
+{n:"Simulador com regua por CPF",s:"ok",d:"Regua colorida pela ENTRADA e pelo PERFIL do CPF. Perfil A abre toda verde, perfil E abre toda vermelha.",l:"/simulador.html",b:"Abrir simulador"},
+{n:"Ver no Fandi / Ver Email",s:"wip",d:"Botoes prontos na tela. O email abre pronto no Outlook e NUNCA e enviado sozinho. Falta rodar um caso real ponta a ponta.",l:"/",b:"Ver botoes"},
+{n:"Banco de dados Postgres",s:"ok",d:"Fichas gravadas no Postgres do Render. Plano gratuito expira em 25/08/2026 - trocar antes.",l:"/api/fichas",b:"Ver JSON"},
+{n:"Campanhas de WhatsApp",s:"ok",d:"Seis modelos de mensagem e calendario semanal prontos no repositorio. Envio e sempre manual, sem robo.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/CAMPANHAS-WHATSAPP.md",b:"Ver modelos"},
+{n:"Integracao NBS",s:"blk",d:"So responde dentro da rede da loja (IP interno). Depende do TI liberar um acesso oficial. Nao vamos contornar por fora.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Integracao Syonet",s:"blk",d:"Janela de acesso 12h-21h definida pela empresa. Depende do admin ampliar ou liberar API.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Area de assinaturas e funil",s:"wip",d:"Estrutura de planos, upsell e order bump pode ser montada. O gateway de pagamento tem que ser aberto por voce.",l:"#",b:""},
+{n:"Ditar por voz no celular",s:"wip",d:"Pagina de ditado pelo navegador do celular em construcao. Detalhes e limites no arquivo VOZ-E-MOBILE.md.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/VOZ-E-MOBILE.md",b:"Ler"}
+];
+var GERS=[
+{n:"Gerente de Objetivo",p:"Pergunta sempre: isso faz vender mais carro esta semana? Se a resposta for nao, a tarefa desce na fila. Prioridade atual: fazer o fluxo Fandi rodar ponta a ponta e colocar o simulador na mao do Humberto."},
+{n:"Gerente de Design",p:"Tela tem que ser entendida em 3 segundos, funcionar no celular e ter contraste alto. Proximo passo: aplicar o mesmo visual do simulador na tela de fichas."},
+{n:"Gerente de Velocidade",p:"Menos requisicao, menos peso, zero framework. Hoje as paginas sao HTML puro. Risco conhecido: plano gratis do Render dorme e demora ~50s para acordar no primeiro acesso do dia."},
+{n:"Gerente de Automacao",p:"Toda tarefa repetida mais de 3 vezes por semana vira botao. Fila: preencher ficha, montar simulacao, montar mensagem de WhatsApp, montar email de sequenciamento."},
+{n:"Gerente do Cerebro",p:"Nada se perde: cada problema resolvido vira registro datado no cerebro com causa, solucao e armadilha. O cerebro esta virando painel navegavel em vez de so um arquivo de texto."}
+];
+var m=document.getElementById("mods");
+MODS.forEach(function(x){
+var lbl=x.s==="ok"?"funcionando":(x.s==="wip"?"em obra":"depende de terceiro");
+var h='<div class="card"><h3><span class="dot '+x.s+'"></span>'+x.n+'</h3><p>'+x.d+'</p><div><span class="tag '+x.s+'">'+lbl+'</span></div>';
+if(x.b){h+='<a class="btn" href="'+x.l+'">'+x.b+'</a>'}
+h+='</div>';
+m.insertAdjacentHTML("beforeend",h);
+});
+var g=document.getElementById("gers");
+GERS.forEach(function(x){g.insertAdjacentHTML("beforeend",'<div class="ger"><b>'+x.n+'</b><p>'+x.p+'</p></div>')});
+(function(){
+var t0=Date.now();
+fetch("/api/fichas").then(function(r){return r.json()}).then(function(j){
+document.getElementById("sApi").textContent="online";
+document.getElementById("sApi").style.color="#7ee2a8";
+document.getElementById("sMs").textContent=(Date.now()-t0)+" ms";
+document.getElementById("sTot").textContent=(typeof j.total==="number"?j.total:"?");
+document.getElementById("sHora").textContent=new Date().toLocaleString("pt-BR");
+}).catch(function(){
+document.getElementById("sApi").textContent="sem resposta";
+document.getElementById("sApi").style.color="#f39a9a";
+document.getElementById("sHora").textContent=new Date().toLocaleString("pt-BR");
+});
+})();
+</script>
+</body>
+</html>
