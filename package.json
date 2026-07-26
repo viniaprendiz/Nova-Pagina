@@ -1,6 +1,6 @@
 {
   "name": "tdrive-automation",
-  "version": "10.0.0",
+  "version": "11.0.0",
   "description": "TDrive Pro - Sistema de automacao de vendas",
   "main": "server.js",
   "scripts": {
