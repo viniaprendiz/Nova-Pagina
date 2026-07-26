@@ -1,9 +1,11 @@
-// TDrive Pro v9.0 - Fandi + Status (Postgres) + Email + Validacao + Anti-duplicidade + Modo Demonstracao
+// TDrive Pro v10.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
 const crypto = require('crypto');
 const { Pool } = require('pg');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +33,8 @@ async function initDb() {
             'criado_em TIMESTAMPTZ DEFAULT NOW()' +
             ')'
             );
+await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS erro_tecnico TEXT');
+await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS tentativas INT DEFAULT 0');
 }
 
 app.use(express.json());
@@ -86,16 +90,56 @@ app.post('/api/submit-fandi', async (req, res) => {
             res.json({ success: false, message: 'Erro ao salvar ficha: ' + err.message });
       }
 });
+// ---------- TRAVA DE ACESSO ----------
+// Se a variavel TDRIVE_PIN existir no Render, a lista de fichas so responde com o PIN.
+// Se nao existir, o sistema continua aberto (como antes) e avisa em vermelho na tela.
+const PIN = process.env.TDRIVE_PIN || '';
+function exigePin(req, res, next) {
+if (!PIN) return next();
+const enviado = req.get('x-tdrive-pin') || '';
+if (enviado === PIN) return next();
+return res.status(401).json({ success: false, semPermissao: true, message: 'Acesso protegido. Informe o PIN.' });
+}
+
+// ---------- NAVEGADOR ----------
+function caminhoChrome() {
+if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+try { return puppeteer.executablePath(); } catch (e) { return null; }
+}
+
+async function abrirNavegador() {
+const opcoes = {
+headless: 'new',
+args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-gpu','--no-zygote','--disable-extensions','--disable-background-networking'],
+timeout: 60000
+};
+const caminho = caminhoChrome();
+if (caminho && fs.existsSync(caminho)) opcoes.executablePath = caminho;
+return puppeteer.launch(opcoes);
+}
+
+// ---------- MENSAGEM DE ERRO EM PORTUGUES ----------
+function erroAmigavel(msg) {
+const m = String(msg || '');
+if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
+return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
+if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
+return 'O Fandi demorou demais para responder. Clique em Tentar de novo daqui a alguns minutos.';
+if (/net::|ENOTFOUND|ECONNREFUSED|ECONNRESET/i.test(m))
+return 'Nao consegui alcancar o site do Fandi agora. Pode ser instabilidade da rede.';
+if (/Botao submit|selector/i.test(m))
+return 'A tela de cadastro do Fandi mudou de lugar. O robo precisa ser reajustado.';
+if (/Target closed|Protocol error|out of memory|Killed/i.test(m))
+return 'O servidor ficou sem memoria no meio do envio. Tente de novo; se repetir, o plano gratuito nao aguenta o robo.';
+return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostico.';
+}
+
 async function processarFicha(fandi_id, dados) {
       const MAX_TENTATIVAS = 2;
       for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
             let browser;
             try {
-                  browser = await puppeteer.launch({
-                        headless: 'new',
-                        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-                        timeout: 60000
-                  });
+                  browser = await abrirNavegador();
                   const page = await browser.newPage();
                   page.setDefaultNavigationTimeout(60000);
                   page.setDefaultTimeout(60000);
@@ -129,14 +173,14 @@ async function processarFicha(fandi_id, dados) {
                   console.error('[ERRO] tentativa ' + tentativa + ' - ' + fandi_id + ': ' + err.message);
                   if (browser) { try { await browser.close(); } catch (e) {} }
                   if (tentativa === MAX_TENTATIVAS) {
-                        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1 WHERE fandi_id=$2', [err.message, fandi_id]);
+                        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3', [erroAmigavel(err.message), err.message, fandi_id]);
                   } else {
                         await new Promise(function (r) { setTimeout(r, 3000); });
                   }
             }
       }
 }
-app.get('/api/fichas', async function (req, res) {
+app.get('/api/fichas', exigePin, async function (req, res) {
       try {
             const result = await pool.query('SELECT * FROM fichas ORDER BY criado_em DESC LIMIT 200');
             const lista = result.rows.map(function (r) {
@@ -152,7 +196,7 @@ app.get('/api/fichas', async function (req, res) {
       }
 });
 
-app.get('/api/status/:fandi_id', async function (req, res) {
+app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
       try {
             const result = await pool.query('SELECT * FROM fichas WHERE fandi_id=$1', [req.params.fandi_id]);
             if (!result.rows.length) return res.json({ success: false, message: 'Nao encontrada' });
@@ -169,7 +213,7 @@ app.get('/api/status/:fandi_id', async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '9.0' });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '10.0', protegido: !!PIN });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -187,6 +231,43 @@ res.json({ success: true, fandi_id: fandi_id, fandiUrl: url, message: 'Ficha de 
 } catch (err) {
 console.error('[DEMO ERRO]', err.message);
 res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message });
+}
+});
+
+// ---------- DIAGNOSTICO ----------
+app.get('/api/diagnostico', exigePin, async function (req, res) {
+const info = { versao: '10.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+try {
+const c = caminhoChrome();
+info.chrome.caminho = c;
+info.chrome.existe = !!(c && fs.existsSync(c));
+} catch (e) { info.chrome.existe = false; info.chrome.detalhe = e.message; }
+try {
+const r = await pool.query('SELECT status, COUNT(*)::int AS total FROM fichas GROUP BY status');
+info.banco.porStatus = {};
+r.rows.forEach(function (x) { info.banco.porStatus[x.status] = x.total; });
+const e = await pool.query("SELECT fandi_id, name, erro, erro_tecnico, criado_em FROM fichas WHERE status='erro' ORDER BY criado_em DESC LIMIT 10");
+info.erros = e.rows;
+info.banco.ok = true;
+} catch (err) { info.banco.ok = false; info.banco.detalhe = err.message; }
+res.json({ success: true, diagnostico: info });
+});
+
+// ---------- TENTAR DE NOVO ----------
+app.post('/api/retry/:fandi_id', exigePin, async function (req, res) {
+try {
+const r = await pool.query('SELECT * FROM fichas WHERE fandi_id=$1', [req.params.fandi_id]);
+if (!r.rows.length) return res.json({ success: false, message: 'Ficha nao encontrada' });
+const f = r.rows[0];
+if (f.status === 'demo') return res.json({ success: false, message: 'Ficha de demonstracao nao vai ao Fandi.' });
+await pool.query("UPDATE fichas SET status='enviando', erro=NULL, erro_tecnico=NULL, tentativas=COALESCE(tentativas,0)+1 WHERE fandi_id=$1", [f.fandi_id]);
+res.json({ success: true, message: 'Tentando de novo...' });
+processarFicha(f.fandi_id, {
+cpf: f.cpf, name: f.name, mother: f.mother, phone: f.phone,
+salary: f.salary, cep: f.cep, address: f.address, neighborhood: f.neighborhood
+});
+} catch (err) {
+res.json({ success: false, message: err.message });
 }
 });
 
