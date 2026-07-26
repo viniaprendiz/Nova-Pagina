@@ -4,11 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Painel TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
 <style>
 :root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
 *{box-sizing:border-box}
 body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-.wrap{max-width:1020px;margin:0 auto;padding:18px 16px 70px}
+.wrap{max-width:1020px;margin:0 auto;padding:18px 16px 90px}
 h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
 h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:28px 0 12px}
 .lead{margin:0 0 16px;color:var(--tx2);font-size:14px}
@@ -29,8 +31,19 @@ a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;ba
 .ger{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ac);border-radius:12px;padding:14px;margin-bottom:10px}
 .ger b{font-size:14px}
 .ger p{margin:6px 0 0;font-size:13px;color:var(--tx2);line-height:1.6}
-.saude{display:flex;gap:14px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13.5px}
+.saude{display:flex;gap:16px;flex-wrap:wrap;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;font-size:13.5px}
 .saude div b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);font-weight:600;margin-bottom:3px}
+.bloco{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.linha{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px;color:var(--tx2)}
+.linha:last-child{border:0}
+.linha b{color:var(--tx)}
+.erroItem{background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.28);border-radius:10px;padding:11px;margin-bottom:8px;font-size:13px;color:#f39a9a;line-height:1.5}
+.erroItem small{display:block;color:var(--tx2);margin-top:4px;font-size:11.5px;word-break:break-word}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:6px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin-bottom:6px}
+input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;outline:none;font-family:inherit}
+input:focus{border-color:var(--ac)}
+.total{font-size:30px;font-weight:800;margin-top:12px}
 </style>
 </head>
 <body>
@@ -40,6 +53,7 @@ a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;ba
 <div class="abas">
 <a href="/">Enviar Ficha</a>
 <a href="/simulador.html">Simulador</a>
+<a href="/consorcio.html">Consorcio</a>
 <a href="/painel.html" class="on">Painel</a>
 <a href="/voz.html">Ditar</a>
 </div>
@@ -49,7 +63,30 @@ a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;ba
 <div><b>API de fichas</b><span id="sApi">checando...</span></div>
 <div><b>Tempo de resposta</b><span id="sMs">-</span></div>
 <div><b>Fichas no banco</b><span id="sTot">-</span></div>
+<div><b>Robo do Fandi</b><span id="sBot">-</span></div>
+<div><b>Acesso</b><span id="sPin">-</span></div>
 <div><b>Ultima checagem</b><span id="sHora">-</span></div>
+</div>
+
+<h2>Diagnostico de falhas</h2>
+<div class="bloco" id="diag">Carregando...</div>
+
+<h2>Quanto isso pode virar por mes</h2>
+<div class="bloco">
+<div class="campos">
+<div><label>Carros por mes</label><input id="qCarro" value="6" inputmode="numeric"></div>
+<div><label>Comissao media por carro (R$)</label><input id="vCarro" value="900" inputmode="numeric"></div>
+<div><label>Cartas de consorcio por mes</label><input id="qCons" value="2" inputmode="numeric"></div>
+<div><label>Valor medio da carta (R$)</label><input id="vCons" value="100.000" inputmode="numeric"></div>
+</div>
+<div style="margin-top:14px">
+<div class="linha"><span>Carros</span><b id="rCarro">-</b></div>
+<div class="linha"><span>Consorcio (1% da carta)</span><b id="rCons">-</b></div>
+<div class="linha"><span>Por semana</span><b id="rSem">-</b></div>
+<div class="linha"><span>Em 12 meses</span><b id="rAno">-</b></div>
+</div>
+<div class="total" id="rTotal">-</div>
+<p style="font-size:12.5px;color:var(--tx2);line-height:1.6;margin-top:4px">Estimativa sua, calculada no proprio aparelho com os numeros que voce digitou. Nao e promessa de ganho nem recomendacao de investimento - e so uma conta para voce enxergar a meta.</p>
 </div>
 
 <h2>Modulos</h2>
@@ -61,26 +98,37 @@ a.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;ba
 </div>
 <script>
 var MODS=[
-{n:"Envio de ficha (colar e subir)",s:"ok",d:"Cola os dados do cliente, o sistema separa nome/CPF/telefone, valida e registra. Ja funcionando.",l:"/",b:"Abrir"},
+{n:"Envio de ficha (colar e subir)",s:"ok",d:"Cola os dados do cliente, o sistema separa nome/CPF/telefone, valida e registra.",l:"/",b:"Abrir"},
 {n:"Validacao de CPF e nome",s:"ok",d:"Bloqueia envio com CPF invalido ou incompleto antes de gastar tempo no Fandi.",l:"/",b:"Testar"},
 {n:"Anti-duplicidade",s:"ok",d:"Mesmo CPF enviado duas vezes em menos de 10 minutos e barrado.",l:"/",b:"Abrir"},
 {n:"Simulador com regua por CPF",s:"ok",d:"Regua colorida pela ENTRADA e pelo PERFIL do CPF. Perfil A abre toda verde, perfil E abre toda vermelha.",l:"/simulador.html",b:"Abrir simulador"},
-{n:"Ver no Fandi / Ver Email",s:"ok",d:"Ja da para ver funcionando: clique em Ver demonstracao na tela de fichas. Cria uma ficha ficticia, abre a tela simulada do Fandi e o email pronto no Outlook. Nada e enviado sozinho.",l:"/",b:"Ver demonstracao"},
+{n:"Consorcio - indicacao pro Vandre",s:"ok",d:"Calcula sua comissao de 1%, qualifica o cliente e monta a mensagem de indicacao pronta. Voce revisa e envia.",l:"/consorcio.html",b:"Abrir consorcio"},
+{n:"Robo que sobe no Fandi",s:"wip",d:"Estava quebrado: o navegador automatico nao existia no servidor. Corrigido em 26/07. Veja acima se o robo esta pronto agora.",l:"/",b:"Ver fichas"},
+{n:"Tentar de novo + copiar dados",s:"ok",d:"Se o robo falhar, a ficha nao se perde: da para tentar de novo com um clique ou copiar tudo formatado e colar no Fandi na mao.",l:"/",b:"Ver fichas"},
+{n:"Ver no Fandi / Ver Email",s:"ok",d:"Da para ensaiar com o botao Ver demonstracao. O email abre pronto no Outlook e nunca e enviado sozinho.",l:"/",b:"Ver demonstracao"},
+{n:"Tema claro e escuro",s:"ok",d:"Botao no canto inferior direito troca entre claro e escuro. A escolha fica salva no aparelho.",l:"/painel.html",b:""},
+{n:"Ditar por voz no celular",s:"ok",d:"Abra no Chrome do celular, toque e fale. O texto sai transcrito, vira nota, WhatsApp, email ou ficha.",l:"/voz.html",b:"Abrir ditado"},
+{n:"Trava de acesso por PIN",s:"wip",d:"Ja programada. Falta voce criar a variavel TDRIVE_PIN no Render. Enquanto isso a lista de fichas fica aberta na internet.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Como fazer"},
 {n:"Banco de dados Postgres",s:"ok",d:"Fichas gravadas no Postgres do Render. Plano gratuito expira em 25/08/2026 - trocar antes.",l:"/api/fichas",b:"Ver JSON"},
-{n:"Campanhas de WhatsApp",s:"ok",d:"Seis modelos de mensagem e calendario semanal prontos no repositorio. Envio e sempre manual, sem robo.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/CAMPANHAS-WHATSAPP.md",b:"Ver modelos"},
-{n:"Integracao NBS",s:"blk",d:"So responde dentro da rede da loja (IP interno). Depende do TI liberar um acesso oficial. Nao vamos contornar por fora.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
-{n:"Integracao Syonet",s:"blk",d:"Janela de acesso 12h-21h definida pela empresa. Depende do admin ampliar ou liberar API.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
-{n:"Area de assinaturas e funil",s:"wip",d:"Estrutura de planos, upsell e order bump pode ser montada. O gateway de pagamento tem que ser aberto por voce.",l:"#",b:""},
-{n:"Ditar por voz no celular",s:"ok",d:"Abra no Chrome do celular, toque e fale. O texto sai transcrito, vira nota, WhatsApp, email ou ficha. Limites e caminhos no VOZ-E-MOBILE.md.",l:"/voz.html",b:"Abrir ditado"}
+{n:"Campanhas de WhatsApp",s:"ok",d:"Seis modelos de mensagem e calendario semanal prontos. Envio sempre manual, sem robo.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/CAMPANHAS-WHATSAPP.md",b:"Ver modelos"},
+{n:"Integracao NBS",s:"blk",d:"So responde dentro da rede da loja. Depende do TI liberar acesso oficial. Nao vamos contornar por fora.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Integracao Syonet",s:"blk",d:"Janela de 12h-21h definida pela empresa. Depende do admin ampliar ou liberar API.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Area de assinaturas e funil",s:"wip",d:"Estrutura de planos, upsell e order bump pode ser montada. O gateway de pagamento tem que ser aberto por voce.",l:"#",b:""}
 ];
 var GERS=[
-{n:"Gerente de Objetivo",p:"Pergunta sempre: isso faz vender mais carro esta semana? Se a resposta for nao, a tarefa desce na fila. Prioridade atual: fazer o fluxo Fandi rodar ponta a ponta e colocar o simulador na mao do Humberto."},
-{n:"Gerente de Design",p:"Tela tem que ser entendida em 3 segundos, funcionar no celular e ter contraste alto. Proximo passo: aplicar o mesmo visual do simulador na tela de fichas."},
-{n:"Gerente de Velocidade",p:"Menos requisicao, menos peso, zero framework. Hoje as paginas sao HTML puro. Risco conhecido: plano gratis do Render dorme e demora ~50s para acordar no primeiro acesso do dia."},
-{n:"Gerente de Automacao",p:"Toda tarefa repetida mais de 3 vezes por semana vira botao. Fila: preencher ficha, montar simulacao, montar mensagem de WhatsApp, montar email de sequenciamento."},
-{n:"Gerente do Cerebro",p:"Nada se perde: cada problema resolvido vira registro datado no cerebro com causa, solucao e armadilha. O cerebro esta virando painel navegavel em vez de so um arquivo de texto."}
+{n:"Gerente de Objetivo",p:"Pergunta sempre: isso faz vender mais carro esta semana? Prioridade agora: confirmar que o robo do Fandi voltou e colocar o consorcio para rodar com cliente reprovado no financiamento."},
+{n:"Gerente de Design",p:"Tela entendida em 3 segundos, funciona no celular, contraste alto. Entregue: tema claro e escuro. Proximo: revisar tudo em tela de 360px."},
+{n:"Gerente de Velocidade",p:"Menos requisicao, zero framework. Risco conhecido: plano gratis do Render dorme e demora ~50s no primeiro acesso do dia, e o robo do Fandi consome muita memoria nesse plano."},
+{n:"Gerente de Automacao",p:"Toda tarefa repetida 3x por semana vira botao. Regra nova: quando a automacao falhar, o sistema tem que oferecer o caminho manual na hora, nunca deixar o vendedor na mao."},
+{n:"Gerente de Preco e Estrategia",p:"Cuida de onde esta o dinheiro. Hoje: comissao do carro + 1% da carta de consorcio. Regra: cliente vermelho na regua nao e cliente perdido, e cliente de consorcio. Proximo estudo: quanto cobrar por assinatura das automacoes para o pessoal da loja."},
+{n:"Gerente de Relatorios",p:"Mede antes de comemorar. Ja mede: fichas no banco, erros, tempo de resposta e projecao de receita mensal. Falta medir: quantas fichas viraram venda e quantas indicacoes de consorcio o Vandre fechou."},
+{n:"Gerente do Cerebro",p:"Nada se perde: cada problema vira registro datado com causa raiz, solucao e armadilha. O cerebro esta virando painel navegavel em vez de so um arquivo de texto."}
 ];
-var m=document.getElementById("mods");
+var $=function(i){return document.getElementById(i)};
+function brl(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function num(s){return parseFloat(String(s||"").replace(/\D/g,""))||0}
+
+var m=$("mods");
 MODS.forEach(function(x){
 var lbl=x.s==="ok"?"funcionando":(x.s==="wip"?"em obra":"depende de terceiro");
 var h='<div class="card"><h3><span class="dot '+x.s+'"></span>'+x.n+'</h3><p>'+x.d+'</p><div><span class="tag '+x.s+'">'+lbl+'</span></div>';
@@ -88,22 +136,66 @@ if(x.b){h+='<a class="btn" href="'+x.l+'">'+x.b+'</a>'}
 h+='</div>';
 m.insertAdjacentHTML("beforeend",h);
 });
-var g=document.getElementById("gers");
+var g=$("gers");
 GERS.forEach(function(x){g.insertAdjacentHTML("beforeend",'<div class="ger"><b>'+x.n+'</b><p>'+x.p+'</p></div>')});
-(function(){
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+
 var t0=Date.now();
-fetch("/api/fichas").then(function(r){return r.json()}).then(function(j){
-document.getElementById("sApi").textContent="online";
-document.getElementById("sApi").style.color="#7ee2a8";
-document.getElementById("sMs").textContent=(Date.now()-t0)+" ms";
-document.getElementById("sTot").textContent=(typeof j.total==="number"?j.total:"?");
-document.getElementById("sHora").textContent=new Date().toLocaleString("pt-BR");
+tdriveFetch("/api/fichas").then(function(j){
+$("sApi").textContent="online";$("sApi").style.color="#7ee2a8";
+$("sMs").textContent=(Date.now()-t0)+" ms";
+$("sTot").textContent=(typeof j.total==="number"?j.total:"?");
+$("sHora").textContent=new Date().toLocaleString("pt-BR");
 }).catch(function(){
-document.getElementById("sApi").textContent="sem resposta";
-document.getElementById("sApi").style.color="#f39a9a";
-document.getElementById("sHora").textContent=new Date().toLocaleString("pt-BR");
+$("sApi").textContent="sem resposta";$("sApi").style.color="#f39a9a";
+$("sHora").textContent=new Date().toLocaleString("pt-BR");
 });
-})();
+
+tdriveFetch("/api/diagnostico").then(function(j){
+var d=j.diagnostico||{};
+$("sBot").textContent=d.chrome&&d.chrome.existe?"pronto":"nao instalado";
+$("sBot").style.color=d.chrome&&d.chrome.existe?"#7ee2a8":"#f39a9a";
+$("sPin").textContent=d.protegido?"protegido por PIN":"ABERTO";
+$("sPin").style.color=d.protegido?"#7ee2a8":"#f39a9a";
+var h="";
+if(!(d.chrome&&d.chrome.existe)){
+h+='<div class="erroItem"><b>O robo do Fandi ainda nao esta pronto neste servidor.</b> O Chrome nao foi encontrado. Se o deploy acabou de sair, espere o build terminar e recarregue. Enquanto isso use Copiar dados e suba a ficha na mao.</div>';
+}
+if(d.banco&&d.banco.porStatus){
+h+='<div class="linha"><span>Fichas por situacao</span><b>'+esc(JSON.stringify(d.banco.porStatus))+'</b></div>';
+}
+if(d.erros&&d.erros.length){
+h+='<div style="margin-top:12px;font-size:13px;color:var(--tx2)">Ultimas fichas que falharam:</div>';
+d.erros.forEach(function(e){
+h+='<div class="erroItem" style="margin-top:8px"><b>'+esc(e.name||"(sem nome)")+'</b> - '+esc(e.erro||"sem detalhe")+'<small>'+new Date(e.criado_em).toLocaleString("pt-BR")+' &middot; tecnico: '+esc(e.erro_tecnico||"-")+'</small></div>';
+});
+}else{
+h+='<div style="margin-top:10px;font-size:13.5px;color:#7ee2a8">Nenhuma ficha com erro no momento.</div>';
+}
+$("diag").innerHTML=h;
+}).catch(function(){
+$("diag").innerHTML='<div class="erroItem">Nao consegui ler o diagnostico. Se o site pediu PIN, informe e recarregue.</div>';
+});
+
+var CH=["qCarro","vCarro","qCons","vCons"];
+function calc(){
+var qc=num($("qCarro").value),vc=num($("vCarro").value);
+var qs=num($("qCons").value),vs=num($("vCons").value);
+var carros=qc*vc, cons=qs*vs*0.01, tot=carros+cons;
+$("rCarro").textContent=brl(carros);
+$("rCons").textContent=brl(cons);
+$("rSem").textContent=brl(tot/4);
+$("rAno").textContent=brl(tot*12);
+$("rTotal").textContent=brl(tot)+" / mes";
+try{localStorage.setItem("tdrive_meta",JSON.stringify({qc:$("qCarro").value,vc:$("vCarro").value,qs:$("qCons").value,vs:$("vCons").value}))}catch(e){}
+}
+try{
+var sv=JSON.parse(localStorage.getItem("tdrive_meta")||"null");
+if(sv){$("qCarro").value=sv.qc;$("vCarro").value=sv.vc;$("qCons").value=sv.qs;$("vCons").value=sv.vs}
+}catch(e){}
+CH.forEach(function(id){$(id).addEventListener("input",calc)});
+calc();
 </script>
 </body>
 </html>
