@@ -1,4 +1,4 @@
-// TDrive Pro v13.2 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v14.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -36,6 +36,23 @@ async function initDb() {
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS erro_tecnico TEXT');
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS tentativas INT DEFAULT 0');
 await pool.query('CREATE TABLE IF NOT EXISTS loja (id INT PRIMARY KEY, dados TEXT, atualizado_em TIMESTAMPTZ DEFAULT NOW())');
+await pool.query(
+'CREATE TABLE IF NOT EXISTS leads (' +
+'id TEXT PRIMARY KEY,' +
+'carro_id TEXT,' +
+'modelo TEXT,' +
+'preco NUMERIC,' +
+'nome TEXT,' +
+'telefone TEXT,' +
+'entrada NUMERIC,' +
+'parcelas INT,' +
+'parcela_estimada NUMERIC,' +
+'mensagem TEXT,' +
+'origem TEXT,' +
+'visto BOOLEAN DEFAULT FALSE,' +
+'criado_em TIMESTAMPTZ DEFAULT NOW()' +
+')'
+);
 }
 
 const agente = require('./agente');
@@ -258,7 +275,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '13.2', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '14.0', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -281,7 +298,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '13.2', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '14.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
@@ -455,6 +472,151 @@ app.post('/api/loja/importar', exigePin, function (req, res) {
 
 app.get('/api/loja/importacao', function (req, res) {
   res.json({ success: true, importacao: importacao });
+});
+
+// ---------- PAGINA DO CARRO + CAPTURA DE LEAD (v14.0) ----------
+// Objetivo direto: o vendedor manda UM link no WhatsApp, o cliente ve o carro
+// com foto, preco e parcela estimada, mexe na entrada e deixa o contato.
+// O lead cai no banco e aparece em /leads.html (protegido pelo PIN).
+// Esta pagina e do CLIENTE FINAL: nao tem login e nao mostra dado de ninguem.
+// A pagina e montada no servidor por causa das tags og: sem isso o link colado
+// no WhatsApp aparece sem foto e sem preco, e conversa muito menos.
+
+var CSS_CARRO = ":root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--grn:#22c55e;--yel:#f59e0b}*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.wrap{max-width:620px;margin:0 auto;padding:16px 14px 40px}.loja{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--tx2);margin-bottom:10px}.foto{width:100%;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:13px}.foto img{width:100%;height:100%;object-fit:cover;display:block}h1{font-size:22px;margin:16px 0 4px;line-height:1.25}.esp{color:var(--tx2);font-size:14px;margin:0 0 10px}.preco{font-size:28px;font-weight:900;color:var(--grn);margin:0 0 4px}.apartir{color:var(--tx2);font-size:14px;margin:0 0 18px}.apartir b{color:var(--tx);font-size:17px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:14px 0 6px}label:first-of-type{margin-top:0}input,select{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:16px;font-family:inherit}input[type=range]{padding:0;background:transparent;border:0;accent-color:var(--ac)}.parc{font-size:24px;font-weight:900;color:var(--tx);margin:14px 0 0}.bt{display:block;width:100%;text-align:center;padding:15px;border-radius:12px;border:0;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:12px;text-decoration:none}.bt.pri{background:var(--ac);color:#fff}.bt.zap{background:#128c7e;color:#fff}.ok{background:rgba(34,197,94,.12);border-left:3px solid var(--grn);padding:12px;border-radius:8px;font-size:14px;line-height:1.55;margin-top:12px}.er{background:rgba(239,68,68,.12);border-left:3px solid #ef4444;padding:12px;border-radius:8px;font-size:14px;margin-top:12px}.aviso{font-size:12px;color:var(--tx2);line-height:1.6;background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--yel);border-radius:10px;padding:12px;margin-top:16px}.volta{display:inline-block;margin-top:18px;color:var(--tx2);font-size:14px}";
+var TAXA_ESTIMADA = Number(process.env.TAXA_MENSAL || 1.99);
+
+function esc(t) {
+  return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function brl(n) {
+  return 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+async function lerLoja() {
+  try {
+    var r = await pool.query('SELECT dados FROM loja WHERE id = 1');
+    if (r.rows.length) return JSON.parse(r.rows[0].dados) || {};
+  } catch (e) { console.error('[LOJA] leitura: ' + e.message); }
+  return lojaMemoria || {};
+}
+function acharNaVitrine(lista, id) {
+  for (var i = 0; i < lista.length; i++) { if (String(lista[i].id) === String(id)) return lista[i]; }
+  return null;
+}
+
+function paginaCarro(c, config, url) {
+  var titulo = c.modelo + (c.ano ? ' ' + c.ano : '');
+  var preco = Number(c.preco) || 0;
+  var km = Number(c.km) || 0;
+  var loja = (config && config.titulo) || 'T-Drive Auto Shopping Aricanduva';
+  var whats = String((config && config.whats) || '').replace(/[^0-9]/g, '');
+  var resumo = [c.ano || '', km ? km.toLocaleString('pt-BR') + ' km' : '', preco ? brl(preco) : ''].filter(Boolean).join(' | ');
+  var msgZap = 'Oi! Vi o ' + titulo + ' na vitrine e queria saber mais. ' + url;
+  var h = [];
+  h.push('<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">');
+  h.push('<meta name="viewport" content="width=device-width, initial-scale=1">');
+  h.push('<title>' + esc(titulo) + ' - ' + esc(loja) + '</title>');
+  h.push('<meta name="description" content="' + esc(resumo) + '">');
+  h.push('<meta property="og:type" content="website">');
+  h.push('<meta property="og:site_name" content="' + esc(loja) + '">');
+  h.push('<meta property="og:title" content="' + esc(titulo) + '">');
+  h.push('<meta property="og:description" content="' + esc(resumo) + '">');
+  h.push('<meta property="og:url" content="' + esc(url) + '">');
+  if (c.foto) h.push('<meta property="og:image" content="' + esc(c.foto) + '">');
+  h.push('<meta name="twitter:card" content="summary_large_image">');
+  h.push('<style>' + CSS_CARRO + '</style></head><body><div class="wrap">');
+  h.push('<div class="loja">' + esc(loja) + '</div>');
+  h.push('<div class="foto">' + (c.foto ? '<img src="' + esc(c.foto) + '" alt="' + esc(titulo) + '">' : 'sem foto') + '</div>');
+  h.push('<h1>' + esc(titulo) + '</h1>');
+  h.push('<p class="esp">' + esc(resumo.replace(/ \| /g, ' - ')) + '</p>');
+  if (preco) h.push('<p class="preco">' + brl(preco) + '</p>');
+  h.push('<p class="apartir">ou a partir de <b id="resumoParc">-</b> por mes</p>');
+  h.push('<div class="card"><h2>Simule sua parcela</h2>');
+  h.push('<label>Entrada: <b id="lblEnt" style="color:#e8eefc">-</b></label>');
+  h.push('<input type="range" id="ent" min="0" max="80" step="5" value="20">');
+  h.push('<label>Em quantas vezes</label>');
+  h.push('<select id="prazo"><option>24</option><option>36</option><option selected>48</option><option>60</option></select>');
+  h.push('<p class="parc" id="parc">-</p>');
+  h.push('</div>');
+  h.push('<div class="card" id="boxForm"><h2>Quero esse carro</h2>');
+  h.push('<label>Seu nome</label><input id="nome" autocomplete="name" placeholder="Como voce se chama">');
+  h.push('<label>Seu WhatsApp com DDD</label><input id="tel" inputmode="numeric" autocomplete="tel" placeholder="11 90000-0000">');
+  h.push('<button class="bt pri" id="enviar">ENVIAR PRO VENDEDOR</button>');
+  h.push('<div id="resp"></div>');
+  h.push('<p class="aviso">Seus dados vao so para o vendedor desta loja, para ele te responder. Nao pedimos CPF nem documento nesta tela.</p>');
+  h.push('</div>');
+  if (whats) h.push('<a class="bt zap" target="_blank" rel="noopener" href="https://wa.me/55' + whats + '?text=' + encodeURIComponent(msgZap) + '">FALAR AGORA NO WHATSAPP</a>');
+  h.push('<div class="aviso"><b>Importante:</b> a parcela mostrada e uma ESTIMATIVA feita com taxa de ' + String(TAXA_ESTIMADA).replace('.', ',') + '% ao mes (tabela Price), so para dar uma ideia. Nao e proposta, nao e aprovacao de credito e nao substitui a analise do banco. Preco, itens e disponibilidade precisam ser confirmados com o vendedor.</div>');
+  h.push('<a class="volta" href="/loja.html?v=1">Ver os outros carros</a>');
+  h.push('</div><script>');
+  h.push('var PRECO=' + preco + ',TAXA=' + TAXA_ESTIMADA + ',ID=' + JSON.stringify(String(c.id)) + ',MODELO=' + JSON.stringify(String(titulo)) + ';');
+  h.push('function d(i){return document.getElementById(i)}');
+  h.push('function m(n){return "R$ "+(Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}');
+  h.push('var ULT={ent:0,pra:48,par:0};');
+  h.push('function calc(){var p=parseInt(d("ent").value,10),n=parseInt(d("prazo").value,10);var e=PRECO*p/100,f=PRECO-e,i=TAXA/100;var v=(f>0&&n>0)?f*i/(1-Math.pow(1+i,-n)):0;d("lblEnt").textContent=p+"% ("+m(e)+")";d("parc").textContent=n+"x de "+m(v);var r=d("resumoParc");if(r)r.textContent=n+"x de "+m(v);ULT={ent:e,pra:n,par:v};}');
+  h.push('d("ent").addEventListener("input",calc);d("prazo").addEventListener("change",calc);calc();');
+  h.push('d("enviar").onclick=function(){var nome=d("nome").value.trim();var tel=d("tel").value.replace(/[^0-9]/g,"");var r=d("resp");if(nome.length<2){r.innerHTML="<div class=\'er\'>Escreva seu nome, por favor.</div>";return}if(tel.length<10){r.innerHTML="<div class=\'er\'>Preciso do WhatsApp com DDD.</div>";return}this.disabled=true;this.textContent="ENVIANDO...";var b=this;fetch("/api/lead",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({carro_id:ID,modelo:MODELO,preco:PRECO,nome:nome,telefone:tel,entrada:ULT.ent,parcelas:ULT.pra,parcela_estimada:ULT.par})}).then(function(x){return x.json()}).then(function(j){b.disabled=false;b.textContent="ENVIAR PRO VENDEDOR";if(j.success){d("boxForm").innerHTML="<h2>Pronto</h2><div class=\'ok\'>"+j.message+"</div>"}else{r.innerHTML="<div class=\'er\'>"+j.message+"</div>"}}).catch(function(){b.disabled=false;b.textContent="ENVIAR PRO VENDEDOR";r.innerHTML="<div class=\'er\'>Falhou o envio. Tente de novo ou chame no WhatsApp.</div>"})};');
+  h.push('<\/script></body></html>');
+  return h.join('');
+}
+
+app.get('/carro/:id', async function (req, res) {
+  var d = await lerLoja();
+  var carros = (d && d.carros) || [];
+  var c = acharNaVitrine(carros, req.params.id);
+  res.set('Content-Type', 'text/html; charset=utf-8');
+  if (!c) return res.status(404).send('<!DOCTYPE html><meta charset="utf-8"><body style="font-family:system-ui;background:#0b1220;color:#e8eefc;padding:28px"><h1>Esse carro saiu da vitrine</h1><p><a style="color:#3b82f6" href="/loja.html?v=1">Ver os carros disponiveis</a></p>');
+  var url = 'https://' + req.get('host') + '/carro/' + encodeURIComponent(c.id);
+  res.send(paginaCarro(c, (d && d.config) || {}, url));
+});
+
+// Recebe o contato do cliente. Publico de proposito (e o cliente final que envia),
+// com limite simples por IP para nao virar deposito de spam.
+var ultimoLead = {};
+app.post('/api/lead', async function (req, res) {
+  var b = req.body || {};
+  var nome = String(b.nome || '').trim().slice(0, 120);
+  var telefone = String(b.telefone || '').replace(/[^0-9]/g, '').slice(0, 13);
+  if (nome.length < 2) return res.json({ success: false, message: 'Escreva seu nome, por favor.' });
+  if (telefone.length < 10) return res.json({ success: false, message: 'Preciso do WhatsApp com DDD.' });
+  var ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'sem-ip';
+  var agora = Date.now();
+  if (Object.keys(ultimoLead).length > 500) ultimoLead = {};
+  if (ultimoLead[ip] && agora - ultimoLead[ip] < 20000) {
+    return res.json({ success: false, message: 'Ja recebi seu contato. O vendedor fala com voce em instantes.' });
+  }
+  ultimoLead[ip] = agora;
+  var id = 'LEAD-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+  try {
+    await pool.query(
+      'INSERT INTO leads (id, carro_id, modelo, preco, nome, telefone, entrada, parcelas, parcela_estimada, mensagem, origem) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
+      [id, String(b.carro_id || '').slice(0, 140), String(b.modelo || '').slice(0, 160), Number(b.preco) || 0, nome, telefone,
+       Number(b.entrada) || 0, parseInt(b.parcelas, 10) || 0, Number(b.parcela_estimada) || 0, String(b.mensagem || '').slice(0, 400), 'vitrine']
+    );
+    console.log('[LEAD] ' + id + ' - ' + nome + ' - ' + String(b.modelo || ''));
+    return res.json({ success: true, message: 'Recebido! O vendedor vai te chamar no WhatsApp.' });
+  } catch (e) {
+    console.error('[LEAD ERRO] ' + e.message);
+    return res.json({ success: false, message: 'Nao consegui salvar agora. Chame direto no WhatsApp, por favor.' });
+  }
+});
+
+// Leitura dos leads: tem dado de pessoa, entao passa pelo PIN.
+app.get('/api/leads', exigePin, async function (req, res) {
+  try {
+    var r = await pool.query('SELECT * FROM leads ORDER BY criado_em DESC LIMIT 300');
+    return res.json({ success: true, total: r.rows.length, leads: r.rows });
+  } catch (e) {
+    return res.json({ success: false, message: e.message, leads: [] });
+  }
+});
+
+app.post('/api/leads/:id/visto', exigePin, async function (req, res) {
+  try {
+    await pool.query('UPDATE leads SET visto = NOT COALESCE(visto,false) WHERE id = $1', [req.params.id]);
+    return res.json({ success: true });
+  } catch (e) {
+    return res.json({ success: false, message: e.message });
+  }
 });
 
 app.get('/', function (req, res) {
