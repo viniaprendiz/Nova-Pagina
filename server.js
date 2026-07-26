@@ -1,4 +1,4 @@
-// TDrive Pro v10.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v12.1 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -123,6 +123,8 @@ return puppeteer.launch(opcoes);
 // ---------- MENSAGEM DE ERRO EM PORTUGUES ----------
 function erroAmigavel(msg) {
 const m = String(msg || '');
+  if (/LOGIN_NECESSARIO/.test(m))
+    return 'O Fandi pediu login e o robo do servidor nao tem acesso a sua conta. A ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
 if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
 return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
 if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
@@ -147,7 +149,17 @@ async function processarFicha(fandi_id, dados) {
                   page.setDefaultTimeout(60000);
 
             await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2', timeout: 60000 });
-                  await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
+                  // 26/07/2026 - CAUSA RAIZ DO BUG DA FICHA (Joelma):
+            // o Fandi exige LOGIN do vendedor. O robo do servidor nao tem (e nao deve ter)
+            // a senha guardada, entao ele caia na tela de login e ficava esperando 60s por
+            // um campo que nunca aparece. Agora detecta e avisa na hora, em portugues.
+            const precisaLogin = await page.evaluate(function () {
+              return !!document.querySelector('input[type="password"]') ||
+                /login|entrar|autentica/i.test(location.pathname + location.search);
+            });
+            if (precisaLogin) throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e o robo nao tem acesso a conta.');
+
+      await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
 
             await page.type('input[name="cpf"]', dados.cpf || '', { delay: 80 });
                   await page.type('input[name="name"]', dados.name || '', { delay: 80 });
@@ -215,7 +227,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '11.0', protegido: !!PIN });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '12.1', protegido: !!PIN });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -238,7 +250,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '10.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '12.1', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
