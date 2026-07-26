@@ -1,8 +1,9 @@
-// TDrive Pro v6.2 - Fandi + Status (Postgres) + Email + Validacao + Anti-duplicidade
+// TDrive Pro v9.0 - Fandi + Status (Postgres) + Email + Validacao + Anti-duplicidade + Modo Demonstracao
 const express = require('express');
 const puppeteer = require('puppeteer');
 const crypto = require('crypto');
 const { Pool } = require('pg');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -167,138 +168,31 @@ app.get('/api/status/:fandi_id', async function (req, res) {
       }
 });
 
-app.get('/', function (req, res) {
-      res.send(renderPage());
+app.get('/api/config', function (req, res) {
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '9.0' });
 });
-function renderPage() {
-      const destinatariosJson = JSON.stringify(EMAIL_DESTINATARIOS);
-      return [
-            '<!DOCTYPE html>',
-            '<html lang="pt-BR"><head><meta charset="utf-8">',
-            '<meta name="viewport" content="width=device-width, initial-scale=1">',
-            '<title>TDrive Pro - Fandi</title>',
-            '<style>',
-            '* { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, sans-serif; }',
-            'body { background: linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; padding:30px 15px; }',
-            'main { background:#fff; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.15); padding:30px; max-width:700px; margin:0 auto 30px; }',
-            'h1 { text-align:center; color:#333; margin-bottom:20px; font-size:1.4em; }',
-            'textarea { width:100%; height:140px; border:2px solid #ddd; border-radius:6px; padding:10px; margin-bottom:15px; font-size:14px; }',
-            'button.principal { background:#667eea; color:#fff; border:none; border-radius:6px; padding:12px 24px; cursor:pointer; width:100%; font-size:15px; }',
-            'button.principal:hover { background:#764ba2; }',
-            '#resultado { margin-top:15px; padding:12px; border-radius:6px; display:none; font-size:14px; }',
-            '#resultado.carregando { background:#fff3cd; color:#856404; display:block; }',
-            '#resultado.sucesso { background:#d4edda; color:#155724; display:block; }',
-            '#resultado.erro { background:#f8d7da; color:#721c24; display:block; }',
-            '.lista { max-width:700px; margin:0 auto; }',
-            '.vazio { text-align:center; color:#eee; font-size:14px; padding:20px; }',
-            '.ficha { background:#fff; border-radius:8px; padding:15px 18px; margin-bottom:10px; box-shadow:0 2px 8px rgba(0,0,0,.08); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }',
-            '.ficha .info { flex:1; min-width:200px; }',
-            '.ficha .info strong { display:block; font-size:15px; color:#333; }',
-            '.ficha .info span { font-size:13px; color:#777; }',
-            '.badge { padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600; }',
-            '.badge.enviando { background:#fff3cd; color:#856404; }',
-            '.badge.enviada { background:#d4edda; color:#155724; }',
-            '.badge.erro { background:#f8d7da; color:#721c24; }',
-            '.acoes a { font-size:13px; padding:6px 10px; border-radius:5px; border:1px solid #667eea; background:#fff; color:#667eea; text-decoration:none; margin-left:6px; }',
-            '.acoes a.desabilitado { opacity:.4; pointer-events:none; }',
-            '.abas { max-width:700px; margin:0 auto 15px; display:flex; gap:8px; }',
-            '.abas a { flex:1; text-align:center; padding:10px; border-radius:8px 8px 0 0; background:rgba(255,255,255,.25); color:#fff; text-decoration:none; font-size:14px; font-weight:600; }',
-            '.abas a.ativa { background:#fff; color:#5a3d9a; }',
-            '</style></head><body>',
-            '<div class="abas"><a href="/" class="ativa">Enviar Ficha</a><a href="/simulador.html">Simulador</a></div>',
-            '<main>',
-            '<h1>TDrive Pro - Envio de Ficha ao Fandi</h1>',
-            '<textarea id="dados" placeholder="Cole os dados do cliente aqui (CPF, Nome, Mae, Telefone, Salario, CEP, Endereco, Bairro)..."></textarea>',
-            '<button class="principal" onclick="enviar()">ENVIAR PARA FANDI</button>',
-            '<div id="resultado"></div>',
-            '</main>',
-            '<div class="lista" id="lista"></div>',
-            '<script>',
-            'var DESTINATARIOS = ' + destinatariosJson + ';',
-            'function extrair(texto) {',
-            ' function pega(regex) { var m = texto.match(regex); return m ? m[1].trim() : ""; }',
-            ' return {',
-            ' cpf: pega(/cpf\\s*:\\s*([\\d.\\-]+)/i),',
-            ' name: pega(/nome\\s*:\\s*([^\\n]+)/i),',
-            ' mother: pega(/m[ãa]e\\s*:\\s*([^\\n]+)/i),',
-            ' phone: pega(/telefone\\s*:\\s*([^\\n]+)/i),',
-            ' salary: pega(/sal[áa]rio\\s*:\\s*([^\\n]+)/i),',
-            ' cep: pega(/cep\\s*:\\s*([^\\n]+)/i),',
-            ' address: pega(/endere[çc]o\\s*:\\s*([^\\n]+)/i),',
-            ' neighborhood: pega(/bairro\\s*:\\s*([^\\n]+)/i)',
-            ' };',
-            '}',
-            'function validar(dados) {',
-            ' var faltando = [];',
-            ' var cpfDigitos = (dados.cpf||"").replace(/\\D/g,"");',
-            ' if (!dados.name) faltando.push("Nome");',
-            ' if (!dados.cpf) { faltando.push("CPF"); }',
-            ' else if (cpfDigitos.length !== 11) { faltando.push("CPF valido (encontrado " + cpfDigitos.length + " digitos)"); }',
-            ' return faltando;',
-            '}',
-            'function enviar() {',
-            ' var texto = document.getElementById("dados").value;',
-            ' var dados = extrair(texto);',
-            ' var res = document.getElementById("resultado");',
-            ' var faltando = validar(dados);',
-            ' if (faltando.length) {',
-            ' res.className = "erro";',
-            ' res.textContent = "Confira os dados colados. Faltando ou invalido: " + faltando.join(", ");',
-            ' return;',
-            ' }',
-            ' res.className = "carregando";',
-            ' res.textContent = "Enviando ficha ao Fandi...";',
-            ' fetch("/api/submit-fandi", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(dados) })',
-            ' .then(function(r){ return r.json(); })',
-            ' .then(function(j){',
-            ' if (!j.success) throw new Error(j.message);',
-            ' res.className = "sucesso";',
-            ' res.textContent = j.message + " (ID: " + j.fandi_id + ")";',
-            ' document.getElementById("dados").value = "";',
-            ' pollStatus(j.fandi_id);',
-            ' carregarLista();',
-            ' })',
-            ' .catch(function(e){',
-            ' res.className = "erro";',
-            ' res.textContent = "Erro: " + e.message;',
-            ' });',
-            '}',
-            'function pollStatus(id) {',
-            ' var iv = setInterval(function(){',
-            ' fetch("/api/status/" + id).then(function(r){ return r.json(); }).then(function(j){',
-            ' if (j.success && j.ficha.status !== "enviando") {',
-            ' clearInterval(iv);',
-            ' carregarLista();',
-            ' }',
-            ' });',
-            ' }, 3000);',
-            ' setTimeout(function(){ clearInterval(iv); }, 90000);',
-            '}',
-            'function linkEmail(ficha) {',
-            ' var assunto = encodeURIComponent("Sequenciar ficha");',
-            ' var corpo = encodeURIComponent("CPF: " + (ficha.cpf||"") + "\\nNome completo: " + (ficha.name||""));',
-            ' var to = DESTINATARIOS.join(",");',
-            ' return "https://outlook.office.com/mail/deeplink/compose?to=" + to + "&subject=" + assunto + "&body=" + corpo;',
-            '}',
-            'function carregarLista() {',
-            ' fetch("/api/fichas").then(function(r){ return r.json(); }).then(function(j){',
-            ' var div = document.getElementById("lista");',
-            ' if (!j.fichas.length) { div.innerHTML = "<div class=\\"vazio\\">Nenhuma ficha enviada ainda.</div>"; return; }',
-            ' var html = "";',
-            ' for (var i=0;i<j.fichas.length;i++) {',
-            ' var f = j.fichas[i];',
 
-            ' html += \'<div class="ficha"><div class="info"><strong>\' + (f.name||"(sem nome)") + \'</strong><span>CPF: \' + (f.cpf||"-") + " - " + new Date(f.criadoEm).toLocaleString("pt-BR") + \'</span></div><span class="badge \' + f.status + \'">\' + f.status + \'</span><div class="acoes"><a class="\' + (f.fandiUrl ? "" : "desabilitado") + \'" href="\' + (f.fandiUrl||"#") + \'" target="_blank">Ver no Fandi</a><a href="\' + linkEmail(f) + \'" target="_blank">Ver Email</a></div></div>\';',
-            ' }',
-            ' div.innerHTML = html;',
-            ' });',
-            '}',
-            'carregarLista();',
-            'setInterval(carregarLista, 15000);',
-            '</script>',
-            '</body></html>'
-            ].join("\n");
+// Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
+app.post('/api/submit-demo', async function (req, res) {
+const fandi_id = 'DEMO-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+const nome = 'Cliente Demonstracao';
+const cpf = '000.000.000-00';
+const url = '/demo-fandi.html?id=' + encodeURIComponent(fandi_id) + '&nome=' + encodeURIComponent(nome) + '&cpf=' + encodeURIComponent(cpf);
+try {
+await pool.query(
+'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status, fandi_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)',
+[fandi_id, cpf, nome, 'Mae Demonstracao', '(00) 00000-0000', '0', '00000-000', 'Rua Exemplo, 100', 'Centro', 'demo', url]
+);
+res.json({ success: true, fandi_id: fandi_id, fandiUrl: url, message: 'Ficha de demonstracao criada. Nada foi enviado ao Fandi.' });
+} catch (err) {
+console.error('[DEMO ERRO]', err.message);
+res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message });
 }
+});
+
+app.get('/', function (req, res) {
+res.sendFile(path.join(__dirname, 'public', 'app.html'));
+});
 
 initDb().then(function () {
       app.listen(PORT, function () {
