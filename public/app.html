@@ -186,6 +186,24 @@ div.innerHTML=h;
 }
 carregar();
 setInterval(carregar,15000);
+
+    /* ---------- RECEBE OS DADOS QUE VIERAM DA PAGINA DE VOZ (v11.0) ---------- */
+    (function(){
+      try{
+        var vindo = localStorage.getItem("tdrive_voz_dados");
+        if(!vindo) return;
+        localStorage.removeItem("tdrive_voz_dados");
+        var caixa = $("dados");
+        if(!caixa) return;
+        caixa.value = vindo;
+        var av = $("alerta");
+        if(av){
+          av.style.display = "block";
+          av.textContent = "Dados trazidos do ditado por voz. CONFIRA tudo antes de enviar - o agente nao envia nada sozinho.";
+        }
+        caixa.focus();
+      }catch(e){}
+    })();
 </script>
 </body>
 </html>
