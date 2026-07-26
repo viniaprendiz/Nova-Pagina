@@ -196,11 +196,10 @@ setInterval(carregar,15000);
         var caixa = $("dados");
         if(!caixa) return;
         caixa.value = vindo;
-        var av = $("alerta");
-        if(av){
-          av.style.display = "block";
-          av.textContent = "Dados trazidos do ditado por voz. CONFIRA tudo antes de enviar - o agente nao envia nada sozinho.";
-        }
+        var nota = document.createElement("div");
+        nota.style.cssText = "background:rgba(34,197,94,.14);border-left:3px solid #22c55e;padding:10px 12px;border-radius:8px;margin:0 0 10px;font-size:13px;line-height:1.5";
+        nota.innerHTML = "<b>Chegou do ditado por voz.</b> CONFIRA tudo antes de enviar. O agente nao envia nada sozinho.";
+        caixa.parentNode.insertBefore(nota, caixa);
         caixa.focus();
       }catch(e){}
     })();
