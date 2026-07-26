@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vitrine - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:18px}
+.carro{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.foto{aspect-ratio:16/10;background:var(--card2);display:flex;align-items:center;justify-content:center;color:var(--tx2);font-size:13px;overflow:hidden}
+.foto img{width:100%;height:100%;object-fit:cover;display:block}
+.corpo{padding:14px;flex:1;display:flex;flex-direction:column}
+.mod{font-size:16px;font-weight:800;margin:0 0 4px;line-height:1.3}
+.esp{font-size:13px;color:var(--tx2);margin:0 0 8px}
+.preco{font-size:20px;font-weight:900;color:var(--grn);margin:0 0 10px}
+.selo{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.4px;padding:3px 9px;border-radius:999px;margin-bottom:8px}
+.selo.disp{background:rgba(34,197,94,.18);color:#9ff0bd}
+.selo.vend{background:rgba(239,68,68,.18);color:#ff9b9b}
+.selo.arq{background:rgba(255,255,255,.08);color:var(--tx2)}
+.acoes{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+button,.bt{padding:9px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;text-align:center}
+button:hover,.bt:hover{border-color:var(--ac)}
+.bt.pri,button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.bt.zap,button.zap{background:#128c7e;border-color:#128c7e;color:#fff}
+.mini{font-size:12px;padding:7px 10px}
+label{display:block;font-size:12px;font-weight:700;color:var(--tx2);margin:10px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+input,textarea,select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14px;font-family:inherit}
+textarea{min-height:110px;resize:vertical}
+.linha{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.nota{font-size:13px;line-height:1.6;padding:11px 13px;border-radius:8px;margin-top:12px}
+.nota.ok{background:rgba(34,197,94,.10);border-left:3px solid var(--grn);color:var(--tx2)}
+.nota.av{background:rgba(245,158,11,.10);border-left:3px solid var(--yel);color:var(--tx2)}
+.nota.re{background:rgba(239,68,68,.10);border-left:3px solid var(--red);color:var(--tx2)}
+b.n{color:var(--tx)}
+.top{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.vazio{text-align:center;color:var(--tx2);font-size:14px;padding:26px 10px}
+.dica{font-size:12px;color:var(--tx2);margin-top:6px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="cabInterno">
+<h1>Vitrine da loja</h1>
+<p class="lead">O estoque que voce mostra pro cliente. Cada carro tem <b class="n">link proprio</b> pra mandar no WhatsApp, botao de simular e botao de falar com voce. Fica salvo no servidor, entao o cliente abre o link e ve. Aqui NAO entra dado de cliente nenhum: so carro, preco e o seu contato.</p>
+<div class="abas"></div>
+</div>
+
+<div id="cabCliente" style="display:none">
+<h1 id="tituloLoja">Toyota T-Drive Aricanduva</h1>
+<p class="lead" id="subLoja">Carros disponiveis. Escolha o seu e fale comigo.</p>
+</div>
+
+<div id="grade" class="grade"></div>
+<div id="vazio" class="card vazio" style="display:none">Nenhum carro publicado ainda.</div>
+
+<div id="rodapeCliente" style="display:none">
+<div class="nota av">Preco, disponibilidade e itens do veiculo precisam ser confirmados com o vendedor antes de qualquer negociacao. Esta pagina e uma vitrine de apoio, nao e proposta comercial.</div>
+</div>
+
+<div id="painelAdmin">
+
+<div class="card">
+<h2>Publicar</h2>
+<div class="top">
+<button class="pri" id="btnSalvar">SALVAR E PUBLICAR</button>
+<button id="btnRecarregar">Recarregar do servidor</button>
+<button id="btnLinkVitrine">Copiar link da vitrine</button>
+<button id="btnVerCliente">Ver como o cliente ve</button>
+</div>
+<div id="statusSalvar" class="nota ok" style="display:none"></div>
+<p class="dica">Enquanto voce nao clicar em SALVAR E PUBLICAR, as mudancas ficam so nesta tela.</p>
+</div>
+
+<div class="card">
+<h2>Adicionar um carro</h2>
+<div class="linha">
+<div><label>Modelo</label><input id="fModelo" placeholder="Corolla XEI 2.0"></div>
+<div><label>Ano</label><input id="fAno" placeholder="2022"></div>
+</div>
+<div class="linha">
+<div><label>KM</label><input id="fKm" placeholder="45000"></div>
+<div><label>Preco</label><input id="fPreco" placeholder="129900"></div>
+</div>
+<div class="linha">
+<div><label>Cor</label><input id="fCor" placeholder="Prata"></div>
+<div><label>Link da foto (opcional)</label><input id="fFoto" placeholder="https://..."></div>
+</div>
+<label>Observacao (opcional)</label>
+<input id="fObs" placeholder="Unico dono, revisoes na concessionaria">
+<div class="top" style="margin-top:14px;margin-bottom:0">
+<button class="pri" id="btnAdd">Adicionar na vitrine</button>
+</div>
+</div>
+
+<div class="card">
+<h2>Colar do estoque (varios de uma vez)</h2>
+<p class="dica" style="margin-top:0">Abra o estoque oficial, copie a lista e cole aqui. Uma linha por carro. Eu acho o ano, o km e o preco sozinho.</p>
+<textarea id="colar" placeholder="Corolla XEI 2.0 2022 45.000 km R$ 129.900
+Hilux SRV 4x4 2021 78.000 km R$ 249.900
+Yaris XL Plus 2023 22.000 km R$ 94.900"></textarea>
+<div class="top" style="margin-top:12px;margin-bottom:0">
+<button class="pri" id="btnImportar">Importar</button>
+<a class="bt" href="https://www.tdrive.com.br/seminovos" target="_blank" rel="noopener">Abrir estoque oficial TDrive</a>
+</div>
+<div id="statusImport" class="nota ok" style="display:none"></div>
+</div>
+
+<div class="card">
+<h2>Configuracao da loja</h2>
+<label>Titulo que o cliente ve</label>
+<input id="cTitulo" placeholder="Toyota T-Drive Aricanduva">
+<label>Frase de baixo</label>
+<input id="cSub" placeholder="Carros disponiveis. Escolha o seu e fale comigo.">
+<label>Seu WhatsApp (com DDD)</label>
+<input id="cWhats" placeholder="11999999999">
+<label>Mensagem que o cliente manda</label>
+<input id="cMsg" placeholder="Oi Vinicios, vi o CARRO na sua vitrine e queria saber mais">
+<p class="dica">Onde estiver CARRO na mensagem, eu troco pelo nome do veiculo que o cliente clicou.</p>
+<div class="top" style="margin-top:14px;margin-bottom:0">
+<button id="btnConfig">Guardar configuracao</button>
+</div>
+</div>
+
+<div class="card">
+<h2>Arquivados</h2>
+<div id="arquivados" class="vazio">Nada arquivado.</div>
+</div>
+
+<div class="card">
+<h2>As regras desta pagina</h2>
+<div class="nota re">
+<b class="n">1. Nada de dado de cliente aqui.</b> Esta pagina e publica: quem tem o link entra. Cliente fica no Clientes, que so existe no seu aparelho.<br>
+<b class="n">2. Preco e disponibilidade sao sua responsabilidade.</b> Eu nao puxo do NBS: quem publica e voce, conferindo antes.<br>
+<b class="n">3. Nao existe robo copiando site de terceiro.</b> Voce cola do estoque oficial e eu organizo. Ninguem bloqueia ninguem.<br>
+<b class="n">4. A mensagem do WhatsApp abre pronta, quem aperta enviar e o cliente.</b> Nada sai sozinho.<br>
+<b class="n">5. Marcar vendido nao apaga.</b> Vai pra arquivados e da pra voltar.
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+(function () {
+  var VAZIO = { config: { titulo: "Toyota T-Drive Aricanduva", sub: "Carros disponiveis. Escolha o seu e fale comigo.", whats: "", msg: "Oi Vinicios, vi o CARRO na sua vitrine e queria saber mais" }, carros: [] };
+  var estado = JSON.parse(JSON.stringify(VAZIO));
+  var params = new URLSearchParams(location.search);
+  var soCarro = params.get("carro") || "";
+  var modoCliente = !!soCarro || params.get("v") === "1";
+
+  function el(id) { return document.getElementById(id); }
+  function dinheiro(v) {
+    var n = Number(v) || 0;
+    return "R$ " + n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
+  function numero(v) {
+    var n = Number(v) || 0;
+    return n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  }
+  function limpaNum(t) { return String(t || "").replace(/[^0-9]/g, ""); }
+  function escapa(t) {
+    return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function aviso(id, texto, tipo) {
+    var d = el(id);
+    if (!d) return;
+    d.className = "nota " + (tipo || "ok");
+    d.innerHTML = texto;
+    d.style.display = "block";
+  }
+
+  function linkCarro(c) { return location.origin + "/loja.html?carro=" + encodeURIComponent(c.id); }
+
+  function linkZap(c) {
+    var num = limpaNum(estado.config.whats);
+    var nome = c.modelo + (c.ano ? " " + c.ano : "");
+    var base = estado.config.msg || "Oi, vi o CARRO na sua vitrine e queria saber mais";
+    var texto = base.replace(/CARRO/g, nome) + " - " + linkCarro(c);
+    if (!num) return "";
+    return "https://wa.me/55" + num + "?text=" + encodeURIComponent(texto);
+  }
+
+  function cartao(c) {
+    var h = "";
+    h += '<div class="carro">';
+    h += '<div class="foto">' + (c.foto ? '<img src="' + escapa(c.foto) + '" alt="' + escapa(c.modelo) + '" loading="lazy">' : "sem foto") + "</div>";
+    h += '<div class="corpo">';
+    if (c.status === "vendido") h += '<span class="selo vend">VENDIDO</span>';
+    else if (c.status === "arquivado") h += '<span class="selo arq">ARQUIVADO</span>';
+    else h += '<span class="selo disp">DISPONIVEL</span>';
+    h += '<p class="mod">' + escapa(c.modelo) + "</p>";
+    var esp = [];
+    if (c.ano) esp.push(c.ano);
+    if (c.km) esp.push(numero(c.km) + " km");
+    if (c.cor) esp.push(c.cor);
+    h += '<p class="esp">' + escapa(esp.join(" - ")) + "</p>";
+    if (c.preco) h += '<p class="preco">' + dinheiro(c.preco) + "</p>";
+    if (c.obs) h += '<p class="esp">' + escapa(c.obs) + "</p>";
+    h += '<div class="acoes">';
+    h += '<a class="bt pri mini" href="/simulador.html?valor=' + encodeURIComponent(c.preco || "") + '">Simular</a>';
+    var z = linkZap(c);
+    if (z) h += '<a class="bt zap mini" href="' + z + '" target="_blank" rel="noopener">' + (modoCliente ? "Falar com o vendedor" : "Mandar pro cliente") + "</a>";
+    if (!modoCliente) {
+      h += '<button class="mini" data-ac="link" data-id="' + escapa(c.id) + '">Copiar link</button>';
+      h += '<button class="mini" data-ac="status" data-id="' + escapa(c.id) + '">' + (c.status === "vendido" ? "Voltou a vender" : "Marcar vendido") + "</button>";
+      h += '<button class="mini" data-ac="arquivar" data-id="' + escapa(c.id) + '">Arquivar</button>';
+    }
+    h += "</div></div></div>";
+    return h;
+  }
+
+  function render() {
+    el("cabInterno").style.display = modoCliente ? "none" : "block";
+    el("cabCliente").style.display = modoCliente ? "block" : "none";
+    el("painelAdmin").style.display = modoCliente ? "none" : "block";
+    el("rodapeCliente").style.display = modoCliente ? "block" : "none";
+    el("tituloLoja").textContent = estado.config.titulo || "Vitrine";
+    el("subLoja").textContent = estado.config.sub || "";
+
+    var lista = estado.carros.filter(function (c) {
+      if (soCarro) return c.id === soCarro;
+      if (modoCliente) return c.status === "disponivel";
+      return c.status !== "arquivado";
+    });
+    el("grade").innerHTML = lista.map(cartao).join("");
+    el("vazio").style.display = lista.length ? "none" : "block";
+
+    if (!modoCliente) {
+      var arq = estado.carros.filter(function (c) { return c.status === "arquivado"; });
+      var cx = el("arquivados");
+      if (!arq.length) { cx.className = "vazio"; cx.textContent = "Nada arquivado."; }
+      else {
+        cx.className = "";
+        cx.innerHTML = arq.map(function (c) {
+          return '<div class="acoes" style="margin-bottom:8px;align-items:center"><span class="esp" style="flex:1;margin:0">' + escapa(c.modelo + " " + (c.ano || "")) + '</span><button class="mini" data-ac="voltar" data-id="' + escapa(c.id) + '">Voltar pra vitrine</button></div>';
+        }).join("");
+      }
+      el("cTitulo").value = estado.config.titulo || "";
+      el("cSub").value = estado.config.sub || "";
+      el("cWhats").value = estado.config.whats || "";
+      el("cMsg").value = estado.config.msg || "";
+    }
+  }
+
+  function acharCarro(id) {
+    for (var i = 0; i < estado.carros.length; i++) if (estado.carros[i].id === id) return estado.carros[i];
+    return null;
+  }
+
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-ac]");
+    if (!b) return;
+    var c = acharCarro(b.getAttribute("data-id"));
+    if (!c) return;
+    var ac = b.getAttribute("data-ac");
+    if (ac === "link") {
+      var url = linkCarro(c);
+      if (navigator.clipboard) navigator.clipboard.writeText(url);
+      aviso("statusSalvar", "Link copiado: <b class=\"n\">" + escapa(url) + "</b> - cole no WhatsApp do cliente.", "ok");
+      return;
+    }
+    if (ac === "status") c.status = (c.status === "vendido") ? "disponivel" : "vendido";
+    if (ac === "arquivar") c.status = "arquivado";
+    if (ac === "voltar") c.status = "disponivel";
+    render();
+    aviso("statusSalvar", "Mudou nesta tela. Clique em <b class=\"n\">SALVAR E PUBLICAR</b> pro cliente ver.", "av");
+  });
+
+  function novoId() { return "C" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function addCarro(dados) {
+    var c = {
+      id: novoId(),
+      modelo: (dados.modelo || "").trim(),
+      ano: (dados.ano || "").toString().trim(),
+      km: limpaNum(dados.km),
+      preco: limpaNum(dados.preco),
+      cor: (dados.cor || "").trim(),
+      foto: (dados.foto || "").trim(),
+      obs: (dados.obs || "").trim(),
+      status: "disponivel"
+    };
+    if (!c.modelo) return null;
+    var igual = estado.carros.filter(function (x) {
+      return x.modelo.toLowerCase() === c.modelo.toLowerCase() && x.ano === c.ano && x.preco === c.preco;
+    });
+    if (igual.length) return null;
+    estado.carros.push(c);
+    return c;
+  }
+
+  el("btnAdd").onclick = function () {
+    var c = addCarro({ modelo: el("fModelo").value, ano: el("fAno").value, km: el("fKm").value, preco: el("fPreco").value, cor: el("fCor").value, foto: el("fFoto").value, obs: el("fObs").value });
+    if (!c) { aviso("statusSalvar", "Preciso do modelo, e esse carro nao pode estar repetido.", "re"); return; }
+    ["fModelo", "fAno", "fKm", "fPreco", "fCor", "fFoto", "fObs"].forEach(function (i) { el(i).value = ""; });
+    render();
+    aviso("statusSalvar", "Carro na vitrine. Clique em <b class=\"n\">SALVAR E PUBLICAR</b> pro cliente ver.", "av");
+  };
+
+  function interpretaLinha(l) {
+    var t = l.replace(/\s+/g, " ").trim();
+    if (!t) return null;
+    var preco = "";
+    var mPreco = t.match(/r\$\s*([\d.,]+)/i);
+    if (mPreco) { preco = limpaNum(mPreco[1].split(",")[0]); t = t.replace(mPreco[0], " "); }
+    var km = "";
+    var mKm = t.match(/([\d.,]+)\s*(km|mil km)/i);
+    if (mKm) { km = limpaNum(mKm[1]); t = t.replace(mKm[0], " "); }
+    var ano = "";
+    var mAno = t.match(/\b(19|20)\d{2}\b/);
+    if (mAno) { ano = mAno[0]; t = t.replace(mAno[0], " "); }
+    var foto = "";
+    var mFoto = l.match(/https?:\/\/\S+\.(jpg|jpeg|png|webp)/i);
+    if (mFoto) { foto = mFoto[0]; t = t.replace(mFoto[0], " "); }
+    var modelo = t.replace(/https?:\/\/\S+/g, " ").replace(/[|;\-\u2013]+/g, " ").replace(/\s+/g, " ").trim();
+    if (!modelo) return null;
+    return { modelo: modelo, ano: ano, km: km, preco: preco, foto: foto };
+  }
+
+  el("btnImportar").onclick = function () {
+    var linhas = el("colar").value.split("\n");
+    var ok = 0, pulou = 0;
+    linhas.forEach(function (l) {
+      var d = interpretaLinha(l);
+      if (!d) { if (l.trim()) pulou++; return; }
+      if (addCarro(d)) ok++; else pulou++;
+    });
+    el("colar").value = "";
+    render();
+    aviso("statusImport", "Entraram <b class=\"n\">" + ok + "</b> carro(s). Pulei " + pulou + " (vazio ou repetido). Confira preco e km antes de publicar.", ok ? "ok" : "av");
+  };
+
+  el("btnConfig").onclick = function () {
+    estado.config.titulo = el("cTitulo").value.trim();
+    estado.config.sub = el("cSub").value.trim();
+    estado.config.whats = limpaNum(el("cWhats").value);
+    estado.config.msg = el("cMsg").value.trim();
+    render();
+    aviso("statusSalvar", "Configuracao guardada nesta tela. Clique em <b class=\"n\">SALVAR E PUBLICAR</b>.", "av");
+  };
+
+  el("btnLinkVitrine").onclick = function () {
+    var url = location.origin + "/loja.html?v=1";
+    if (navigator.clipboard) navigator.clipboard.writeText(url);
+    aviso("statusSalvar", "Link da vitrine copiado: <b class=\"n\">" + escapa(url) + "</b>", "ok");
+  };
+
+  el("btnVerCliente").onclick = function () { location.href = "/loja.html?v=1"; };
+
+  el("btnSalvar").onclick = function () {
+    aviso("statusSalvar", "Publicando...", "av");
+    var f = window.tdriveFetch ? window.tdriveFetch : function (u, o) { return fetch(u, o).then(function (r) { return r.json(); }); };
+    f("/api/loja", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dados: estado })
+    }).then(function (r) {
+      if (r && r.success) {
+        var onde = r.salvo === "banco" ? "no banco" : "so na memoria do servidor (volta a zero se o Render reiniciar)";
+        aviso("statusSalvar", "Publicado " + onde + ". <b class=\"n\">" + estado.carros.filter(function (c) { return c.status === "disponivel"; }).length + " carro(s) disponivel(is)</b> pro cliente.", r.salvo === "banco" ? "ok" : "av");
+      } else {
+        aviso("statusSalvar", "Nao publicou: " + escapa((r && r.message) || "erro desconhecido"), "re");
+      }
+    }).catch(function (e) { aviso("statusSalvar", "Nao publicou: " + escapa(e.message), "re"); });
+  };
+
+  function carregar() {
+    fetch("/api/loja").then(function (r) { return r.json(); }).then(function (r) {
+      if (r && r.dados && r.dados.carros) {
+        estado = r.dados;
+        if (!estado.config) estado.config = JSON.parse(JSON.stringify(VAZIO.config));
+      }
+      render();
+    }).catch(function () { render(); });
+  }
+
+  el("btnRecarregar").onclick = carregar;
+  carregar();
+})();
+</script>
+</body>
+</html>
