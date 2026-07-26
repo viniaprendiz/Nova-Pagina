@@ -1,152 +1,139 @@
 <!DOCTYPE html>
-  <html lang="pt-BR">
-  <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Simulador de Financiamento - TDrive</title>
-  <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family: system-ui, sans-serif; }
-body { background: linear-gradient(135deg,#667eea,#764ba2); min-height:100vh; padding:30px 15px; }
-.abas { max-width:700px; margin:0 auto 15px; display:flex; gap:8px; }
-.abas a { flex:1; text-align:center; padding:10px; border-radius:8px 8px 0 0; background:rgba(255,255,255,.25); color:#fff; text-decoration:none; font-size:14px; font-weight:600; }
-.abas a.ativa { background:#fff; color:#5a3d9a; }
-main { background:#fff; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.15); padding:28px; max-width:700px; margin:0 auto 20px; }
-  h1 { text-align:center; color:#333; margin-bottom:6px; font-size:1.35em; }
-.sub { text-align:center; color:#888; font-size:13px; margin-bottom:22px; }
-label { display:block; font-size:13px; color:#555; font-weight:600; margin-bottom:6px; }
-.campo { margin-bottom:18px; }
-input[type=number], select { width:100%; border:2px solid #ddd; border-radius:6px; padding:10px; font-size:15px; }
-input[type=range] { width:100%; height:8px; -webkit-appearance:none; border-radius:5px; outline:none; }
-.valorGrande { font-size:22px; font-weight:700; color:#333; margin-bottom:8px; }
-.regua { height:26px; border-radius:13px; background:linear-gradient(90deg,#e74c3c 0%,#e74c3c 33%,#f1c40f 33%,#f1c40f 60%,#27ae60 60%,#27ae60 100%); position:relative; margin:14px 0 8px; }
-  .marcador { position:absolute; top:-6px; width:6px; height:38px; background:#222; border-radius:3px; transition:left .15s; }
-.legenda { display:flex; justify-content:space-between; font-size:11px; color:#888; margin-bottom:18px; }
-.status { padding:16px; border-radius:8px; text-align:center; font-weight:700; font-size:16px; margin-bottom:18px; }
-.status.vermelho { background:#fdecea; color:#c0392b; border:2px solid #e74c3c; }
-.status.amarelo { background:#fef9e7; color:#9a7d0a; border:2px solid #f1c40f; }
-.status.verde { background:#eafaf1; color:#1e8449; border:2px solid #27ae60; }
-.resumo { background:#f8f9fa; border-radius:8px; padding:16px; margin-bottom:16px; }
-.linha { display:flex; justify-content:space-between; padding:6px 0; font-size:14px; color:#555; }
-.linha strong { color:#333; }
-.aviso { font-size:12px; color:#888; line-height:1.5; background:#f4f4f8; padding:12px; border-radius:6px; border-left:4px solid #bbb; }
-.cta { display:block; text-align:center; background:#667eea; color:#fff; padding:14px; border-radius:8px; text-decoration:none; font-weight:600; margin-top:16px; }
-.cta:hover { background:#764ba2; }
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de Financiamento - TDrive PRO</title>
+<style>
+:root{--bg:#0b1220;--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 70px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:780px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:14px 0 6px}
+label:first-child{margin-top:0}
+input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;outline:none}
+input:focus,select:focus{border-color:var(--ac)}
+input[type=range]{padding:0;background:transparent;border:0;accent-color:var(--ac)}
+.sub{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin-bottom:8px}
+.badge{display:inline-block;padding:9px 16px;border-radius:999px;font-weight:800;font-size:15px;color:#08111f;margin-bottom:16px}
+.track{position:relative;height:28px;border-radius:999px;border:1px solid var(--line);overflow:hidden}
+.marker{position:absolute;top:-7px;margin-left:-3px;width:6px;height:42px;background:#fff;border-radius:3px;box-shadow:0 0 0 2px rgba(0,0,0,.5);transition:left .18s ease}
+.escala{display:flex;justify-content:space-between;font-size:11px;color:var(--tx2);margin-top:8px}
+.linha{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px;color:var(--tx2)}
+.linha:last-child{border:0}
+.linha b{color:var(--tx)}
+.mini{font-size:12.5px;color:var(--tx2);margin-top:10px;line-height:1.55}
+.aviso{margin-top:18px;font-size:12.5px;color:var(--tx2);background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--yel);border-radius:10px;padding:13px;line-height:1.6}
 </style>
-  </head>
-  <body>
-
-  <div class="abas">
-  <a href="/">Enviar Ficha</a>
-  <a href="/simulador.html" class="ativa">Simulador</a>
-  </div>
-
-  <main>
-  <h1>Simulador de Financiamento</h1>
-<div class="sub">Veja sua chance de aprovacao conforme a entrada</div>
-
-  <div class="campo">
-  <label>Valor do carro (R$)</label>
-  <input type="number" id="valor" value="60000" min="5000" step="1000">
-  </div>
-
-  <div class="campo">
-  <label>Entrada: <span id="entradaLabel">R$ 12.000 (20%)</span></label>
-  <input type="range" id="entrada" min="0" max="60000" step="500" value="12000">
-  </div>
-
-  <div class="regua"><div class="marcador" id="marcador" style="left:20%"></div></div>
-  <div class="legenda">
-  <span>0% - baixa</span>
-  <span>20% - razoavel</span>
-  <span>40%+ - alta</span>
-  </div>
-
-  <div class="status" id="status">Calculando...</div>
-
-  <div class="campo">
-  <label>Prazo</label>
-  <select id="prazo">
-  <option value="12">12 meses</option>
-  <option value="24">24 meses</option>
-  <option value="36">36 meses</option>
-  <option value="48" selected>48 meses</option>
-  <option value="60">60 meses</option>
-  </select>
-  </div>
-
-  <div class="campo">
-  <label>Taxa de juros ao mes (%) - ajuste conforme a tabela do banco</label>
-<input type="number" id="taxa" value="1.99" min="0.1" max="10" step="0.01">
-  </div>
-
-  <div class="resumo">
-  <div class="linha"><span>Valor do carro</span><strong id="rValor">-</strong></div>
-  <div class="linha"><span>Entrada</span><strong id="rEntrada">-</strong></div>
-  <div class="linha"><span>Valor financiado</span><strong id="rFinanciado">-</strong></div>
-  <div class="linha"><span>Parcela estimada</span><strong id="rParcela">-</strong></div>
-  </div>
-
-  <div class="aviso">
-  <strong>Importante:</strong> esta simulacao e apenas uma estimativa para orientacao inicial. Nao e proposta, nao e aprovacao de credito e nao substitui a analise do banco. A aprovacao final depende de analise de credito (score, renda comprovada, restricoes) feita pela financeira. As parcelas reais podem variar conforme taxa, tarifas e seguro.
-  </div>
-
-<a class="cta" href="/">Gostou? Enviar meus dados para analise</a>
-</main>
-
+</head>
+<body>
+<div class="wrap">
+<h1>Simulador de Financiamento</h1>
+<p class="lead">A cor da regua depende da ENTRADA e do PERFIL do CPF. Cada CPF abre uma regua diferente.</p>
+<div class="abas">
+<a href="/">Enviar Ficha</a>
+<a href="/simulador.html" class="on">Simulador</a>
+<a href="/painel.html">Painel</a>
+</div>
+<div class="grid">
+<div class="card">
+<label>CPF do cliente (opcional - o perfil fica salvo neste aparelho)</label>
+<input id="cpf" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
+<label>Perfil de credito deste CPF</label>
+<select id="perfil"></select>
+<div class="mini" id="descPerfil"></div>
+<label>Valor do veiculo</label>
+<input id="valor" value="80.000" inputmode="numeric" autocomplete="off">
+<label>Entrada: <b id="lblEntrada" style="color:#e8eefc"></b></label>
+<input type="range" id="entrada" min="0" max="90" step="1" value="20">
+<label>Prazo (meses)</label>
+<select id="prazo"><option>12</option><option>24</option><option>36</option><option selected>48</option><option>60</option></select>
+</div>
+<div class="card">
+<div class="sub">Possibilidade de aprovacao</div>
+<div id="badge" class="badge">-</div>
+<div class="track"><div class="marker" id="marker"></div></div>
+<div class="escala"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>90%</span></div>
+<div style="margin-top:18px">
+<div class="linha"><span>Entrada</span><b id="oEnt">-</b></div>
+<div class="linha"><span>Valor financiado</span><b id="oFin">-</b></div>
+<div class="linha"><span>Taxa estimada (a.m.)</span><b id="oTax">-</b></div>
+<div class="linha"><span>Parcela estimada</span><b id="oPar">-</b></div>
+<div class="linha"><span>Total pago</span><b id="oTot">-</b></div>
+</div>
+<div class="mini" id="dica"></div>
+</div>
+</div>
+<div class="aviso"><b>Importante:</b> esta e uma ESTIMATIVA para orientar a conversa com o cliente. Nao e proposta, nao e aprovacao de credito e nao substitui a analise do banco. Enquanto nao existir integracao oficial de consulta, o perfil e escolhido manualmente pelo vendedor.</div>
+</div>
 <script>
-function moeda(v) {
-  return "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+var PERFIS=[
+{id:"a",nome:"A - Score alto, sem restricao",red:0,yel:0,taxa:1.49,txt:"Cliente limpo e com bom score: a regua abre TODA VERDE. Aprova ate sem entrada."},
+{id:"b",nome:"B - Score bom",red:0,yel:10,taxa:1.69,txt:"Passa sem entrada com ressalva. A partir de 10% de entrada fica confortavel."},
+{id:"c",nome:"C - Score medio (padrao)",red:15,yel:30,taxa:1.99,txt:"Precisa de 15% para sair do vermelho e 30% para ficar verde."},
+{id:"d",nome:"D - Score baixo",red:30,yel:50,taxa:2.49,txt:"So melhora com entrada alta: 30% vira amarelo, 50% vira verde."},
+{id:"e",nome:"E - Restricao / negativado",red:101,yel:101,taxa:2.99,txt:"Regua TODA VERMELHA: nao aprova nem com entrada alta. Caminho: avalista, CPF de terceiro ou quitar a restricao."}
+];
+var K="tdrive_perfis_cpf";
+var $=function(i){return document.getElementById(i)};
+function mapa(){try{return JSON.parse(localStorage.getItem(K)||"{}")}catch(e){return {}}}
+function salvar(c,p){if(c.length!==11)return;var m=mapa();m[c]=p;localStorage.setItem(K,JSON.stringify(m))}
+function brl(n){return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function soNum(s){return (s||"").replace(/\D/g,"")}
+function fmtCpf(d){d=d.slice(0,11);var o=d;if(d.length>9)o=d.slice(0,3)+"."+d.slice(3,6)+"."+d.slice(6,9)+"-"+d.slice(9);else if(d.length>6)o=d.slice(0,3)+"."+d.slice(3,6)+"."+d.slice(6);else if(d.length>3)o=d.slice(0,3)+"."+d.slice(3);return o}
+var sel=$("perfil");
+PERFIS.forEach(function(p){var o=document.createElement("option");o.value=p.id;o.textContent=p.nome;sel.appendChild(o)});
+sel.value="c";
+function perfilAtual(){for(var i=0;i<PERFIS.length;i++){if(PERFIS[i].id===sel.value)return PERFIS[i]}return PERFIS[2]}
+function calcular(){
+var p=perfilAtual();
+var valor=parseFloat(soNum($("valor").value)||"0");
+var pct=parseInt($("entrada").value,10);
+var n=parseInt($("prazo").value,10);
+var ent=valor*pct/100;
+var fin=valor-ent;
+var i=p.taxa/100;
+var parc=n>0&&fin>0?fin*i/(1-Math.pow(1+i,-n)):0;
+var cor,rot;
+if(pct<p.red){cor="var(--red)";rot="APROVACAO IMPROVAVEL"}
+else if(pct<p.yel){cor="var(--yel)";rot="POSSIBILIDADE RAZOAVEL"}
+else{cor="var(--grn)";rot="GRANDE CHANCE DE APROVAR"}
+var r=Math.max(0,Math.min(90,p.red))/90*100;
+var y=Math.max(0,Math.min(90,p.yel))/90*100;
+document.querySelector(".track").style.background="linear-gradient(90deg,#ef4444 0 "+r+"%,#f59e0b "+r+"% "+y+"%,#22c55e "+y+"% 100%)";
+$("marker").style.left=(pct/90*100)+"%";
+var b=$("badge");b.textContent=rot;b.style.background=cor;
+$("lblEntrada").textContent=pct+"% ("+brl(ent)+")";
+$("oEnt").textContent=brl(ent);
+$("oFin").textContent=brl(fin);
+$("oTax").textContent=p.taxa.toFixed(2).replace(".",",")+"%";
+$("oPar").textContent=n+"x de "+brl(parc);
+$("oTot").textContent=brl(parc*n+ent);
+$("descPerfil").textContent=p.txt;
+var d="";
+if(pct<p.red){var falta=valor*p.red/100;d="Para virar AMARELO precisa de "+p.red+"% = "+brl(falta)+" de entrada."+(p.red>90?" Neste perfil nao ha entrada que resolva.":"")}
+else if(pct<p.yel){d="Para virar VERDE precisa de "+p.yel+"% = "+brl(valor*p.yel/100)+" de entrada."}
+else{d="Cenario otimo. Suba a ficha no Fandi e sequencie."}
+$("dica").textContent=d;
 }
-
-function calcular() {
-  var valor = parseFloat(document.getElementById("valor").value) || 0;
-var entradaEl = document.getElementById("entrada");
-var entrada = parseFloat(entradaEl.value) || 0;
-var prazo = parseInt(document.getElementById("prazo").value, 10);
-var taxa = parseFloat(document.getElementById("taxa").value) || 0;
-
-if (entrada > valor) { entrada = valor; entradaEl.value = valor; }
-entradaEl.max = valor;
-
-var pct = valor > 0 ? (entrada / valor) * 100 : 0;
-var financiado = valor - entrada;
-
-var i = taxa / 100;
-var parcela = 0;
-if (financiado > 0 && i > 0 && prazo > 0) {
-parcela = financiado * i / (1 - Math.pow(1 + i, -prazo));
-} else if (financiado > 0 && prazo > 0) {
-parcela = financiado / prazo;
-}
-
-document.getElementById("entradaLabel").textContent = moeda(entrada) + " (" + pct.toFixed(0) + "%)";
-var posicao = Math.min(pct, 50) / 50 * 100;
-document.getElementById("marcador").style.left = posicao + "%";
-
-var st = document.getElementById("status");
-if (pct < 15) {
-st.className = "status vermelho";
-st.textContent = "Chance BAIXA de aprovacao - aumente a entrada";
-} else if (pct < 30) {
-st.className = "status amarelo";
-st.textContent = "Chance RAZOAVEL de aprovacao";
-} else {
-st.className = "status verde";
-st.textContent = "Chance ALTA de aprovacao";
-}
-
-document.getElementById("rValor").textContent = moeda(valor);
-document.getElementById("rEntrada").textContent = moeda(entrada) + " (" + pct.toFixed(0) + "%)";
-document.getElementById("rFinanciado").textContent = moeda(financiado);
-document.getElementById("rParcela").textContent = prazo + "x de " + moeda(parcela);
-}
-
-document.getElementById("valor").addEventListener("input", calcular);
-document.getElementById("entrada").addEventListener("input", calcular);
-document.getElementById("prazo").addEventListener("change", calcular);
-document.getElementById("taxa").addEventListener("input", calcular);
+$("cpf").addEventListener("input",function(){
+var d=soNum(this.value);this.value=fmtCpf(d);
+if(d.length===11){var m=mapa();if(m[d]){sel.value=m[d]}}
+calcular();
+});
+sel.addEventListener("change",function(){salvar(soNum($("cpf").value),sel.value);calcular()});
+$("valor").addEventListener("input",function(){var d=soNum(this.value);this.value=d?parseInt(d,10).toLocaleString("pt-BR"):"";calcular()});
+$("entrada").addEventListener("input",calcular);
+$("prazo").addEventListener("change",calcular);
 calcular();
 </script>
-  </body>
-  </html>
-  
+</body>
+</html>
