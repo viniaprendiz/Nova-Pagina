@@ -1,4 +1,4 @@
-// TDrive Pro v12.1 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v12.2 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -123,6 +123,8 @@ return puppeteer.launch(opcoes);
 // ---------- MENSAGEM DE ERRO EM PORTUGUES ----------
 function erroAmigavel(msg) {
 const m = String(msg || '');
+  if (/CAMPO_CPF_NAO_APARECEU/.test(m))
+    return 'A tela de cadastro do Fandi nao abriu para o robo (provavelmente pediu login ou mudou de endereco). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
   if (/LOGIN_NECESSARIO/.test(m))
     return 'O Fandi pediu login e o robo do servidor nao tem acesso a sua conta. A ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
 if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
@@ -159,7 +161,19 @@ async function processarFicha(fandi_id, dados) {
             });
             if (precisaLogin) throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e o robo nao tem acesso a conta.');
 
-      await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
+      try {
+              await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
+            } catch (eCampo) {
+              // 26/07/2026: se o campo nao aparece, guarda O QUE O ROBO VIU (endereco, titulo,
+              // nomes dos campos, se tem campo de senha). Assim ninguem fica no escuro depois.
+              const oQueVi = await page.evaluate(function () {
+                const nomes = Array.prototype.slice.call(document.querySelectorAll('input,select'))
+                  .map(function (c) { return c.getAttribute('name') || c.getAttribute('id') || c.type || '?'; })
+                  .slice(0, 25);
+                return { titulo: document.title, endereco: location.href, temCampoSenha: !!document.querySelector('input[type="password"]'), campos: nomes };
+              }).catch(function () { return null; });
+              throw new Error('CAMPO_CPF_NAO_APARECEU. O robo viu: ' + JSON.stringify(oQueVi));
+            }
 
             await page.type('input[name="cpf"]', dados.cpf || '', { delay: 80 });
                   await page.type('input[name="name"]', dados.name || '', { delay: 80 });
@@ -227,7 +241,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '12.1', protegido: !!PIN });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '12.2', protegido: !!PIN });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -250,7 +264,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '12.1', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '12.2', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
