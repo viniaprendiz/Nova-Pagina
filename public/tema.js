@@ -25,6 +25,29 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar);
   else montar();
 
+  // ---- Abas de navegacao: uma lista so para todo o site ----
+  var ABAS = [
+    ["/", "Ficha"],
+    ["/crm.html", "Clientes"],
+    ["/simulador.html", "Simulador"],
+    ["/consorcio.html", "Consorcio"],
+    ["/voz.html", "Ditar"],
+    ["/painel.html", "Painel"],
+    ["/roadmap.html", "Ideias"]
+  ];
+  function montarAbas() {
+    var caixas = document.querySelectorAll(".abas");
+    if (!caixas.length) return;
+    var aqui = location.pathname.replace(/(index|app)\.html$/, "");
+    var html = ABAS.map(function (a) {
+      var on = (a[0] === aqui) ? ' class="on"' : "";
+      return '<a href="' + a[0] + '"' + on + '>' + a[1] + '</a>';
+    }).join("");
+    for (var i = 0; i < caixas.length; i++) caixas[i].innerHTML = html;
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montarAbas);
+  else montarAbas();
+
   // ---- PIN de acesso (so entra em acao se o servidor exigir) ----
   var PK = "tdrive_pin";
   window.tdrivePin = function () { return localStorage.getItem(PK) || ""; };
