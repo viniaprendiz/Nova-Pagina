@@ -1,4 +1,4 @@
-// TDrive Pro v13.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v13.2 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -92,15 +92,32 @@ app.post('/api/submit-fandi', async (req, res) => {
             res.json({ success: false, message: 'Erro ao salvar ficha: ' + err.message });
       }
 });
-// ---------- TRAVA DE ACESSO ----------
-// Se a variavel TDRIVE_PIN existir no Render, a lista de fichas so responde com o PIN.
-// Se nao existir, o sistema continua aberto (como antes) e avisa em vermelho na tela.
-const PIN = process.env.TDRIVE_PIN || '';
+// ---------- TRAVA DE ACESSO (v13.2 - agora FECHA quando falta o PIN) ----------
+// ATE 26/07/2026 a trava era "aberta por padrao": sem TDRIVE_PIN o /api/fichas
+// respondia para qualquer pessoa da internet - e la tem dado de cliente real.
+// Um erro de configuracao virava vazamento silencioso.
+// AGORA e o contrario: sem PIN configurado, as rotas com dado de cliente NEGAM
+// acesso e explicam o que fazer. Erro de configuracao vira erro visivel, nunca vazamento.
+const PIN = (process.env.TDRIVE_PIN || '').trim();
+// Ajuda a achar variavel criada com nome errado ou no servico errado do Render.
+// Mostra so os NOMES parecidos, NUNCA o valor.
+const NOMES_PARECIDOS = Object.keys(process.env).filter(function (k) { return /pin|tdrive/i.test(k); });
+if (!PIN) {
+  console.warn('[SEGURANCA] TDRIVE_PIN nao chegou no servidor. Rotas com dado de cliente estao BLOQUEADAS. Nomes parecidos vistos: ' + JSON.stringify(NOMES_PARECIDOS));
+}
 function exigePin(req, res, next) {
-if (!PIN) return next();
-const enviado = req.get('x-tdrive-pin') || '';
-if (enviado === PIN) return next();
-return res.status(401).json({ success: false, semPermissao: true, message: 'Acesso protegido. Informe o PIN.' });
+  if (!PIN) {
+    return res.status(503).json({
+      success: false,
+      semPermissao: true,
+      pinAusente: true,
+      message: 'Esta rota tem dado de cliente e esta BLOQUEADA porque a variavel TDRIVE_PIN nao chegou no servidor. Confira no Render: servico web Nova-Pagina (nao o banco) > Environment > TDRIVE_PIN > Save changes (o servico reinicia sozinho).',
+      variaveisParecidas: NOMES_PARECIDOS
+    });
+  }
+  const enviado = (req.get('x-tdrive-pin') || '').trim();
+  if (enviado === PIN) return next();
+  return res.status(401).json({ success: false, semPermissao: true, message: 'Acesso protegido. Informe o PIN.' });
 }
 
 // ---------- NAVEGADOR ----------
@@ -241,7 +258,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '13.0', protegido: !!PIN });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '13.2', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -264,7 +281,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '13.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '13.2', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
