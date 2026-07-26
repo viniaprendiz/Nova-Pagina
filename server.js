@@ -37,6 +37,7 @@ await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS erro_tecnico TEXT'
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS tentativas INT DEFAULT 0');
 }
 
+const agente = require('./agente');
 app.use(express.json());
 app.use(express.static('public', { index: false }));
 
@@ -213,7 +214,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '10.0', protegido: !!PIN });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '11.0', protegido: !!PIN });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -269,6 +270,20 @@ salary: f.salary, cep: f.cep, address: f.address, neighborhood: f.neighborhood
 } catch (err) {
 res.json({ success: false, message: err.message });
 }
+});
+
+// ---------- AGENTE DE VOZ: SO INTERPRETA, NUNCA ENVIA ----------
+// Recebe o texto ditado em /voz.html e devolve os 8 campos separados.
+// Nao grava nada no banco e nao fala com o Fandi. O envio continua
+// dependendo de um clique humano na tela de ficha.
+app.post('/api/agente', async function (req, res) {
+  try {
+    const texto = (req.body && req.body.texto) || '';
+    const resultado = await agente.interpretar(texto);
+    return res.json(resultado);
+  } catch (e) {
+    return res.json({ success: false, message: 'Erro no agente: ' + e.message });
+  }
 });
 
 app.get('/', function (req, res) {
