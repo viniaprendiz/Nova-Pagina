@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TDrive PRO - Envio de Ficha</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:820px;margin:0 auto;padding:18px 16px 70px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin-bottom:6px}
+textarea{width:100%;height:150px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14px;resize:vertical;outline:none;font-family:inherit}
+textarea:focus{border-color:var(--ac)}
+.botoes{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer}
+.b1{background:var(--ac);color:#fff;flex:1;min-width:200px}
+.b1:hover{background:#2f6ede}
+.b2{background:transparent;color:var(--tx2);border:1px solid var(--line)}
+.b2:hover{color:var(--tx);border-color:var(--ac)}
+#res{display:none;margin-top:12px;padding:12px;border-radius:10px;font-size:14px;line-height:1.5}
+#res.load{display:block;background:rgba(245,158,11,.13);color:#fbcd76;border:1px solid rgba(245,158,11,.35)}
+#res.ok{display:block;background:rgba(34,197,94,.13);color:#7ee2a8;border:1px solid rgba(34,197,94,.35)}
+#res.err{display:block;background:rgba(239,68,68,.13);color:#f39a9a;border:1px solid rgba(239,68,68,.35)}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:26px 0 12px}
+.ficha{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ficha .nome{font-size:15px;font-weight:700}
+.ficha .meta{font-size:12.5px;color:var(--tx2);margin-top:3px}
+.info{flex:1;min-width:210px}
+.badge{padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.badge.enviando{background:rgba(245,158,11,.15);color:#fbcd76}
+.badge.enviada{background:rgba(34,197,94,.15);color:#7ee2a8}
+.badge.erro{background:rgba(239,68,68,.15);color:#f39a9a}
+.badge.demo{background:rgba(59,130,246,.18);color:#9cc2ff}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+.acoes a{font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);text-decoration:none;font-weight:600}
+.acoes a:hover{border-color:var(--ac)}
+.acoes a.off{opacity:.35;pointer-events:none}
+.vazio{color:var(--tx2);font-size:14px;padding:18px;text-align:center;border:1px dashed var(--line);border-radius:14px}
+.nota{font-size:12.5px;color:var(--tx2);line-height:1.6;margin-top:10px}
+.aviso{margin-top:6px;font-size:12.5px;color:var(--tx2);background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--grn);border-radius:10px;padding:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>TDrive PRO - Envio de Ficha</h1>
+<p class="lead">Cola os dados do cliente, o sistema separa tudo, valida e sobe no Fandi.</p>
+<div class="abas">
+<a href="/" class="on">Enviar Ficha</a>
+<a href="/simulador.html">Simulador</a>
+<a href="/painel.html">Painel</a>
+</div>
+
+<div class="card">
+<label>Dados do cliente (cole aqui)</label>
+<textarea id="dados" placeholder="CPF: 000.000.000-00
+Nome: 
+Mae: 
+Telefone: 
+Salario: 
+CEP: 
+Endereco: 
+Bairro: "></textarea>
+<div class="botoes">
+<button class="b1" onclick="enviar()">ENVIAR PARA O FANDI</button>
+<button class="b2" onclick="demo()">Ver demonstracao (nao vai pro Fandi)</button>
+</div>
+<div id="res"></div>
+<div class="aviso"><b>O email nunca sai sozinho.</b> O botao "Ver Email" abre o Outlook com o assunto "Sequenciar ficha", os destinatarios e o corpo ja preenchidos. Voce confere e clica em enviar.</div>
+</div>
+
+<h2>Fichas</h2>
+<div id="lista"></div>
+</div>
+<script>
+var DEST=["marcelo.sinhorine@tdrive.com.br","douglas.pinto@tdrive.com.br","eli.psilva@tdrive.com.br","feitoyota@automob.com.br"];
+fetch("/api/config").then(function(r){return r.json()}).then(function(j){if(j&&j.destinatarios&&j.destinatarios.length){DEST=j.destinatarios}}).catch(function(){});
+var $=function(i){return document.getElementById(i)};
+function extrair(t){
+function p(rx){var m=t.match(rx);return m?m[1].trim():""}
+return{
+cpf:p(/cpf\s*:\s*([\d.\-]+)/i),
+name:p(/nome\s*:\s*([^\n]+)/i),
+mother:p(/m[ãa]e\s*:\s*([^\n]+)/i),
+phone:p(/telefone\s*:\s*([^\n]+)/i),
+salary:p(/sal[áa]rio\s*:\s*([^\n]+)/i),
+cep:p(/cep\s*:\s*([^\n]+)/i),
+address:p(/endere[çc]o\s*:\s*([^\n]+)/i),
+neighborhood:p(/bairro\s*:\s*([^\n]+)/i)
+}}
+function validar(d){
+var f=[];var n=(d.cpf||"").replace(/\D/g,"");
+if(!d.name)f.push("Nome");
+if(!d.cpf)f.push("CPF");else if(n.length!==11)f.push("CPF valido (encontrado "+n.length+" digitos)");
+return f}
+function msg(cls,txt){var r=$("res");r.className=cls;r.textContent=txt}
+function enviar(){
+var d=extrair($("dados").value);
+var f=validar(d);
+if(f.length){msg("err","Confira os dados colados. Faltando ou invalido: "+f.join(", "));return}
+msg("load","Enviando ficha ao Fandi...");
+fetch("/api/submit-fandi",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)})
+.then(function(r){return r.json()}).then(function(j){
+if(!j.success)throw new Error(j.message);
+msg("ok",j.message+" (ID: "+j.fandi_id+")");
+$("dados").value="";poll(j.fandi_id);carregar();
+}).catch(function(e){msg("err","Erro: "+e.message)});
+}
+function demo(){
+msg("load","Criando ficha de demonstracao...");
+fetch("/api/submit-demo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})})
+.then(function(r){return r.json()}).then(function(j){
+if(!j.success)throw new Error(j.message);
+msg("ok","Demonstracao criada. Role para baixo e use os botoes Ver no Fandi (simulado) e Ver Email. Nada foi enviado ao Fandi de verdade.");
+carregar();
+}).catch(function(e){msg("err","Erro: "+e.message)});
+}
+function poll(id){
+var iv=setInterval(function(){
+fetch("/api/status/"+id).then(function(r){return r.json()}).then(function(j){
+if(j.success&&j.ficha.status!=="enviando"){clearInterval(iv);carregar()}
+})},3000);
+setTimeout(function(){clearInterval(iv)},90000);
+}
+function linkEmail(f){
+var a=encodeURIComponent("Sequenciar ficha");
+var c=encodeURIComponent("CPF: "+(f.cpf||"")+"\nNome completo: "+(f.name||""));
+return "https://outlook.office.com/mail/deeplink/compose?to="+DEST.join(",")+"&subject="+a+"&body="+c;
+}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function carregar(){
+fetch("/api/fichas").then(function(r){return r.json()}).then(function(j){
+var div=$("lista");
+if(!j.fichas||!j.fichas.length){div.innerHTML='<div class="vazio">Nenhuma ficha enviada ainda. Cole os dados acima ou clique em "Ver demonstracao".</div>';return}
+var h="";
+for(var i=0;i<j.fichas.length;i++){
+var f=j.fichas[i];
+var st=(f.status||"").toLowerCase();
+var rotulo=st==="demo"?"Ver no Fandi (simulado)":"Ver no Fandi";
+h+='<div class="ficha"><div class="info"><div class="nome">'+esc(f.name||"(sem nome)")+'</div><div class="meta">CPF '+esc(f.cpf||"-")+" &middot; "+new Date(f.criadoEm).toLocaleString("pt-BR")+(f.erro?' &middot; '+esc(f.erro):"")+'</div></div>';
+h+='<span class="badge '+esc(st)+'">'+esc(st)+'</span>';
+h+='<div class="acoes"><a class="'+(f.fandiUrl?"":"off")+'" href="'+esc(f.fandiUrl||"#")+'" target="_blank">'+rotulo+'</a><a href="'+linkEmail(f)+'" target="_blank">Ver Email</a></div></div>';
+}
+div.innerHTML=h;
+});
+}
+carregar();
+setInterval(carregar,15000);
+</script>
+</body>
+</html>
