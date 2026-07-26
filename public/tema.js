@@ -29,6 +29,7 @@
   var ABAS = [
     ["/", "Ficha"],
     ["/crm.html", "Clientes"],
+["/loja.html", "Vitrine"],
     ["/simulador.html", "Simulador"],
     ["/consorcio.html", "Consorcio"],
     ["/voz.html", "Ditar"],
