@@ -207,3 +207,40 @@ Ainda nao medido (fila):
 | 26/07/2026 | tema claro/escuro, diagnostico, tentar de novo, copiar dados | - | tema.css / tema.js / server.js v10 |
 | 26/07/2026 | modulo Consorcio (comissao 1% + indicacao pro Vandre) | - | public/consorcio.html |
 | 26/07/2026 | gerentes de Preco/Estrategia e de Relatorios | - | este arquivo |
+
+
+---
+
+## 8. GERENTE DE POSSIBILIDADES (criado em 26/07/2026, pedido do Vinicios)
+
+**Objetivo:** transformar "tenho um milhao de ideias" em uma fila ordenada por dinheiro.
+
+**Perguntas obrigatorias de cada ideia:**
+1. Isso me faz vender mais um carro ESTE mes, ou e enfeite?
+2. Da pra comecar hoje, sem depender de chave, senha ou aprovacao de terceiro?
+3. Quanto de retorno (1 a 5) contra quanto de esforco (1 a 5)? Nota = retorno x 2 - esforco.
+4. Se depende de alguem, de quem exatamente: do Vinicios, do TI da Automob ou de um contrato?
+5. Existe uma versao menor disso que ja da resultado hoje?
+
+**Criterio de aprovacao:** so entra na fila com nota calculada, dono definido e uma
+versao minima que caiba em uma sessao de trabalho.
+
+**Onde ele mora:** /roadmap.html (aba "Ideias"). O mapa e visivel, colorido e filtravel:
+verde ja esta no ar, azul o assistente constroi sozinho, amarelo depende de uma acao do
+Vinicios, vermelho depende da empresa.
+
+**Linha vermelha deste gerente:** ideia que depende de burlar acesso (VPN pra NBS, driblar
+horario do Syonet) NAO entra na fila. Vai pro arquivo ACESSOS-BLOQUEADOS.md, que tem o
+caminho formal e um texto pronto pro TI. Automacao que precisa ser escondida do gerente
+nao entra neste projeto.
+
+---
+
+## PLACAR ATUALIZADO (26/07/2026, fim da tarde)
+
+- Gerentes ativos: **8**
+- Paginas no ar: **8** (Ficha, Clientes, Simulador, Consorcio, Ditar, Painel, Ideias, Demo Fandi)
+- Modulos entregues hoje: correcao do robo Fandi, tema claro/escuro, consorcio,
+  agente de voz, CRM com termometro, mapa de possibilidades
+- Abas do site: agora saem de uma lista unica no tema.js. Mexe em um lugar, muda em todas.
+- Pendencia numero 1 (do Vinicios): criar TDRIVE_PIN no Render pra fechar a lista de fichas.
