@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consorcio - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:13px 0 6px}
+.card > label:first-of-type{margin-top:0}
+input,select,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+textarea{height:150px;font-size:14px;line-height:1.6;resize:vertical}
+.cartas{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-top:4px}
+.carta{padding:12px 8px;border-radius:12px;border:1px solid var(--line);background:var(--card2);text-align:center;cursor:pointer}
+.carta.on{border-color:var(--ac);background:rgba(59,130,246,.15)}
+.carta b{display:block;font-size:15px}
+.carta span{font-size:12px;color:var(--tx2)}
+.big{font-size:30px;font-weight:800;margin:4px 0 2px}
+.linha{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px;color:var(--tx2)}
+.linha:last-child{border:0}
+.linha b{color:var(--tx)}
+.chk{display:flex;align-items:flex-start;gap:9px;padding:9px 0;font-size:14px;line-height:1.45;cursor:pointer}
+.chk input{width:18px;height:18px;flex:0 0 auto;margin-top:1px;accent-color:var(--ac)}
+.selo{display:inline-block;padding:8px 15px;border-radius:999px;font-weight:800;font-size:14px;color:#08111f;margin-bottom:6px}
+.row{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+.row button,.row a{flex:1;min-width:150px;text-align:center;text-decoration:none;padding:12px;border-radius:11px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.row .pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+.row button:hover,.row a:hover{border-color:var(--ac)}
+.aviso{font-size:12.5px;color:var(--tx2);background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--yel);border-radius:10px;padding:13px;line-height:1.65}
+.status{font-size:13px;color:var(--tx2);min-height:18px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Consorcio - indicacao para o Vandre</h1>
+<p class="lead">Cliente que nao aprova no financiamento nao e cliente perdido. Aqui voce qualifica, calcula sua comissao de 1% e sai com a mensagem pronta para mandar ao Vandre.</p>
+<div class="abas">
+<a href="/">Enviar Ficha</a>
+<a href="/simulador.html">Simulador</a>
+<a href="/consorcio.html" class="on">Consorcio</a>
+<a href="/painel.html">Painel</a>
+<a href="/voz.html">Ditar</a>
+</div>
+
+<div class="grid">
+<div class="card">
+<h2>1. Carta e comissao</h2>
+<label>Valor da carta</label>
+<div class="cartas" id="cartas"></div>
+<label>Outro valor (R$)</label>
+<input id="livre" inputmode="numeric" placeholder="ex: 120.000">
+<div style="margin-top:16px">
+<div class="linha"><span>Comissao 1% da carta</span><b id="oCom">-</b></div>
+<div class="linha"><span>Se fechar 2 no mes</span><b id="o2">-</b></div>
+<div class="linha"><span>Se fechar 4 no mes</span><b id="o4">-</b></div>
+</div>
+<label>Quanto voce quer ganhar por mes so com consorcio (R$)</label>
+<input id="meta" inputmode="numeric" value="3.000">
+<div class="linha" style="margin-top:10px"><span>Cartas necessarias no mes</span><b id="oMeta">-</b></div>
+<div class="linha"><span>Isso da por semana</span><b id="oSem">-</b></div>
+</div>
+
+<div class="card">
+<h2>2. Esse cliente e candidato?</h2>
+<div id="perguntas"></div>
+<div style="margin-top:14px">
+<div class="selo" id="selo">-</div>
+<div class="status" id="dica"></div>
+</div>
+</div>
+</div>
+
+<div class="card">
+<h2>3. Dados para a indicacao</h2>
+<div class="grid">
+<div>
+<label>Nome do cliente</label>
+<input id="cNome" placeholder="Nome completo">
+<label>Telefone do cliente</label>
+<input id="cTel" placeholder="(00) 00000-0000">
+</div>
+<div>
+<label>O que ele quer / observacao</label>
+<input id="cObs" placeholder="ex: quer trocar de carro, entrada curta">
+<label>Seu nome (quem indica)</label>
+<input id="cVend" value="Vinicios - TDrive">
+</div>
+</div>
+<div class="row">
+<button class="pri" onclick="gerar()">Gerar mensagem para o Vandre</button>
+<button onclick="gerarCliente()">Gerar mensagem para o cliente</button>
+</div>
+<label style="margin-top:16px">Mensagem (confira antes de mandar)</label>
+<textarea id="msg" placeholder="A mensagem gerada aparece aqui. Nada e enviado automaticamente."></textarea>
+<div class="row">
+<button onclick="copiarMsg()">Copiar</button>
+<a id="lZap" target="_blank">Abrir no WhatsApp</a>
+<button onclick="document.getElementById('msg').value=''">Limpar</button>
+</div>
+<div class="status" id="st"></div>
+</div>
+
+<div class="card">
+<div class="aviso"><b>Honestidade vende mais que promessa.</b> Consorcio nao tem juros, mas tem taxa de administracao e fundo de reserva. A contemplacao acontece por sorteio ou por lance e <b>nao tem data garantida</b>. Nunca prometa prazo de entrega da carta. Quem fecha a venda e explica as regras oficiais e o Vandre; o nosso papel e qualificar bem e passar a indicacao redonda. Os valores aqui sao estimativa da sua comissao de 1%, nao sao proposta.</div>
+</div>
+</div>
+
+<script>
+var VALORES=[60000,100000,150000,200000];
+var sel=60000;
+var $=function(i){return document.getElementById(i)};
+function brl(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function num(s){return parseFloat(String(s||"").replace(/\D/g,""))||0}
+
+var cx=$("cartas");
+VALORES.forEach(function(v){
+var d=document.createElement("div");
+d.className="carta"+(v===sel?" on":"");
+d.innerHTML="<b>"+(v/1000)+" mil</b><span>comissao "+brl(v*0.01)+"</span>";
+d.onclick=function(){sel=v;$("livre").value="";render();};
+d.dataset.v=v;
+cx.appendChild(d);
+});
+$("livre").addEventListener("input",function(){
+var d=String(this.value).replace(/\D/g,"");
+this.value=d?parseInt(d,10).toLocaleString("pt-BR"):"";
+if(d){sel=parseInt(d,10)}
+render();
+});
+$("meta").addEventListener("input",function(){
+var d=String(this.value).replace(/\D/g,"");
+this.value=d?parseInt(d,10).toLocaleString("pt-BR"):"";
+render();
+});
+
+var PERG=[
+{t:"Foi reprovado ou ficou vermelho no financiamento",p:3},
+{t:"Nao tem pressa de receber o carro agora",p:3},
+{t:"Consegue pagar uma parcela mensal com folga",p:2},
+{t:"Tem valor guardado para dar lance",p:2},
+{t:"Reclamou dos juros do financiamento",p:2},
+{t:"Ja tem ou ja teve consorcio antes",p:1},
+{t:"Esta comprando para investir ou trocar depois",p:1}
+];
+var pq=$("perguntas");
+PERG.forEach(function(x,i){
+var l=document.createElement("label");
+l.className="chk";
+l.innerHTML='<input type="checkbox" data-p="'+x.p+'" id="q'+i+'"><span>'+x.t+'</span>';
+pq.appendChild(l);
+});
+pq.addEventListener("change",render);
+
+function pontos(){
+var t=0;
+pq.querySelectorAll("input:checked").forEach(function(e){t+=parseInt(e.dataset.p,10)});
+return t;
+}
+function render(){
+cx.querySelectorAll(".carta").forEach(function(d){d.classList.toggle("on",parseInt(d.dataset.v,10)===sel)});
+var com=sel*0.01;
+$("oCom").textContent=brl(com);
+$("o2").textContent=brl(com*2);
+$("o4").textContent=brl(com*4);
+var meta=num($("meta").value);
+var q=com>0?Math.ceil(meta/com):0;
+$("oMeta").textContent=q+" carta(s) de "+brl(sel);
+$("oSem").textContent=(q/4).toFixed(1).replace(".",",")+" por semana";
+var p=pontos(),cor,rot,dica;
+if(p>=8){cor="#22c55e";rot="CANDIDATO FORTE";dica="Passa pro Vandre hoje. Cliente com esse perfil costuma fechar."}
+else if(p>=4){cor="#f59e0b";rot="CANDIDATO POSSIVEL";dica="Vale a indicacao, mas explique bem que nao tem data de contemplacao."}
+else{cor="#ef4444";rot="AINDA NAO";dica="Tente primeiro o financiamento ou uma entrada maior. Consorcio agora provavelmente nao resolve o que ele precisa."}
+var s=$("selo");s.textContent=rot;s.style.background=cor;
+$("dica").textContent=dica+" (pontuacao "+p+")";
+}
+
+function marcados(){
+var l=[];
+pq.querySelectorAll("input:checked").forEach(function(e){l.push(e.parentNode.querySelector("span").textContent.toLowerCase())});
+return l;
+}
+function gerar(){
+var perfil=marcados();
+var t="Fala Vandre, tudo certo?\n\n"+
+"Indicacao minha, cliente da loja.\n\n"+
+"Cliente: "+($("cNome").value||"(preencher nome)")+"\n"+
+"Telefone: "+($("cTel").value||"(preencher telefone)")+"\n"+
+"Carta de interesse: "+brl(sel)+"\n"+
+(($("cObs").value)?("Observacao: "+$("cObs").value+"\n"):"")+
+(perfil.length?("Perfil: "+perfil.join("; ")+"\n"):"")+
+"\nJa expliquei o basico: sem juros, tem taxa de administracao, e a contemplacao e por sorteio ou lance, sem data garantida. Ele ficou de esperar seu contato.\n\n"+
+"Indicacao de "+($("cVend").value||"Vinicios - TDrive")+". Qualquer coisa me chama.";
+$("msg").value=t;links();
+$("st").textContent="Mensagem pronta. Confira e mande voce mesmo - o sistema nao envia nada sozinho.";
+}
+function gerarCliente(){
+var t="Oi "+($("cNome").value||"")+", tudo bem? Aqui e o "+($("cVend").value||"Vinicios")+", da TDrive.\n\n"+
+"Sobre o que a gente conversou: alem do financiamento existe o consorcio, que funciona assim:\n\n"+
+"- Nao tem juros. Tem taxa de administracao, que costuma pesar bem menos.\n"+
+"- A parcela normalmente fica mais leve que a do financiamento.\n"+
+"- Voce e contemplado por sorteio ou dando um lance. Nao existe data garantida, e importante voce saber disso.\n"+
+"- Carta a partir de "+brl(60000)+", e da para usar em carro novo ou seminovo.\n\n"+
+"Se fizer sentido pra voce, eu te passo pro Vandre, que e quem cuida disso e explica tudo direitinho. Posso passar seu contato pra ele?";
+$("msg").value=t;links();
+$("st").textContent="Mensagem pronta. Leia antes de enviar.";
+}
+function links(){
+$("lZap").href="https://wa.me/?text="+encodeURIComponent($("msg").value);
+}
+$("msg").addEventListener("input",links);
+function copiarMsg(){
+var t=$("msg").value;
+if(!t){$("st").textContent="Gere a mensagem primeiro.";return}
+if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){$("st").textContent="Copiado."}).catch(function(){$("st").textContent="Nao consegui copiar."})}
+else{$("st").textContent="Selecione e copie na mao."}
+}
+render();links();
+</script>
+</body>
+</html>
