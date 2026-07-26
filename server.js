@@ -33,6 +33,7 @@ async function initDb() {
 }
 
 app.use(express.json());
+app.use(express.static('public', { index: false }));
 
 const EMAIL_DESTINATARIOS = [
       'marcelo.sinhorine@tdrive.com.br',
@@ -200,7 +201,11 @@ function renderPage() {
             '.badge.erro { background:#f8d7da; color:#721c24; }',
             '.acoes a { font-size:13px; padding:6px 10px; border-radius:5px; border:1px solid #667eea; background:#fff; color:#667eea; text-decoration:none; margin-left:6px; }',
             '.acoes a.desabilitado { opacity:.4; pointer-events:none; }',
+            '.abas { max-width:700px; margin:0 auto 15px; display:flex; gap:8px; }',
+            '.abas a { flex:1; text-align:center; padding:10px; border-radius:8px 8px 0 0; background:rgba(255,255,255,.25); color:#fff; text-decoration:none; font-size:14px; font-weight:600; }',
+            '.abas a.ativa { background:#fff; color:#5a3d9a; }',
             '</style></head><body>',
+            '<div class="abas"><a href="/" class="ativa">Enviar Ficha</a><a href="/simulador.html">Simulador</a></div>',
             '<main>',
             '<h1>TDrive Pro - Envio de Ficha ao Fandi</h1>',
             '<textarea id="dados" placeholder="Cole os dados do cliente aqui (CPF, Nome, Mae, Telefone, Salario, CEP, Endereco, Bairro)..."></textarea>',
