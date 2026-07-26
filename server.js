@@ -1,4 +1,4 @@
-// TDrive Pro v12.2 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v13.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -241,7 +241,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '12.2', protegido: !!PIN });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '13.0', protegido: !!PIN });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -264,7 +264,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '12.2', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '13.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
@@ -348,6 +348,96 @@ app.post('/api/loja', exigePin, async function (req, res) {
   } catch (e) {
     return res.json({ success: true, salvo: 'memoria', aviso: 'Salvei so na memoria do servidor (o banco recusou): ' + e.message });
   }
+});
+
+// ---------- ESTOQUE OFICIAL T-DRIVE (v13.0) ----------
+// Le o site publico da propria rede (www.tdrive.com.br, robots.txt permite) e monta a vitrine.
+// Roda SO quando alguem clica no botao - nao fica batendo no site sozinho.
+// Aqui NAO entra dado de cliente: so modelo, ano, km, preco, foto e unidade.
+var importacao = { rodando: false, feitos: 0, total: 0, encontrados: 0, unidade: '', fim: null, erro: null };
+var CABECALHO_ROBO = { 'User-Agent': 'TDrivePro/1.0 (vitrine interna T-Drive Aricanduva)' };
+
+function lerCarroDoHtml(html, url) {
+  var mt = html.match(/<title>([^<]*)<\/title>/);
+  if (!mt) return null;
+  var m = mt[1].match(/^(.+?)\s+(\d{4})\s+por\s+R\$\s*([\d.,]+).*?(T-Drive.*?)\s*$/);
+  if (!m) return null;
+  var foto = (html.match(/https:\/\/production\.autoforce\.com\/uploads\/used_model\/profile_image\/[^"'\s]+/) || [''])[0];
+  var mkm = html.match(/([\d.]+)\s?Km/i);
+  var unidade = m[4].trim();
+  return {
+    id: url.split('/').pop(),
+    modelo: m[1].trim(),
+    ano: m[2],
+    km: mkm ? (Number(mkm[1].replace(/\D/g, '')) || 0) : 0,
+    preco: Number(m[3].replace(/\./g, '').replace(',', '.')) || 0,
+    cor: '',
+    foto: foto,
+    obs: unidade,
+    status: 'disponivel',
+    origem: 'tdrive',
+    unidade: unidade,
+    link: url
+  };
+}
+
+async function importarEstoque(unidade) {
+  importacao = { rodando: true, feitos: 0, total: 0, encontrados: 0, unidade: unidade, fim: null, erro: null };
+  try {
+    if (typeof fetch !== 'function') throw new Error('Este Node nao tem fetch (precisa Node 18 ou mais novo).');
+    var rs = await fetch('https://www.tdrive.com.br/sitemap.xml', { headers: CABECALHO_ROBO });
+    var xml = await rs.text();
+    var urls = (xml.match(/<loc>[^<]+<\/loc>/g) || [])
+      .map(function (s) { return s.replace(/<\/?loc>/g, ''); })
+      .filter(function (u) { return /\/seminovos\/.+/.test(u); });
+    importacao.total = urls.length;
+    var achados = [];
+    for (var i = 0; i < urls.length; i += 4) {
+      var lote = urls.slice(i, i + 4);
+      var res = await Promise.all(lote.map(async function (u) {
+        try {
+          var r = await fetch(u, { headers: CABECALHO_ROBO });
+          var h = await r.text();
+          return lerCarroDoHtml(h, u);
+        } catch (e) { return null; }
+      }));
+      res.forEach(function (c) {
+        if (c && (!unidade || c.unidade.toLowerCase().indexOf(unidade.toLowerCase()) > -1)) achados.push(c);
+      });
+      importacao.feitos += lote.length;
+      importacao.encontrados = achados.length;
+      await new Promise(function (r) { setTimeout(r, 300); });
+    }
+    var manuais = [];
+    var config = null;
+    try {
+      var atual = await pool.query('SELECT dados FROM loja WHERE id = 1');
+      if (atual.rows.length) {
+        var d = JSON.parse(atual.rows[0].dados);
+        config = d.config || null;
+        manuais = (d.carros || []).filter(function (c) { return c.origem !== 'tdrive'; });
+      }
+    } catch (e) { console.error('[LOJA] nao li o estoque anterior: ' + e.message); }
+    var dados = { carros: manuais.concat(achados), config: config };
+    lojaMemoria = dados;
+    await pool.query('INSERT INTO loja (id, dados, atualizado_em) VALUES (1, $1, NOW()) ON CONFLICT (id) DO UPDATE SET dados = $1, atualizado_em = NOW()', [JSON.stringify(dados)]);
+    importacao.fim = new Date().toISOString();
+  } catch (e) {
+    importacao.erro = e.message;
+    importacao.fim = new Date().toISOString();
+  }
+  importacao.rodando = false;
+}
+
+app.post('/api/loja/importar', exigePin, function (req, res) {
+  if (importacao.rodando) return res.json({ success: false, message: 'Ja estou importando. Aguarde terminar.' });
+  var unidade = (req.body && req.body.unidade) || 'Aricanduva';
+  importarEstoque(unidade);
+  res.json({ success: true, message: 'Importando o estoque da unidade ' + unidade + '. Leva de 1 a 3 minutos.' });
+});
+
+app.get('/api/loja/importacao', function (req, res) {
+  res.json({ success: true, importacao: importacao });
 });
 
 app.get('/', function (req, res) {
