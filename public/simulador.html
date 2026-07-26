@@ -120,7 +120,7 @@ $("oPar").textContent=n+"x de "+brl(parc);
 $("oTot").textContent=brl(parc*n+ent);
 $("descPerfil").textContent=p.txt;
 var d="";
-if(pct<p.red){var falta=valor*p.red/100;d="Para virar AMARELO precisa de "+p.red+"% = "+brl(falta)+" de entrada."+(p.red>90?" Neste perfil nao ha entrada que resolva.":"")}
+if(pct<p.red){d=p.red>90?"Neste perfil nao existe entrada que resolva. Caminhos: avalista, CPF de terceiro, quitar a restricao ou carro mais barato.":("Para virar AMARELO precisa de "+p.red+"% = "+brl(valor*p.red/100)+" de entrada.")}
 else if(pct<p.yel){d="Para virar VERDE precisa de "+p.yel+"% = "+brl(valor*p.yel/100)+" de entrada."}
 else{d="Cenario otimo. Suba a ficha no Fandi e sequencie."}
 $("dica").textContent=d;
