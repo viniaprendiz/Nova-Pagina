@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ideias e Possibilidades - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filtros button{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--tx2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.filtros button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.it{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+.it.noar{border-left-color:var(--grn)}
+.it.agora{border-left-color:var(--ac)}
+.it.voce{border-left-color:var(--yel)}
+.it.ti{border-left-color:var(--red)}
+.it h3{margin:0 0 4px;font-size:16px}
+.it p{margin:0;font-size:13px;color:var(--tx2);line-height:1.6}
+.tags{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:800;letter-spacing:.4px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.06);color:var(--tx2)}
+.tag.noar{background:rgba(34,197,94,.18);color:#9ff0bd}
+.tag.agora{background:rgba(59,130,246,.18);color:#a9c7ff}
+.tag.voce{background:rgba(245,158,11,.18);color:#ffd08a}
+.tag.ti{background:rgba(239,68,68,.18);color:#ff9b9b}
+.regra{font-size:13px;line-height:1.65;background:rgba(239,68,68,.10);border-left:3px solid var(--red);padding:12px 14px;border-radius:8px;color:var(--tx2)}
+.ok{font-size:13px;line-height:1.65;background:rgba(34,197,94,.10);border-left:3px solid var(--grn);padding:12px 14px;border-radius:8px;color:var(--tx2)}
+b.n{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Gerente de Possibilidades</h1>
+<p class="lead">O mapa do dinheiro. Cada ideia foi pontuada por <b>quanto traz de resultado</b> contra <b>quanto custa de esforco</b>, e ordenada da melhor pra pior. Verde ja esta no ar, azul eu consigo construir sozinho, amarelo depende de uma acao sua, vermelho depende da empresa.</p>
+<div class="abas"></div>
+
+<div class="card">
+<h2>O mapa</h2>
+<div class="filtros" id="filtros"></div>
+<div id="lista"></div>
+</div>
+
+<div class="card">
+<h2>Como esse gerente pensa</h2>
+<div class="ok">
+<b class="n">1. Dinheiro antes de enfeite.</b> Toda ideia responde: isso me faz vender mais um carro esse mes, ou nao?<br>
+<b class="n">2. O que da pra fazer hoje vem primeiro.</b> Nada de esperar chave, senha ou aprovacao pra comecar.<br>
+<b class="n">3. Entrega so termina quando esta no ar e testada.</b> Codigo que ninguem viu funcionando nao conta.<br>
+<b class="n">4. Um passo de cada vez.</b> Uma coisa pronta vale mais que cinco pela metade.<br>
+<b class="n">5. Cada problema resolvido vira registro no cerebro,</b> pra nunca ser resolvido duas vezes.
+</div>
+</div>
+
+<div class="card">
+<h2>O que este gerente NAO faz</h2>
+<div class="regra">
+Nao burla acesso. NBS que so abre no wifi da loja e Syonet que so abre em certo horario sao <b class="n">regras que a empresa configurou de proposito</b>. Tentar entrar por VPN, proxy ou driblar horario poderia custar seu emprego e nao e por ai que voce vai ficar rico.<br><br>
+O caminho certo e o formal: pedir liberacao ao TI da Automob, por escrito, explicando pra que serve. Se outros vendedores tem acesso e voce nao, isso e pedido de perfil, nao problema tecnico. Tem um texto pronto pra voce mandar no arquivo <b class="n">ACESSOS-BLOQUEADOS.md</b> do projeto.<br><br>
+Tambem nao mando mensagem, email nem ficha sem voce clicar. O sistema deixa tudo pronto; o dedo e seu.
+</div>
+</div>
+
+</div>
+<script>
+var ITENS = [
+  { t: "Ficha sobe sozinha no Fandi", d: "Cola os dados, o robo preenche e sobe. O erro que travava tudo (Chrome faltando no servidor) foi corrigido hoje.", ganho: 5, esforco: 3, st: "noar" },
+  { t: "Agente de voz: falar e virar ficha", d: "Dita no celular, o servidor separa os 8 campos e leva pra tela de envio. Funciona sem chave de API.", ganho: 5, esforco: 3, st: "noar" },
+  { t: "CRM: quem esta quente agora", d: "Termometro por cliente, proximo passo sugerido e mensagem de WhatsApp pronta. Dados so no seu aparelho.", ganho: 5, esforco: 2, st: "noar" },
+  { t: "Simulador com regua por CPF", d: "Mostra na hora se aprova sem entrada, com 10, 20 ou 30 por cento. A ideia do Humberto.", ganho: 4, esforco: 2, st: "noar" },
+  { t: "Consorcio: comissao de 1 por cento", d: "Qualifica o cliente reprovado e gera a mensagem de indicacao pro Vandre. Carta de 60 mil = 600 reais no seu bolso.", ganho: 4, esforco: 2, st: "noar" },
+  { t: "Fechar a lista de fichas com PIN", d: "Hoje a lista com nome e CPF de cliente esta aberta na internet. O codigo ja pede PIN; falta voce criar a variavel TDRIVE_PIN no Render. E o item mais urgente da lista.", ganho: 5, esforco: 1, st: "voce" },
+  { t: "Lista do dia: quem esfriou", d: "Uma tela que abre e diz: liga nestes 5 hoje. Sai da memoria e vira rotina. Eu construo em cima do CRM.", ganho: 5, esforco: 2, st: "agora" },
+  { t: "Relatorio: quanto investi x quanto ganhei", d: "Quanto entrou de comissao, quanto custou (site, anuncio, gasolina) e quanto sobrou. Sem isso a gente acha que esta ganhando e nao esta.", ganho: 4, esforco: 2, st: "agora" },
+  { t: "Vitrine dos carros pra mandar no zap", d: "Pagina com os carros, foto e parcela, com link curto por carro. Voce manda o link em vez de foto solta.", ganho: 4, esforco: 3, st: "agora" },
+  { t: "Agente mais esperto com Claude API", d: "Com a variavel ANTHROPIC_API_KEY o agente entende frase solta em vez de depender dos rotulos. Custa centavos por uso.", ganho: 3, esforco: 1, st: "voce" },
+  { t: "Funil com login, checkout e assinatura", d: "Da pra construir a pagina, o carrinho e o upsell. Mas receber dinheiro exige conta em gateway (Mercado Pago, Asaas, Stripe) aberta por voce, no seu CPF.", ganho: 5, esforco: 5, st: "voce" },
+  { t: "Notificacao quando cair PIX", d: "O sonho: o sistema te avisa que entrou dinheiro. Depende do gateway acima, porque a notificacao vem dele.", ganho: 4, esforco: 4, st: "voce" },
+  { t: "Meta Ads: anuncio virando lead no CRM", d: "Da pra receber os leads do formulario do Facebook direto no CRM. Precisa de conta Business e token que so voce pode criar.", ganho: 4, esforco: 4, st: "voce" },
+  { t: "WhatsApp oficial (API)", d: "Mensagem automatica de verdade, sem risco de banimento. Tem custo por conversa e precisa de conta aprovada. Enquanto isso a gente gera o texto e voce manda.", ganho: 3, esforco: 4, st: "voce" },
+  { t: "Puxar leads do Syonet automatico", d: "So com API ou usuario de integracao liberado pela Automob. Enquanto nao tiver, o importador do CRM resolve: voce exporta ou copia a lista e cola.", ganho: 5, esforco: 4, st: "ti" },
+  { t: "NBS fora do wifi da loja", d: "O sistema hoje so responde no IP interno da loja. Isso e decisao de rede da empresa. Caminho: pedir acesso remoto ao TI.", ganho: 4, esforco: 3, st: "ti" },
+  { t: "Syonet fora do horario", d: "A janela de horario e configuracao do sistema. Se outros vendedores tem horario maior, e perfil de usuario. Caminho: pedir ao TI.", ganho: 3, esforco: 2, st: "ti" },
+  { t: "Banco Toyota direto no sistema", d: "Integracao com banco exige contrato e credencial institucional. Nao e coisa de vendedor sozinho: precisa da diretoria.", ganho: 4, esforco: 5, st: "ti" }
+];
+
+var NOMES = { noar: "JA NO AR", agora: "EU CONSTRUO", voce: "DEPENDE DE VOCE", ti: "DEPENDE DO TI" };
+var filtro = "todos";
+
+function nota(i){ return (i.ganho * 2) - i.esforco; }
+
+function render(){
+  var l = ITENS.slice().sort(function(a,b){ return nota(b) - nota(a); });
+  if(filtro !== "todos") l = l.filter(function(i){ return i.st === filtro; });
+  document.getElementById("lista").innerHTML = l.map(function(i){
+    var h = '<div class="it ' + i.st + '">';
+    h += "<h3>" + i.t + "</h3>";
+    h += "<p>" + i.d + "</p>";
+    h += '<div class="tags">';
+    h += '<span class="tag ' + i.st + '">' + NOMES[i.st] + "</span>";
+    h += '<span class="tag">retorno ' + i.ganho + "/5</span>";
+    h += '<span class="tag">esforco ' + i.esforco + "/5</span>";
+    h += '<span class="tag">nota ' + nota(i) + "</span>";
+    h += "</div></div>";
+    return h;
+  }).join("");
+}
+
+(function(){
+  var f = document.getElementById("filtros");
+  var opcoes = [["todos","Tudo"],["noar","Ja no ar"],["agora","Eu construo"],["voce","Depende de voce"],["ti","Depende do TI"]];
+  opcoes.forEach(function(o){
+    var b = document.createElement("button");
+    b.textContent = o[1];
+    if(o[0] === "todos") b.className = "on";
+    b.onclick = function(){
+      filtro = o[0];
+      var bs = f.getElementsByTagName("button");
+      for(var i = 0; i < bs.length; i++) bs[i].className = "";
+      b.className = "on";
+      render();
+    };
+    f.appendChild(b);
+  });
+  render();
+})();
+</script>
+</body>
+</html>
