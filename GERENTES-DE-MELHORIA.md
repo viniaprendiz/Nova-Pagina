@@ -139,6 +139,59 @@ lendo o conteudo do gist e mostrando organizado por data e por tema.
 
 ---
 
+## 6. GERENTE DE PRECO E ESTRATEGIA
+*(criado em 26/07/2026)*
+
+**Objetivo:** saber de onde vem o dinheiro e nao deixar receita na mesa.
+
+Perguntas obrigatorias:
+- Esse cliente tem so UM caminho de compra ou tem tres?
+- Se ele nao aprova no financiamento, o que sobra? (consorcio, entrada maior, avalista, carro mais barato)
+- Quanto isso paga? Em quanto tempo?
+- Estamos cobrando de menos por algo que da trabalho?
+
+Fontes de receita mapeadas hoje:
+| Fonte | Como ganha | Valor de referencia |
+|---|---|---|
+| Venda de carro | comissao da loja | varia por veiculo |
+| Consorcio (indicacao pro Vandre) | 1% da carta | carta de 60 mil = R\$ 600; 100 mil = R\$ 1.000; 150 mil = R\$ 1.500; 200 mil = R\$ 2.000 |
+| Assinatura das automacoes | mensalidade do pessoal da loja | a definir - depende de gateway |
+| Ferramentas avulsas | venda unica | a definir |
+
+**Regra de ouro deste gerente:** cliente vermelho na regua NAO e cliente perdido, e cliente
+de consorcio. O simulador e o modulo de consorcio existem para essa ponte.
+
+Limites: nada de prometer contemplacao, prazo ou aprovacao. Nada de recomendacao de
+investimento. O sistema estima comissao, quem fecha e explica regra oficial e o Vandre.
+
+---
+
+## 7. GERENTE DE RELATORIOS
+*(criado em 26/07/2026)*
+
+**Objetivo:** medir antes de comemorar.
+
+Perguntas obrigatorias:
+- Isso que a gente construiu foi usado quantas vezes esta semana?
+- Quantas fichas subiram, quantas falharam e por que?
+- Quanto ja entrou de dinheiro e quanto ja gastamos de infraestrutura?
+- Qual numero eu ainda nao consigo ver e deveria?
+
+Ja medido (no painel):
+- fichas no banco e fichas por situacao;
+- tempo de resposta da API;
+- se o robo do Fandi esta instalado;
+- ultimas fichas com erro, com causa amigavel e detalhe tecnico;
+- projecao de receita do mes (carros + consorcio).
+
+Ainda nao medido (fila):
+- quantas fichas viraram venda de verdade;
+- quantas indicacoes de consorcio o Vandre fechou;
+- custo mensal de infraestrutura (hoje: plano gratuito, banco expira 25/08/2026);
+- tempo economizado por ficha comparado ao processo manual.
+
+---
+
 ## Placar (atualizar a cada sessao)
 
 | Data | Entregas | Problemas resolvidos | Onde |
@@ -150,3 +203,7 @@ lendo o conteudo do gist e mostrando organizado por data e por tema.
 | 26/07/2026 | simulador v2 (regua por perfil de CPF) | - | commit 931164e |
 | 26/07/2026 | painel do que ja funciona | - | public/painel.html |
 | 26/07/2026 | este manifesto | - | GERENTES-DE-MELHORIA.md |
+| 26/07/2026 | correcao do robo do Fandi (Chrome inexistente) | 1 critico | .puppeteerrc.cjs + package.json |
+| 26/07/2026 | tema claro/escuro, diagnostico, tentar de novo, copiar dados | - | tema.css / tema.js / server.js v10 |
+| 26/07/2026 | modulo Consorcio (comissao 1% + indicacao pro Vandre) | - | public/consorcio.html |
+| 26/07/2026 | gerentes de Preco/Estrategia e de Relatorios | - | este arquivo |
