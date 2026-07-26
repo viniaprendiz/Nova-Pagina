@@ -57,6 +57,26 @@ h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);
 </div>
 </div>
 
+    <div class="card">
+      <style>
+        .grid8{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+        .campo{background:var(--card2);border:1px solid #ffffff14;border-radius:10px;padding:8px 10px}
+        .campo span{display:block;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--tx2)}
+        .campo b{font-size:14px}
+        .campo.vazio b{color:var(--red)}
+        @media(max-width:520px){.grid8{grid-template-columns:1fr}}
+      </style>
+      <h2>Agente: virar a fala em ficha</h2>
+      <p class="dica">Dita ai em cima e clica no botao. O agente separa os 8 campos e mostra na tela. <b>Ele nunca envia nada sozinho</b> - o envio continua dependendo do seu clique.</p>
+      <div class="row"><button id="btAg" onclick="chamarAgente()">INTERPRETAR O QUE EU FALEI</button></div>
+      <div class="status" id="stAg"></div>
+      <div id="camposAg"></div>
+      <div class="row" id="rowAg" style="display:none">
+        <button onclick="copiarFicha()">Copiar os 8 campos</button>
+        <button onclick="levarParaFicha()">Levar para a ficha</button>
+      </div>
+    </div>
+
 <div class="card">
 <h2>Modelo de ficha por voz</h2>
 <p class="dica">Fale nesta ordem que o sistema de fichas ja entende: <code>CPF</code>, <code>Nome</code>, <code>Mae</code>, <code>Telefone</code>, <code>Salario</code>, <code>CEP</code>, <code>Endereco</code>, <code>Bairro</code>. Diga a palavra e depois o valor. Exemplo: "cpf um dois tres... nome Joao da Silva... mae Maria da Silva".</p>
@@ -134,6 +154,62 @@ localStorage.setItem(K,JSON.stringify(n.slice(-50)));
 render();st("Nota salva neste aparelho.");
 }
 links();render();
+
+    /* ---------- AGENTE DE VOZ (v11.0) ---------- */
+    var ultimoAgente = null;
+    var ROT8 = [["cpf","CPF"],["name","Nome"],["mother","Mae"],["phone","Telefone"],["salary","Salario"],["cep","CEP"],["address","Endereco"],["neighborhood","Bairro"]];
+
+    async function chamarAgente(){
+      var texto = $("txt").value.trim();
+      if(!texto){ $("stAg").textContent = "Fala alguma coisa primeiro, ou digita no campo de cima."; return; }
+      var bt = $("btAg"); var antes = bt.textContent;
+      bt.disabled = true; bt.textContent = "PENSANDO...";
+      $("stAg").textContent = "Mandando para o agente...";
+      try{
+        var r = await fetch("/api/agente", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ texto: texto }) });
+        var j = await r.json();
+        if(!j.success){
+          $("stAg").textContent = j.message || "Nao deu certo.";
+          $("camposAg").innerHTML = ""; $("rowAg").style.display = "none";
+          return;
+        }
+        ultimoAgente = j;
+        mostrarCampos(j);
+      }catch(e){
+        $("stAg").textContent = "Erro de conexao: " + e.message;
+      }finally{
+        bt.disabled = false; bt.textContent = antes;
+      }
+    }
+
+    function mostrarCampos(j){
+      var d = j.dados || {};
+      var html = "<div class='grid8'>";
+      ROT8.forEach(function(p){
+        var v = d[p[0]] || "";
+        html += "<div class='campo" + (v ? "" : " vazio") + "'><span>" + p[1] + "</span><b>" + (v ? v : "faltou") + "</b></div>";
+      });
+      html += "</div>";
+      $("camposAg").innerHTML = html;
+      var msg = j.completo ? "Os 8 campos vieram completos." : ("Faltou: " + (j.faltando || []).join(", "));
+      msg += "  |  modo: " + (j.fonte === "claude" ? "Claude API" : "local (regex)");
+      if(j.aviso) msg += "  |  " + j.aviso;
+      $("stAg").textContent = msg;
+      $("rowAg").style.display = "flex";
+    }
+
+    function copiarFicha(){
+      if(!ultimoAgente) return;
+      navigator.clipboard.writeText(ultimoAgente.textoFicha).then(function(){
+        $("stAg").textContent = "Copiado. Agora cola na tela de ficha.";
+      });
+    }
+
+    function levarParaFicha(){
+      if(!ultimoAgente) return;
+      try{ localStorage.setItem("tdrive_voz_dados", ultimoAgente.textoFicha); }catch(e){}
+      location.href = "/";
+    }
 </script>
 </body>
 </html>
