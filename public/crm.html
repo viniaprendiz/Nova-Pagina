@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:13px 0 6px}
+input,select,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+textarea{min-height:110px;resize:vertical}
+button{padding:12px 16px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.mini{padding:8px 12px;font-size:13px;font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row > *{flex:1;min-width:130px}
+.termo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tbox{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
+.tbox b{display:block;font-size:26px;line-height:1.15}
+.tbox span{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2)}
+.q b{color:var(--red)}
+.m b{color:var(--yel)}
+.f b{color:var(--ac)}
+.cli{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.cli.quente{border-left-color:var(--red)}
+.cli.morno{border-left-color:var(--yel)}
+.cli.frio{border-left-color:var(--ac)}
+.cli h3{margin:0 0 4px;font-size:16px}
+.meta{font-size:12px;color:var(--tx2);line-height:1.65}
+.selo{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;vertical-align:middle}
+.selo.quente{background:rgba(239,68,68,.18);color:#ff9b9b}
+.selo.morno{background:rgba(245,158,11,.18);color:#ffd08a}
+.selo.frio{background:rgba(59,130,246,.18);color:#a9c7ff}
+.acao{margin-top:8px;font-size:13px;background:rgba(59,130,246,.12);border-left:3px solid var(--ac);padding:8px 10px;border-radius:8px;line-height:1.5}
+.priv{font-size:12px;color:var(--tx2);background:rgba(34,197,94,.10);border-left:3px solid var(--grn);padding:10px 12px;border-radius:8px;line-height:1.6;margin-bottom:16px}
+code{background:var(--card2);padding:2px 6px;border-radius:6px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Meus clientes</h1>
+<p class="lead">Quem esta quente, quem esta esfriando e o que fazer agora. O sistema calcula a temperatura de cada cliente e te diz o proximo passo.</p>
+<div class="abas"></div>
+
+<div class="priv">
+<b>Privacidade:</b> esta lista NAO sobe para o servidor. Ela fica guardada so no navegador deste aparelho. Nome e telefone de cliente nao aparecem em nenhum endereco publico da internet. Se voce limpar os dados do navegador a lista vai embora, entao use o <b>Copiar backup</b> de vez em quando.
+</div>
+
+<div class="card">
+<h2>Termometro</h2>
+<div class="termo">
+  <div class="tbox q"><b id="nQ">0</b><span>Quentes</span></div>
+  <div class="tbox m"><b id="nM">0</b><span>Mornos</span></div>
+  <div class="tbox f"><b id="nF">0</b><span>Frios</span></div>
+</div>
+<div class="acao" id="resumo" style="display:none"></div>
+</div>
+
+<div class="card">
+<h2>Liga nestes primeiro</h2>
+<div id="quentes"></div>
+</div>
+
+<div class="card">
+<h2>Novo cliente</h2>
+<label>Nome</label>
+<input id="fNome" placeholder="Joao da Silva">
+<div class="row" style="margin-top:0">
+  <div><label>Telefone</label><input id="fTel" inputmode="tel" placeholder="(11) 99999-9999"></div>
+  <div><label>Carro de interesse</label><input id="fCarro" placeholder="Corolla Cross XRE"></div>
+</div>
+<div class="row" style="margin-top:0">
+  <div><label>De onde veio</label><select id="fOrigem"></select></div>
+  <div><label>Em que pe esta</label><select id="fEtapa"></select></div>
+</div>
+<label>Observacao</label>
+<textarea id="fObs" placeholder="Tem carro na troca, quer parcela ate 1500, esposa decide junto..."></textarea>
+<div class="row">
+  <button class="pri" onclick="salvar()">Salvar cliente</button>
+  <button onclick="limparForm()">Limpar campos</button>
+</div>
+<div class="meta" id="stForm" style="margin-top:10px"></div>
+</div>
+
+<div class="card">
+<h2>Importar lista de uma vez</h2>
+<p class="lead" style="margin:0 0 10px">Cola uma linha por cliente, do jeito que estiver: exportacao do Syonet, lista do WhatsApp, seu caderno. Ele acha telefone, nome e modelo sozinho. Exemplo: <code>Joao da Silva - (11) 98888-7777 - Corolla Cross</code></p>
+<textarea id="imp" placeholder="Maria Souza (11) 97777-1111 Yaris
+Pedro Lima 11 96666-2222 Hilux"></textarea>
+<div class="row">
+  <button class="pri" onclick="importar()">Importar</button>
+  <button onclick="document.getElementById('imp').value=''">Limpar</button>
+</div>
+<div class="meta" id="stImp" style="margin-top:10px"></div>
+</div>
+
+<div class="card">
+<h2>Todos os clientes (<span id="nTotal">0</span>)</h2>
+<div id="lista"></div>
+</div>
+
+<div class="card">
+<h2>Backup</h2>
+<p class="lead" style="margin:0 0 10px">Copia e guarda num bloco de notas, ou manda pra voce mesmo no WhatsApp. Nada disso passa pelo servidor.</p>
+<div class="row">
+  <button onclick="copiarBackup()">Copiar backup</button>
+  <button onclick="restaurar()">Colar backup e restaurar</button>
+</div>
+<div class="meta" id="stBk" style="margin-top:10px"></div>
+</div>
+
+</div>
+<script>
+var K = "tdrive_crm_v1";
+var ORIGENS = ["Loja (passou na loja)","Indicacao","WhatsApp","Site / Anuncio","Syonet","Telefone","Outro"];
+var ETAPAS = ["Primeiro contato","Escolhendo carro","Simulou financiamento","Ficha enviada","Aprovado no banco","Negociando valor","Fechou","Perdido"];
+var PESO = {"Primeiro contato":6,"Escolhendo carro":14,"Simulou financiamento":24,"Ficha enviada":32,"Aprovado no banco":42,"Negociando valor":38,"Fechou":0,"Perdido":0};
+var MODELOS = ["Corolla Cross","Corolla","Yaris Sedan","Yaris","Hilux SW4","Hilux","SW4","RAV4","Etios","Camry","Prius","Land Cruiser"];
+
+function $(id){ return document.getElementById(id); }
+function ler(){ try{ return JSON.parse(localStorage.getItem(K)) || []; }catch(e){ return []; } }
+function gravar(l){ try{ localStorage.setItem(K, JSON.stringify(l)); }catch(e){ alert("Nao consegui salvar neste aparelho."); } }
+function hoje(){ return new Date().toISOString().slice(0,10); }
+function dias(d){ if(!d) return 999; var a = new Date(d + "T12:00:00"); return Math.floor((Date.now() - a.getTime()) / 86400000); }
+function digitos(s){ return (s||"").toString().replace(/\D+/g,""); }
+function fmtTel(s){
+  var d = digitos(s);
+  if(d.length === 11) return "(" + d.slice(0,2) + ") " + d.slice(2,7) + "-" + d.slice(7);
+  if(d.length === 10) return "(" + d.slice(0,2) + ") " + d.slice(2,6) + "-" + d.slice(6);
+  return s || "";
+}
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function novoId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function pontos(c){
+  if(c.etapa === "Fechou" || c.etapa === "Perdido") return 0;
+  var p = PESO[c.etapa] || 0;
+  var d = dias(c.contato);
+  if(d <= 1) p += 25; else if(d <= 3) p += 18; else if(d <= 7) p += 10; else if(d <= 14) p += 2; else p -= 8;
+  if(c.carro) p += 10;
+  if(c.tel) p += 8;
+  if(c.origem === "Indicacao" || c.origem === "Loja (passou na loja)") p += 10;
+  else if(c.origem === "Syonet" || c.origem === "Site / Anuncio") p += 5;
+  if(p < 0) p = 0;
+  if(p > 100) p = 100;
+  return p;
+}
+function faixa(p){ return p >= 60 ? "quente" : (p >= 32 ? "morno" : "frio"); }
+
+function proxima(c){
+  if(c.etapa === "Fechou") return "Fechado. Pede indicacao e oferece consorcio para o proximo passo dele.";
+  if(c.etapa === "Perdido") return "Nao aprovou? Nao e cliente perdido: manda pro consorcio com o Vandre (aba Consorcio).";
+  var d = dias(c.contato);
+  if(d > 7) return "Sumiu ha " + d + " dias. Liga hoje ou manda um audio no WhatsApp antes de esfriar de vez.";
+  if(c.etapa === "Aprovado no banco") return "APROVADO. Agenda a assinatura hoje mesmo, antes que ele pesquise em outra loja.";
+  if(c.etapa === "Ficha enviada") return "Cobra o retorno do banco e avisa o cliente que esta andando. Silencio mata venda.";
+  if(c.etapa === "Simulou financiamento") return "Sobe a ficha no Fandi (aba Ficha) e trava a parcela com ele.";
+  if(c.etapa === "Escolhendo carro") return "Manda o simulador com a entrada dele (aba Simulador) e marca o test drive.";
+  if(c.etapa === "Negociando valor") return "Fecha o desconto com o gerente e manda a proposta final por escrito.";
+  return "Liga, entende o que ele precisa e faz a simulacao na hora.";
+}
+
+function msgWhats(c){
+  var nome = (c.nome || "").trim().split(" ")[0] || "tudo bem";
+  var carro = c.carro ? " do " + c.carro : "";
+  if(c.etapa === "Aprovado no banco") return "Oi " + nome + "! Saiu a aprovacao do seu financiamento" + carro + ". Consegue passar hoje para a gente assinar?";
+  if(c.etapa === "Ficha enviada") return "Oi " + nome + "! Sua analise" + carro + " ja esta com o banco. Assim que sair o retorno eu te aviso na hora.";
+  if(dias(c.contato) > 7) return "Oi " + nome + "! Aqui e o Vinicios da Toyota TDrive. Ainda esta pensando no carro" + carro + "? Apareceu condicao nova essa semana, quer que eu simule pra voce?";
+  return "Oi " + nome + "! Aqui e o Vinicios da Toyota TDrive. Fiz uma simulacao" + carro + " pra voce, posso te mandar?";
+}
+
+function linha(c){
+  var p = pontos(c);
+  var f = faixa(p);
+  var h = '<div class="cli ' + f + '">';
+  h += '<h3>' + esc(c.nome || "(sem nome)") + ' <span class="selo ' + f + '">' + f.toUpperCase() + " " + p + '</span></h3>';
+  h += '<div class="meta">' + esc(c.tel ? fmtTel(c.tel) : "sem telefone");
+  if(c.carro) h += " &middot; " + esc(c.carro);
+  h += " &middot; " + esc(c.etapa) + " &middot; " + esc(c.origem || "-");
+  h += "<br>Ultimo contato: " + (c.contato ? esc(c.contato) + " (" + dias(c.contato) + " dias)" : "nunca");
+  if(c.obs) h += "<br>" + esc(c.obs);
+  h += "</div>";
+  h += '<div class="acao">' + esc(proxima(c)) + "</div>";
+  h += '<div class="row">';
+  if(c.tel) h += '<button class="mini pri" data-a="whats" data-id="' + c.id + '">WhatsApp</button>';
+  h += '<button class="mini" data-a="contato" data-id="' + c.id + '">Falei hoje</button>';
+  h += '<button class="mini" data-a="sobe" data-id="' + c.id + '">Avancar etapa</button>';
+  h += '<button class="mini" data-a="ficha" data-id="' + c.id + '">Levar pra ficha</button>';
+  h += '<button class="mini" data-a="del" data-id="' + c.id + '">Excluir</button>';
+  h += "</div></div>";
+  return h;
+}
+
+function render(){
+  var l = ler();
+  l.forEach(function(c){ c._p = pontos(c); });
+  l.sort(function(a,b){ return b._p - a._p; });
+
+  var nq = 0, nm = 0, nf = 0;
+  l.forEach(function(c){
+    var f = faixa(c._p);
+    if(f === "quente") nq++; else if(f === "morno") nm++; else nf++;
+  });
+  $("nQ").textContent = nq;
+  $("nM").textContent = nm;
+  $("nF").textContent = nf;
+  $("nTotal").textContent = l.length;
+
+  var ativos = l.filter(function(c){ return c.etapa !== "Fechou" && c.etapa !== "Perdido"; });
+  var top = ativos.slice(0, 5);
+  $("quentes").innerHTML = top.length ? top.map(linha).join("") : '<div class="meta">Ainda nao tem ninguem aqui. Cadastra um cliente ou importa a lista ali embaixo.</div>';
+
+  var r = $("resumo");
+  if(l.length){
+    r.style.display = "block";
+    var primeiro = top.length ? top[0] : null;
+    r.textContent = nq ? ("Voce tem " + nq + " cliente(s) quente(s). Comeca pelo " + ((primeiro && primeiro.nome) || "primeiro da lista") + ".") : "Nenhum quente hoje. Reaquece os mornos: liga em 3 hoje e a semana muda.";
+  } else {
+    r.style.display = "none";
+  }
+
+  $("lista").innerHTML = l.length ? l.map(linha).join("") : '<div class="meta">Lista vazia.</div>';
+}
+
+function salvar(){
+  var nome = $("fNome").value.trim();
+  var tel = $("fTel").value.trim();
+  if(!nome && !tel){ $("stForm").textContent = "Coloca pelo menos o nome ou o telefone."; return; }
+  var l = ler();
+  l.push({
+    id: novoId(),
+    nome: nome,
+    tel: digitos(tel),
+    carro: $("fCarro").value.trim(),
+    origem: $("fOrigem").value,
+    etapa: $("fEtapa").value,
+    obs: $("fObs").value.trim(),
+    contato: hoje(),
+    criado: hoje()
+  });
+  gravar(l);
+  limparForm();
+  render();
+  $("stForm").textContent = "Salvo. Ja apareceu no termometro.";
+}
+
+function limparForm(){
+  ["fNome","fTel","fCarro","fObs"].forEach(function(i){ $(i).value = ""; });
+  $("fOrigem").selectedIndex = 0;
+  $("fEtapa").selectedIndex = 0;
+}
+
+function importar(){
+  var bruto = $("imp").value.split(/\n+/);
+  var l = ler();
+  var jaTem = {};
+  l.forEach(function(c){ if(c.tel) jaTem[c.tel] = true; });
+  var add = 0, pulou = 0;
+  bruto.forEach(function(ln){
+    var s = (ln || "").trim();
+    if(!s) return;
+    var mt = s.match(/\(?\d{2}\)?[\s.-]?9?\d{4}[\s.-]?\d{4}/);
+    var tel = mt ? digitos(mt[0]) : "";
+    var resto = mt ? s.replace(mt[0], " ") : s;
+    var carro = "";
+    for(var i = 0; i < MODELOS.length; i++){
+      var rx = new RegExp(MODELOS[i], "i");
+      if(rx.test(resto)){ carro = MODELOS[i]; resto = resto.replace(rx, " "); break; }
+    }
+    var nome = resto.replace(/[^A-Za-zÀ-ÿ ]/g, " ").replace(/\s+/g, " ").trim();
+    if(!nome && !tel) return;
+    if(tel && jaTem[tel]){ pulou++; return; }
+    if(tel) jaTem[tel] = true;
+    l.push({ id: novoId(), nome: nome, tel: tel, carro: carro, origem: "Syonet", etapa: "Primeiro contato", obs: "", contato: hoje(), criado: hoje() });
+    add++;
+  });
+  gravar(l);
+  $("imp").value = "";
+  render();
+  $("stImp").textContent = add + " cliente(s) importado(s)." + (pulou ? " " + pulou + " repetido(s) foram pulados." : "");
+}
+
+function copiarBackup(){
+  var txt = JSON.stringify(ler());
+  navigator.clipboard.writeText(txt).then(function(){
+    $("stBk").textContent = "Backup copiado (" + ler().length + " clientes). Cola num bloco de notas e guarda.";
+  }, function(){
+    $("stBk").textContent = "Nao consegui copiar. Tenta pelo celular no Chrome.";
+  });
+}
+
+function restaurar(){
+  var txt = prompt("Cola aqui o backup que voce guardou:");
+  if(!txt) return;
+  try{
+    var l = JSON.parse(txt);
+    if(!Array.isArray(l)) throw new Error("formato");
+    gravar(l);
+    render();
+    $("stBk").textContent = "Restaurado: " + l.length + " clientes.";
+  }catch(e){
+    $("stBk").textContent = "Esse texto nao parece um backup valido.";
+  }
+}
+
+document.addEventListener("click", function(ev){
+  var b = ev.target.closest ? ev.target.closest("button[data-a]") : null;
+  if(!b) return;
+  var id = b.getAttribute("data-id");
+  var acao = b.getAttribute("data-a");
+  var l = ler();
+  var i = -1;
+  for(var k = 0; k < l.length; k++){ if(l[k].id === id) { i = k; break; } }
+  if(i < 0) return;
+  var c = l[i];
+
+  if(acao === "whats"){
+    window.open("https://wa.me/55" + digitos(c.tel) + "?text=" + encodeURIComponent(msgWhats(c)), "_blank");
+    return;
+  }
+  if(acao === "contato"){
+    c.contato = hoje();
+    gravar(l); render();
+    return;
+  }
+  if(acao === "sobe"){
+    var pos = ETAPAS.indexOf(c.etapa);
+    if(pos < 0) pos = 0;
+    if(pos < ETAPAS.length - 3) c.etapa = ETAPAS[pos + 1];
+    else c.etapa = ETAPAS[pos];
+    c.contato = hoje();
+    gravar(l); render();
+    return;
+  }
+  if(acao === "ficha"){
+    var t = "CPF: \nNome: " + (c.nome || "") + "\nMae: \nTelefone: " + (c.tel ? fmtTel(c.tel) : "") + "\nSalario: \nCEP: \nEndereco: \nBairro: ";
+    try{ localStorage.setItem("tdrive_voz_dados", t); }catch(e){}
+    location.href = "/";
+    return;
+  }
+  if(acao === "del"){
+    if(!confirm("Excluir " + (c.nome || "este cliente") + " da SUA lista deste aparelho?")) return;
+    l.splice(i, 1);
+    gravar(l); render();
+    return;
+  }
+});
+
+(function inicio(){
+  ORIGENS.forEach(function(o){ var op = document.createElement("option"); op.textContent = o; $("fOrigem").appendChild(op); });
+  ETAPAS.forEach(function(e){ var op = document.createElement("option"); op.textContent = e; $("fEtapa").appendChild(op); });
+  render();
+})();
+</script>
+</body>
+</html>
