@@ -35,6 +35,7 @@ async function initDb() {
             );
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS erro_tecnico TEXT');
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS tentativas INT DEFAULT 0');
+await pool.query('CREATE TABLE IF NOT EXISTS loja (id INT PRIMARY KEY, dados TEXT, atualizado_em TIMESTAMPTZ DEFAULT NOW())');
 }
 
 const agente = require('./agente');
@@ -283,6 +284,43 @@ app.post('/api/agente', async function (req, res) {
     return res.json(resultado);
   } catch (e) {
     return res.json({ success: false, message: 'Erro no agente: ' + e.message });
+  }
+});
+
+// ---------- VITRINE / ESTOQUE DA LOJA (v12.0) ----------
+// Leitura PUBLICA: o cliente abre o link da vitrine e ve os carros.
+// Gravacao passa pelo exigePin: quando a variavel TDRIVE_PIN existir no Render,
+// so quem tem o PIN consegue mexer no estoque.
+// Aqui NAO entra dado de cliente: so carro, preco e o contato da loja.
+var lojaMemoria = null;
+
+app.get('/api/loja', async function (req, res) {
+  try {
+    var r = await pool.query('SELECT dados, atualizado_em FROM loja WHERE id = 1');
+    if (r.rows.length) {
+      return res.json({ success: true, fonte: 'banco', atualizado_em: r.rows[0].atualizado_em, dados: JSON.parse(r.rows[0].dados) });
+    }
+    return res.json({ success: true, fonte: 'vazio', dados: lojaMemoria });
+  } catch (e) {
+    return res.json({ success: true, fonte: 'memoria', aviso: e.message, dados: lojaMemoria });
+  }
+});
+
+app.post('/api/loja', exigePin, async function (req, res) {
+  var dados = req.body && req.body.dados;
+  if (!dados || typeof dados !== 'object') {
+    return res.status(400).json({ success: false, message: 'Nada para salvar.' });
+  }
+  var texto = JSON.stringify(dados);
+  if (texto.length > 400000) {
+    return res.status(413).json({ success: false, message: 'Estoque muito grande. Tire fotos gigantes ou carros antigos.' });
+  }
+  lojaMemoria = dados;
+  try {
+    await pool.query('INSERT INTO loja (id, dados, atualizado_em) VALUES (1, $1, NOW()) ON CONFLICT (id) DO UPDATE SET dados = $1, atualizado_em = NOW()', [texto]);
+    return res.json({ success: true, salvo: 'banco' });
+  } catch (e) {
+    return res.json({ success: true, salvo: 'memoria', aviso: 'Salvei so na memoria do servidor (o banco recusou): ' + e.message });
   }
 });
 
