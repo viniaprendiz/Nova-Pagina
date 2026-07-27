@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar - Area administrativa - TDrive PRO</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px;max-width:380px;width:100%}
+h1{font-size:20px;margin:0 0 4px}
+.lead{color:var(--tx2);font-size:13.5px;margin:0 0 20px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:14px 0 6px}
+label:first-of-type{margin-top:0}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;font-family:inherit}
+input:focus{outline:none;border-color:var(--ac)}
+.bt{display:block;width:100%;text-align:center;padding:13px;border-radius:10px;border:0;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:18px;background:var(--ac);color:#fff}
+.bt:disabled{opacity:.6}
+.msg{margin-top:14px;padding:11px;border-radius:9px;font-size:13.5px;line-height:1.5;display:none}
+.msg.err{display:block;background:rgba(239,68,68,.13);color:#f39a9a;border:1px solid rgba(239,68,68,.35)}
+.msg.ok{display:block;background:rgba(34,197,94,.13);color:#7ee2a8;border:1px solid rgba(34,197,94,.35)}
+.volta{display:block;text-align:center;margin-top:18px;color:var(--tx2);font-size:13px;text-decoration:none}
+.volta:hover{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Area administrativa</h1>
+<p class="lead">Entre com o email e senha que o dono criou pra voce.</p>
+<form id="fLogin">
+<label>Email</label>
+<input id="email" type="email" autocomplete="username" required>
+<label>Senha</label>
+<input id="senha" type="password" autocomplete="current-password" required>
+<button class="bt" id="bEntrar" type="submit">ENTRAR</button>
+</form>
+<div class="msg" id="msg"></div>
+<a class="volta" href="/loja.html?v=1">Voltar pra vitrine</a>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+$("fLogin").addEventListener("submit", function(ev){
+ev.preventDefault();
+var email=$("email").value.trim();
+var senha=$("senha").value;
+var msg=$("msg");
+var b=$("bEntrar");
+msg.className="msg";
+b.disabled=true; b.textContent="ENTRANDO...";
+fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email,senha:senha})})
+.then(function(r){return r.json()})
+.then(function(j){
+b.disabled=false; b.textContent="ENTRAR";
+if(!j.success){ msg.className="msg err"; msg.textContent=j.message||"Nao consegui entrar."; return; }
+if(j.usuario.role!=="gestor"){ msg.className="msg err"; msg.textContent="Esta conta nao e de ADM. Use a area correta."; return; }
+msg.className="msg ok"; msg.textContent="Entrando...";
+location.href="/admin";
+})
+.catch(function(){ b.disabled=false; b.textContent="ENTRAR"; msg.className="msg err"; msg.textContent="Falha ao conectar."; });
+});
+</script>
+</body>
+</html>
