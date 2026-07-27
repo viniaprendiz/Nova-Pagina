@@ -682,7 +682,195 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 // preenchido, e o vendedor termina o resto (veiculo + condicoes da venda)
 // com o link direto, ja logado.
 
-            } catch (err) {
+            const urlParada = page.url();
+            const diagLog = { fases: [] };
+            const inicioV5 = Date.now();
+
+            function comTimeout(promise, ms, label) {
+              let timer;
+              const timeout = new Promise(function (_, reject) {
+                timer = setTimeout(function () { reject(new Error('TIMEOUT_' + label)); }, ms);
+              });
+              return Promise.race([promise, timeout]).finally(function () { clearTimeout(timer); });
+            }
+
+            async function corpoTextoV5() {
+              try { return await frameFandi.evaluate(function () { return document.body.innerText || ''; }); }
+              catch (eTxt) { return ''; }
+            }
+
+            async function executarPasso3ComSeguranca() {
+              await new Promise(function (r) { setTimeout(r, 2500); });
+
+              let txtInicialV5 = await comTimeout(corpoTextoV5(), 8000, 'corpo_inicial').catch(function () { return ''; });
+              let modalDetectadoV5 = /outras opera|pend[eê]ncias vizualizada/i.test(txtInicialV5);
+              diagLog.fases.push({ fase: 'deteccao_modal', modalDetectado: modalDetectadoV5, trecho: txtInicialV5.slice(0, 300) });
+
+              if (modalDetectadoV5) {
+                try {
+                  const marcouV5 = await comTimeout(clicarPorTexto(frameFandi, 'Pendências Vizualizadas'), 6000, 'chk_pendencias').catch(function () { return false; });
+                  await new Promise(function (r) { setTimeout(r, 600); });
+                  const candidatosV5 = ['Continuar sem adicionar', 'Sim, desejo adicionar', 'Estou ciente', 'Não, desejo manter', 'Avançar', 'Continuar', 'Fechar'];
+                  let botaoClicadoV5 = null;
+                  for (const txt of candidatosV5) {
+                    const ok = await comTimeout(clicarPorTexto(frameFandi, txt), 6000, 'btn_modal').catch(function () { return false; });
+                    if (ok) { botaoClicadoV5 = txt; await new Promise(function (r) { setTimeout(r, 1000); }); break; }
+                  }
+                  diagLog.fases.push({ fase: 'fechar_modal', marcouCheckbox: marcouV5, botaoClicado: botaoClicadoV5 });
+                } catch (eModalV5) {
+                  diagLog.fases.push({ fase: 'fechar_modal_erro', erro: eModalV5.message });
+                }
+              }
+
+              async function estadoCamposV5() {
+                return await comTimeout(frameFandi.evaluate(function () {
+                  function visivel(el) {
+                    var r = el.getBoundingClientRect();
+                    if (r.width <= 0 || r.height <= 0) return false;
+                    var st = window.getComputedStyle(el);
+                    return st.visibility !== 'hidden' && st.display !== 'none';
+                  }
+                  function cv(id) { var el = document.getElementById(id); return el ? visivel(el) : null; }
+                  return { marca: cv('opo_slctMarca'), usado: cv('usado'), novo: cv('novo') };
+                }), 6000, 'estado_campos').catch(function (e) { return { erro: e.message }; });
+              }
+
+              let estadoV5 = await estadoCamposV5();
+              diagLog.fases.push({ fase: 'estado_apos_modal', estado: estadoV5 });
+
+              if (!estadoV5.marca) {
+                const clicouUsadoV5 = await comTimeout(clicarPorTexto(frameFandi, 'Usado'), 6000, 'clicar_usado').catch(function () { return false; });
+                await new Promise(function (r) { setTimeout(r, 1000); });
+                estadoV5 = await estadoCamposV5();
+                diagLog.fases.push({ fase: 'apos_usado', clicouUsado: clicouUsadoV5, estado: estadoV5 });
+              }
+
+              let preencheuV5 = { tentou: false };
+              if (estadoV5.marca) {
+                preencheuV5.tentou = true;
+                try {
+                  const opcoesMarcaV5 = await comTimeout(frameFandi.evaluate(function () {
+                    var sel = document.getElementById('opo_slctMarca');
+                    return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                  }), 6000, 'opcoes_marca').catch(function () { return []; });
+                  preencheuV5.opcoesMarca = opcoesMarcaV5.slice(0, 5);
+
+                  if (opcoesMarcaV5.length) {
+                    try {
+                      await comTimeout(frameFandi.select('#opo_slctMarca', opcoesMarcaV5[0].value), 8000, 'select_marca');
+                    } catch (eSelMarca) {
+                      preencheuV5.erroSelectMarca = eSelMarca.message;
+                      try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
+                    }
+                    await new Promise(function (r) { setTimeout(r, 1800); });
+
+                    const opcoesModeloV5 = await comTimeout(frameFandi.evaluate(function () {
+                      var sel = document.getElementById('opo_slctModelo');
+                      return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                    }), 6000, 'opcoes_modelo').catch(function () { return []; });
+                    preencheuV5.opcoesModelo = opcoesModeloV5.slice(0, 5);
+
+                    if (opcoesModeloV5.length) {
+                      try {
+                        await comTimeout(frameFandi.select('#opo_slctModelo', opcoesModeloV5[0].value), 8000, 'select_modelo');
+                      } catch (eSelModelo) {
+                        preencheuV5.erroSelectModelo = eSelModelo.message;
+                      }
+                      await new Promise(function (r) { setTimeout(r, 1800); });
+
+                      const opcoesVersaoV5 = await comTimeout(frameFandi.evaluate(function () {
+                        var sel = document.getElementById('opo_slctVersao');
+                        return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                      }), 6000, 'opcoes_versao').catch(function () { return []; });
+                      preencheuV5.opcoesVersao = opcoesVersaoV5.slice(0, 5);
+
+                      if (opcoesVersaoV5.length) {
+                        try {
+                          await comTimeout(frameFandi.select('#opo_slctVersao', opcoesVersaoV5[0].value), 8000, 'select_versao');
+                        } catch (eSelVersao) {
+                          preencheuV5.erroSelectVersao = eSelVersao.message;
+                        }
+                        await new Promise(function (r) { setTimeout(r, 800); });
+                      }
+                    }
+                  }
+
+                  async function preencheTextoV5(id, valor) {
+                    return await comTimeout(frameFandi.evaluate(function (id2, valor2) {
+                      var el = document.getElementById(id2);
+                      if (!el) return false;
+                      el.focus();
+                      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                      setter.call(el, valor2);
+                      el.dispatchEvent(new Event('input', { bubbles: true }));
+                      el.dispatchEvent(new Event('change', { bubbles: true }));
+                      el.blur();
+                      return true;
+                    }, id, valor), 6000, 'preenche_campo').catch(function () { return false; });
+                  }
+
+                  preencheuV5.placa = await preencheTextoV5('placa', 'TST1A23');
+                  preencheuV5.chassi = await preencheTextoV5('chassi', '9BWZZZ377VT004251');
+                  preencheuV5.renavam = await preencheTextoV5('renavam', '00123456789');
+                  preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
+
+                  const clicouProximaV5 = await comTimeout(clicarPorTexto(frameFandi, 'Próxima'), 6000, 'clicar_proxima').catch(function () { return false; });
+                  preencheuV5.clicouProxima = clicouProximaV5;
+                  await new Promise(function (r) { setTimeout(r, 1500); });
+                } catch (eFillV5) {
+                  preencheuV5.erro = eFillV5.message;
+                }
+              }
+              diagLog.fases.push({ fase: 'preenchimento_veiculo', resultado: preencheuV5 });
+
+              let estruturaFinalV5 = null;
+              try {
+                estruturaFinalV5 = await comTimeout(frameFandi.evaluate(function () {
+                  function visivel(el) {
+                    var r = el.getBoundingClientRect();
+                    if (r.width <= 0 || r.height <= 0) return false;
+                    var st = window.getComputedStyle(el);
+                    return st.visibility !== 'hidden' && st.display !== 'none';
+                  }
+                  var campos = Array.prototype.slice.call(document.querySelectorAll('input, select, textarea')).map(function (el) {
+                    return { tag: el.tagName, id: el.id || null, name: el.name || null, visible: visivel(el) };
+                  }).filter(function (c) { return c.visible; });
+                  var botoesFinais = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
+                    return { text: (b.textContent || '').trim().slice(0, 40) };
+                  }).filter(function (b) { return b.text && /enviar|concluir|finalizar|pr[oó]xima/i.test(b.text); });
+                  return { camposVisiveis: campos.slice(0, 30), botoesFinais: botoesFinais };
+                }), 6000, 'estrutura_final').catch(function (e) { return { erro: e.message }; });
+              } catch (eEstruturaV5) { estruturaFinalV5 = { erro: eEstruturaV5.message }; }
+              diagLog.fases.push({ fase: 'estrutura_final', estrutura: estruturaFinalV5 });
+
+              const txtFinalV5 = await comTimeout(corpoTextoV5(), 6000, 'corpo_final').catch(function () { return ''; });
+              diagLog.trechoFinal = txtFinalV5.slice(0, 400);
+              try { diagLog.urlFinal = frameFandi.url(); } catch (eUrlV5) { diagLog.urlFinal = 'erro: ' + eUrlV5.message; }
+            }
+
+            let travouV5 = false;
+            try {
+              await comTimeout(executarPasso3ComSeguranca(), 55000, 'geral_passo3');
+            } catch (eGeralV5) {
+              travouV5 = true;
+              diagLog.fases.push({ fase: 'timeout_geral', erro: eGeralV5.message });
+            }
+
+            const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 9500);
+            await pool.query(
+              "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
+              [
+                'Cliente localizado/criado no Fandi (Passo 2 concluido). O robo tentou avancar o Passo 3 automaticamente com protecao contra travamentos. Verifique erro_tecnico para ver ate onde chegou. Clique em Abrir Fandi pra conferir/terminar (Condicoes da venda + Enviar), ja logado.',
+                'DIAGNOSTICO_V5: ' + diagnosticoTxt,
+                urlParada,
+                fandi_id
+              ]
+            );
+            console.log('[PUPPETEER] Ficha levada ate o Passo 2 no Fandi (tentativa V5, protegida contra travamento):', fandi_id, urlParada, 'travou=' + travouV5);
+            try { if (page && !page.isClosed()) { await page.close(); } } catch (eCloseV5) {}
+            await browser.close();
+            return;
+} catch (err) {
       try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {}
       try { if (browser) { await browser.close(); } } catch (e) {}
 
