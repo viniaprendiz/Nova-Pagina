@@ -993,6 +993,48 @@ let preencheuV5 = { tentou: false };
                   preencheuV5.renavam = await preencheTextoV5('renavam', '00123456789');
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
 
+                  try {
+                    const anosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
+                      function textoLabelProximo(el) {
+                        var cur = el;
+                        for (var i = 0; i < 6 && cur; i++) {
+                          cur = cur.parentElement;
+                          if (!cur) break;
+                          var lab = cur.querySelector('label');
+                          if (lab && lab.textContent.trim()) return lab.textContent.trim().slice(0, 40);
+                        }
+                        return null;
+                      }
+                      var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
+                      var candidatos = selects.filter(function (s) {
+                        var opts = Array.prototype.slice.call(s.options).map(function (o) { return o.textContent.trim(); }).filter(Boolean);
+                        return opts.length > 0 && opts.every(function (t) { return /^(19|20)\d{2}$/.test(t); });
+                      });
+                      return candidatos.map(function (s) {
+                        return { id: s.id || null, valorAtual: s.value, label: textoLabelProximo(s), opcoes: Array.prototype.slice.call(s.options).map(function (o) { return o.value; }).filter(Boolean) };
+                      });
+                    }), 8000, 'anos_info').catch(function (e) { return { erro: e.message }; });
+                    diagLog.fases.push({ fase: 'anos_info', resultado: anosInfoV5 });
+
+                    if (Array.isArray(anosInfoV5)) {
+                      for (const anoSel of anosInfoV5) {
+                        if (anoSel.id && !anoSel.valorAtual && anoSel.opcoes && anoSel.opcoes.length) {
+                          const valorEscolhido = anoSel.opcoes.includes('2024') ? '2024' : anoSel.opcoes[anoSel.opcoes.length - 1];
+                          try {
+                            await comTimeout(frameFandi.select('#' + anoSel.id, valorEscolhido), 8000, 'select_ano');
+                            diagLog.fases.push({ fase: 'selecionou_ano', id: anoSel.id, valor: valorEscolhido });
+                          } catch (eAnoV5) {
+                            diagLog.fases.push({ fase: 'erro_selecionou_ano', id: anoSel.id, erro: eAnoV5.message });
+                          }
+                        }
+                      }
+                      await new Promise(function (r) { setTimeout(r, 500); });
+                    }
+                  } catch (eAnosV5) {
+                    diagLog.fases.push({ fase: 'erro_anos_info', erro: eAnosV5.message });
+                  }
+
+
                   const clicouProximaV5 = await comTimeout(clicarPorTexto(frameFandi, 'Próxima'), 6000, 'clicar_proxima').catch(function () { return false; });
                   preencheuV5.clicouProxima = clicouProximaV5;
                   await new Promise(function (r) { setTimeout(r, 1500); });
