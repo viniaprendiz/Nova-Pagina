@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Area do dono - TDrive PRO</title>
+<title>Central de Negocios - TDrive PRO</title>
 <style>
 :root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
 *{box-sizing:border-box}
@@ -18,6 +18,15 @@ body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var
 .acoesTopo{display:flex;gap:8px;flex-wrap:wrap}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:22px 0 10px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.ger{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ac);border-radius:12px;padding:14px;margin-bottom:10px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;display:inline-block}
+.ok{background:var(--grn)}.wip{background:var(--yel)}.blk{background:var(--red)}
+.tag{display:inline-block;margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);color:var(--tx2)}
+.tag.ok{background:rgba(34,197,94,.13);color:#7ee2a8;border-color:rgba(34,197,94,.35)}
+.tag.wip{background:rgba(245,158,11,.13);color:#fbcd76;border-color:rgba(245,158,11,.35)}
+.tag.blk{background:rgba(239,68,68,.13);color:#f39a9a;border-color:rgba(239,68,68,.35)}
+.btn{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:9px;background:var(--ac);color:#fff;text-decoration:none;font-size:13px;font-weight:600}
 label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:12px 0 6px}
 label:first-of-type{margin-top:0}
 input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14.5px;font-family:inherit}
@@ -68,8 +77,23 @@ input:focus{outline:none;border-color:var(--ac)}
 <div class="card">
 <div class="gradeFerr">
 <a class="ferrItem" href="/painel.html"><b>Abrir painel do negocio</b><span>Fichas, leads, CRM, consorcio, saude e projecao - tudo num so lugar</span></a>
+</div>
+</div>
+
+<div id="estrategiaWrap" style="display:none">
+<h2>Estrategia e roadmap</h2>
+<div class="card">
+<div class="gradeFerr">
+<a class="ferrItem" href="/roadmap.html"><b>Ideias e roadmap</b><span>Fila do proximo ciclo</span></a>
 <a class="ferrItem" href="/projetos.html"><b>Projetos e progresso</b><span>Ideias e negocios pra gerar renda, do rascunho ao no ar</span></a>
 </div>
+</div>
+
+<h2>Principios que guiam as decisoes</h2>
+<div id="gers"></div>
+
+<h2>Modulos (o que ja funciona e o que falta)</h2>
+<div class="cards" id="mods"></div>
 </div>
 <div class="card" style="border-left:3px solid var(--grn)">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -80,13 +104,52 @@ input:focus{outline:none;border-color:var(--ac)}
 </div>
 <script>
 var $=function(i){return document.getElementById(i)};
+var MODS=[
+{n:"Envio de ficha (colar e subir)",s:"ok",d:"Cola os dados do cliente, o sistema separa nome/CPF/telefone, valida e registra.",l:"/",b:"Abrir"},
+{n:"Validacao de CPF e nome",s:"ok",d:"Bloqueia envio com CPF invalido ou incompleto antes de gastar tempo no Fandi.",l:"/",b:"Testar"},
+{n:"Anti-duplicidade",s:"ok",d:"Mesmo CPF enviado duas vezes em menos de 10 minutos e barrado.",l:"/",b:"Abrir"},
+{n:"Simulador com regua por CPF",s:"ok",d:"Regua colorida pela ENTRADA e pelo PERFIL do CPF. Perfil A abre toda verde, perfil E abre toda vermelha.",l:"/simulador.html",b:"Abrir simulador"},
+{n:"Consorcio - indicacao pro Vandre",s:"ok",d:"Calcula sua comissao de 1%, qualifica o cliente e monta a mensagem de indicacao pronta. Voce revisa e envia.",l:"/consorcio.html",b:"Abrir consorcio"},
+{n:"Robo que sobe no Fandi",s:"wip",d:"Estava quebrado: o navegador automatico nao existia no servidor. Corrigido em 26/07. Veja acima se o robo esta pronto agora.",l:"/",b:"Ver fichas"},
+{n:"Tentar de novo + copiar dados",s:"ok",d:"Se o robo falhar, a ficha nao se perde: da para tentar de novo com um clique ou copiar tudo formatado e colar no Fandi na mao.",l:"/",b:"Ver fichas"},
+{n:"Ver no Fandi / Ver Email",s:"ok",d:"Da para ensaiar com o botao Ver demonstracao. O email abre pronto no Outlook e nunca e enviado sozinho.",l:"/",b:"Ver demonstracao"},
+{n:"Tema claro e escuro",s:"ok",d:"Botao no canto inferior direito troca entre claro e escuro. A escolha fica salva no aparelho.",l:"/painel.html",b:""},
+{n:"Ditar por voz no celular",s:"ok",d:"Abra no Chrome do celular, toque e fale. O texto sai transcrito, vira nota, WhatsApp, email ou ficha.",l:"/voz.html",b:"Abrir ditado"},
+{n:"Trava de acesso por PIN",s:"wip",d:"Ja programada. Falta voce criar a variavel TDRIVE_PIN no Render. Enquanto isso a lista de fichas fica aberta na internet.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Como fazer"},
+{n:"Banco de dados Postgres",s:"ok",d:"Fichas gravadas no Postgres do Render. Plano gratuito expira em 25/08/2026 - trocar antes.",l:"/api/fichas",b:"Ver JSON"},
+{n:"Campanhas de WhatsApp",s:"ok",d:"Seis modelos de mensagem e calendario semanal prontos. Envio sempre manual, sem robo.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/CAMPANHAS-WHATSAPP.md",b:"Ver modelos"},
+{n:"Integracao NBS",s:"blk",d:"So responde dentro da rede da loja. Depende do TI liberar acesso oficial. Nao vamos contornar por fora.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Integracao Syonet",s:"blk",d:"Janela de 12h-21h definida pela empresa. Depende do admin ampliar ou liberar API.",l:"https://github.com/viniaprendiz/Nova-Pagina/blob/main/INTEGRACOES-ACESSO-SEGURO.md",b:"Entender"},
+{n:"Area de assinaturas e funil",s:"wip",d:"Estrutura de planos, upsell e order bump pode ser montada. O gateway de pagamento tem que ser aberto por voce.",l:"#",b:""}
+];
+var GERS=[
+{n:"Gerente de Objetivo",p:"Pergunta sempre: isso faz vender mais carro esta semana? Prioridade agora: confirmar que o robo do Fandi voltou e colocar o consorcio para rodar com cliente reprovado no financiamento."},
+{n:"Gerente de Design",p:"Tela entendida em 3 segundos, funciona no celular, contraste alto. Entregue: tema claro e escuro. Proximo: revisar tudo em tela de 360px."},
+{n:"Gerente de Velocidade",p:"Menos requisicao, zero framework. Risco conhecido: plano gratis do Render dorme e demora ~50s no primeiro acesso do dia, e o robo do Fandi consome muita memoria nesse plano."},
+{n:"Gerente de Automacao",p:"Toda tarefa repetida 3x por semana vira botao. Regra nova: quando a automacao falhar, o sistema tem que oferecer o caminho manual na hora, nunca deixar o vendedor na mao."},
+{n:"Gerente de Preco e Estrategia",p:"Cuida de onde esta o dinheiro. Hoje: comissao do carro + 1% da carta de consorcio. Regra: cliente vermelho na regua nao e cliente perdido, e cliente de consorcio. Proximo estudo: quanto cobrar por assinatura das automacoes para o pessoal da loja."},
+{n:"Gerente de Relatorios",p:"Mede antes de comemorar. Ja mede: fichas no banco, erros, tempo de resposta e projecao de receita mensal. Falta medir: quantas fichas viraram venda e quantas indicacoes de consorcio o Vandre fechou."},
+{n:"Gerente do Cerebro",p:"Nada se perde: cada problema vira registro datado com causa raiz, solucao e armadilha. O cerebro esta virando painel navegavel em vez de so um arquivo de texto."}
+];
+var m=$("mods");
+MODS.forEach(function(x){
+var lbl=x.s==="ok"?"funcionando":(x.s==="wip"?"em obra":"depende de terceiro");
+var h='<div class="card"><h3><span class="dot '+x.s+'"></span>'+x.n+'</h3><p>'+x.d+'</p><div><span class="tag '+x.s+'">'+lbl+'</span></div>';
+if(x.b){h+='<a class="btn" href="'+x.l+'">'+x.b+'</a>'}
+h+='</div>';
+m.insertAdjacentHTML("beforeend",h);
+});
+var g=$("gers");
+GERS.forEach(function(x){g.insertAdjacentHTML("beforeend",'<div class="ger"><b>'+x.n+'</b><p>'+x.p+'</p></div>')});
+
+
 var papelAtual=null;
 fetch("/api/me").then(function(r){return r.json()}).then(function(j){
 if(!j.usuario || (j.usuario.role!=="admin" && j.usuario.role!=="gestor")){ location.href="/admin/login"; return; }
 papelAtual=j.usuario.role;
-$("hOla").textContent=(papelAtual==="admin"?"Area do dono":"Area administrativa")+" - Ola, "+j.usuario.nome;
+$("hOla").textContent=(papelAtual==="admin"?"Central de Negocios":"Area administrativa")+" - Ola, "+j.usuario.nome;
 $("hEmail").textContent=j.usuario.email+" - "+(papelAtual==="admin"?"dono":"ADM");
-if(papelAtual==="admin"){ $("campoPapel").style.display=""; }
+if(papelAtual==="admin"){ $("campoPapel").style.display=""; $("estrategiaWrap").style.display=""; }
 carregarVendedores();
 }).catch(function(){ location.href="/admin/login"; });
 function fmtData(d){try{return new Date(d).toLocaleDateString("pt-BR");}catch(e){return d;}}
