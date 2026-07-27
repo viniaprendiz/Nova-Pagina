@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entrar - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.caixa{max-width:420px;width:100%}
+h1{margin:0 0 6px;font-size:22px}
+.lead{margin:0 0 22px;color:var(--tx2);font-size:14px}
+.opcao{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-decoration:none;color:var(--tx);margin-bottom:12px}
+.opcao:hover{border-color:var(--ac)}
+.opcao b{display:block;font-size:15.5px;margin-bottom:2px}
+.opcao span{font-size:12.5px;color:var(--tx2)}
+.voltar{display:inline-block;margin-bottom:18px;font-size:13px;color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.voltar:hover{border-color:var(--ac);color:var(--tx)}
+.pinBox{margin-top:18px;text-align:center}
+.pinBox button{background:none;border:none;color:var(--tx2);font-size:12.5px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:6px}
+#estadoPin{display:block;margin-top:6px;font-size:11.5px;color:var(--tx2)}
+</style>
+</head>
+<body>
+<div class="caixa">
+<a class="voltar" href="/loja.html?v=1">← Voltar pro site</a>
+<h1>Entrar</h1>
+<p class="lead">Escolha o tipo de acesso pra continuar.</p>
+<a class="opcao" href="/vendedor/login"><b>Sou vendedor</b><span>Enviar fichas, ver meus atendimentos.</span></a>
+<a class="opcao" href="/adm/login"><b>Sou gestor</b><span>Acompanhar a equipe e os números do negócio.</span></a>
+<a class="opcao" href="/admin/login"><b>Sou o dono</b><span>Acesso completo, todos os negócios.</span></a>
+<div class="pinBox">
+<button id="bPin" type="button">Acesso por PIN (ferramentas antigas)</button>
+<span id="estadoPin"></span>
+</div>
+</div>
+<script>
+document.getElementById('bPin').onclick = function(){ if (window.tdrivePedirPin) window.tdrivePedirPin(); };
+fetch('/api/config', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (c) {
+  var el = document.getElementById('estadoPin');
+  el.textContent = c.protegido ? 'Servidor protegido por PIN: sim.' : '';
+}).catch(function(){});
+</script>
+</body>
+</html>
