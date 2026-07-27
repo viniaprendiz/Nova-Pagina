@@ -830,7 +830,8 @@ await new Promise(function (r) { setTimeout(r, 1000); });
               }
 
               
-                try {
+                let wizardInfoV5 = null;
+              try {
                   async function lerWizardInfoV5() {
                     return await comTimeout(frameFandi.evaluate(function () {
                       var blocos = Array.prototype.slice.call(document.querySelectorAll('[class*="wizard-content"]'));
@@ -859,10 +860,10 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                   }
 
                   let tentativaWizardV5 = 0;
-                  let wizardInfoV5 = await lerWizardInfoV5();
+                  wizardInfoV5 = await lerWizardInfoV5();
                   diagLog.fases.push({ fase: 'wizard_info_0', resultado: wizardInfoV5 });
 
-                  while (tentativaWizardV5 < 6 && wizardInfoV5 && !/ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '')) {
+                  while (tentativaWizardV5 < 6 && wizardInfoV5 && !/dados do ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '')) {
                     tentativaWizardV5++;
 
                     try {
@@ -922,7 +923,7 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                   diagLog.fases.push({ fase: 'wizard_info_erro', erro: eWizardV5.message });
                 }
 let preencheuV5 = { tentou: false };
-              const estamosEmDadosDoVeiculo = wizardInfoV5 && /ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '');
+              const estamosEmDadosDoVeiculo = wizardInfoV5 && /dados do ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '');
               diagLog.fases.push({ fase: 'checagem_pre_preenchimento', estadoMarca: estadoV5.marca, estamosEmDadosDoVeiculo: estamosEmDadosDoVeiculo });
               if (estadoV5.marca || estamosEmDadosDoVeiculo) {
                 preencheuV5.tentou = true;
