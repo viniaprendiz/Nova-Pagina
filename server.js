@@ -418,13 +418,22 @@ async function tentarLoginFandi(page) {
   const senha = process.env.FANDI_SENHA || '';
   if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
   try {
-    const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
-    const campoSenha = await page.$('input[type="password"]');
-    if (!campoEmail || !campoSenha) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
-    await campoEmail.click({ clickCount: 3 });
-    await campoEmail.type(email, { delay: 60 });
-    await campoSenha.click({ clickCount: 3 });
-    await campoSenha.type(senha, { delay: 60 });
+    // 27/07/2026 - CAUSA RAIZ REAL 2 (confirmada limpando cookies/localStorage e abrindo o site direto): o login do Fandi tem DUAS ETAPAS pra quem nunca acessou dali (o caso do robo, que nunca tem cookie salvo). Primeiro so aparece o campo de LOGIN com um botao "Proximo"; SO DEPOIS de clicar e que a SENHA aparece. O codigo antigo procurava os dois campos ao mesmo tempo e nunca achava a senha.
+const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
+if (!campoEmail) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
+await campoEmail.click({ clickCount: 3 });
+await campoEmail.type(email, { delay: 60 });
+let campoSenha = await page.$('input[type="password"]');
+if (!campoSenha) {
+const botaoProximo = await page.$('button[type="submit"]');
+if (!botaoProximo) return { ok: false, motivo: 'BOTAO_PROXIMO_NAO_ENCONTRADO' };
+await botaoProximo.click();
+try { await page.waitForSelector('input[type="password"]', { timeout: 15000 }); } catch (eSenha) { return { ok: false, motivo: 'CAMPO_SENHA_NAO_APARECEU' }; }
+campoSenha = await page.$('input[type="password"]');
+}
+if (!campoSenha) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
+await campoSenha.click({ clickCount: 3 });
+await campoSenha.type(senha, { delay: 60 });
     const botaoEntrar = await page.$('button[type="submit"]');
     if (botaoEntrar) {
       await Promise.all([
