@@ -625,15 +625,15 @@ async function processarFicha(fandi_id, dados) {
   if (precisaLogin) {
     const temCredencialFandi = !!(process.env.FANDI_EMAIL && process.env.FANDI_SENHA);
     if (!temCredencialFandi) {
-      throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no servidor.');
+      try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {} try { if (browser) { await browser.close(); } } catch (e) {} throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no servidor.');
     }
     const tentativaLoginFandi = await tentarLoginFandi(page);
     if (!tentativaLoginFandi.ok) {
-      throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
+      try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {} try { if (browser) { await browser.close(); } } catch (e) {} throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
     }
     const aindaPedeLoginFandi = await page.evaluate(checagemLoginFandi);
     if (aindaPedeLoginFandi) {
-      throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO');
+      try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {} try { if (browser) { await browser.close(); } } catch (e) {} throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO');
     }
   }
 
@@ -692,9 +692,13 @@ fandi_id
 ]
 );
 console.log('[PUPPETEER] Ficha levada ate o Passo 2 no Fandi (falta Km/Placa):', fandi_id, urlParada);
-await browser.close();
+try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {}
+      await browser.close();
 return;
             } catch (err) {
+      try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {}
+      try { if (browser) { await browser.close(); } } catch (e) {}
+
                   console.error('[ERRO] tentativa ' + tentativa + ' - ' + fandi_id + ': ' + err.message);
                   if (browser) { try { await browser.close(); } catch (e) {} }
                   if (tentativa === MAX_TENTATIVAS) {
