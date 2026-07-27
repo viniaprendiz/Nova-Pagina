@@ -484,17 +484,24 @@ async function obterFrameFandi(page) {
 }
 
 async function clicarPorTexto(ctx, texto) {
-  for (let tentativa = 0; tentativa < 8; tentativa++) {
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
     let handle;
     try {
       handle = await ctx.evaluateHandle(function (alvo) {
         function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+        function visivel(el) {
+          var r = el.getBoundingClientRect();
+          if (r.width <= 0 || r.height <= 0) return false;
+          var estilo = window.getComputedStyle(el);
+          if (estilo.visibility === 'hidden' || estilo.display === 'none' || estilo.pointerEvents === 'none') return false;
+          return true;
+        }
         var alvoNorm = normaliza(alvo);
         var candidatos = Array.prototype.slice.call(document.querySelectorAll('a, button, li, div, span, mat-option, option, [role="option"], [role="button"]'));
         var melhor = null, melhorLen = Infinity;
         for (var i = 0; i < candidatos.length; i++) {
           var el = candidatos[i];
-          if (el.offsetParent === null && el.tagName !== 'OPTION') continue;
+          if (el.tagName !== 'OPTION' && !visivel(el)) continue;
           var texto2 = normaliza(el.textContent);
           if (texto2.length === 0 || texto2.length > 80) continue;
           if (texto2 === alvoNorm) { return el; }
@@ -505,15 +512,28 @@ async function clicarPorTexto(ctx, texto) {
     } catch (eEval) { handle = null; }
     const el = handle ? handle.asElement() : null;
     if (el) {
-      await el.click();
-      if (handle) await handle.dispose();
-      return true;
+      try {
+        await el.click();
+        await handle.dispose();
+        return true;
+      } catch (eClick) {
+        try {
+          await el.evaluate(function (node) { node.click(); });
+          await handle.dispose();
+          return true;
+        } catch (eClick2) {
+          await handle.dispose();
+        }
+      }
+    } else if (handle) {
+      await handle.dispose();
     }
-    if (handle) await handle.dispose();
     await new Promise(function (r) { setTimeout(r, 400); });
   }
   return false;
 }
+
+
 
 
 
