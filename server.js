@@ -190,7 +190,7 @@ next();
 // pagina de ferramenta interna sem sessao valida nunca sai do servidor.
 // Publico continua livre: loja.html, /carro/:id e as duas telas de login.
 var PAGINAS_SO_DONO = ['/roadmap.html'];
-var PAGINAS_DONO_E_GESTOR = ['/painel.html', '/admin', '/admin.html'];
+var PAGINAS_DONO_E_GESTOR = ['/painel.html', '/admin', '/admin.html', '/projetos.html'];
 var PAGINAS_LOGIN_QUALQUER = ['/', '/app.html', '/voz.html', '/consorcio.html', '/leads.html', '/simulador.html', '/crm.html', '/demo-fandi.html', '/vendedor', '/vendedor.html', '/padrao-clientes.html', '/index-old.html'];
 app.use(function (req, res, next) {
   if (req.method !== 'GET') return next();
