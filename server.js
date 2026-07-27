@@ -883,6 +883,26 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                         return { encontrado: true, id: cpfEl.id || null, valorAtual: cpfEl.value };
                       }), 6000, 'cpf_info').catch(function (e) { return { erro: e.message }; });
                       diagLog.fases.push({ fase: 'cpf_info_' + tentativaWizardV5, resultado: cpfInfoV5 });
+
+                    if (cpfInfoV5 && cpfInfoV5.encontrado && !cpfInfoV5.valorAtual && cpfInfoV5.id && dados && dados.cpf) {
+                      try {
+                        const preencheuCpfV5 = await comTimeout(frameFandi.evaluate(function (id2, valor2) {
+                          var el = document.getElementById(id2);
+                          if (!el) return false;
+                          el.focus();
+                          var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                          setter.call(el, valor2);
+                          el.dispatchEvent(new Event('input', { bubbles: true }));
+                          el.dispatchEvent(new Event('change', { bubbles: true }));
+                          el.blur();
+                          return true;
+                        }, cpfInfoV5.id, String(dados.cpf)), 6000, 'preenche_cpf').catch(function (e) { return false; });
+                        diagLog.fases.push({ fase: 'preencheu_cpf_' + tentativaWizardV5, ok: preencheuCpfV5 });
+                        await new Promise(function (r) { setTimeout(r, 600); });
+                      } catch (ePreencheCpfV5) {
+                        diagLog.fases.push({ fase: 'erro_preenche_cpf_' + tentativaWizardV5, erro: ePreencheCpfV5.message });
+                      }
+                    }
                     } catch (eCpfV5) {
                       diagLog.fases.push({ fase: 'cpf_info_erro_' + tentativaWizardV5, erro: eCpfV5.message });
                     }
