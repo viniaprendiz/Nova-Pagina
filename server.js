@@ -682,20 +682,20 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 // preenchido, e o vendedor termina o resto (veiculo + condicoes da venda)
 // com o link direto, ja logado.
 const urlParada = page.url();
-for (let esperaP3 = 0; esperaP3 < 24; esperaP3++) {
-  let achouPasso3 = false;
-  try {
-    achouPasso3 = await frameFandi.evaluate(function () {
-      const t = (document.body.innerText || '').toLowerCase();
-      return t.indexOf('placa') > -1 || t.indexOf('quilometragem') > -1 || t.indexOf(' km') > -1 || t.indexOf('dados do veiculo') > -1 || t.indexOf('dados do veículo') > -1;
-    });
-  } catch (eEspera) {}
-  if (achouPasso3) break;
-  await new Promise(function (r) { setTimeout(r, 500); });
-}
+await new Promise(function (r) { setTimeout(r, 2500); });
 let estruturaPasso3 = null;
 try {
   estruturaPasso3 = await frameFandi.evaluate(function () {
+    function tituloSecao(el) {
+      let cur = el;
+      for (let i = 0; i < 8 && cur; i++) {
+        cur = cur.parentElement;
+        if (!cur) break;
+        const h = cur.querySelector(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > legend, :scope > .titulo, :scope > .title');
+        if (h && h.textContent.trim()) return h.textContent.trim().slice(0, 60);
+      }
+      return null;
+    }
     function textoLabel(el) {
       if (el.id) {
         const lab = document.querySelector('label[for="' + el.id + '"]');
@@ -710,37 +710,43 @@ try {
       }
       return null;
     }
-    const campos = Array.prototype.slice.call(document.querySelectorAll('input,select,textarea')).map(function (el) {
+    const todos = Array.prototype.slice.call(document.querySelectorAll('input,select,textarea')).map(function (el) {
       const info = {
         tag: el.tagName,
         type: el.type || null,
         name: el.name || null,
         id: el.id || null,
         placeholder: el.getAttribute('placeholder') || null,
-        ariaLabel: el.getAttribute('aria-label') || null,
         label: textoLabel(el),
+        secao: tituloSecao(el),
         visible: !!(el.offsetWidth || el.offsetHeight)
       };
       if (el.tagName === 'SELECT') {
-        info.options = Array.prototype.slice.call(el.options).slice(0, 15).map(function (o) { return { value: o.value, text: o.text }; });
+        info.numOpcoes = el.options.length;
       }
       return info;
+    });
+    const visiveis = todos.filter(function (c) { return c.visible; });
+    const re = /km|placa|marca|modelo|vers|cor\b|chassi|renavam|combust|opcional|condi|negoc|proposta|financ|ano\b/i;
+    const relevantesOcultos = todos.filter(function (c) {
+      if (c.visible) return false;
+      const texto = [c.id, c.name, c.placeholder, c.label, c.secao].filter(Boolean).join(' ');
+      return re.test(texto);
     });
     const botoes = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
       return { text: (b.textContent || '').trim().slice(0, 40), tag: b.tagName };
     }).filter(function (b) { return b.text; });
-    const textoResumo = (document.body.innerText || '').slice(0, 600);
-    return { url: location.href, titulo: document.title, campos: campos, botoes: botoes, textoResumo: textoResumo };
+    return { url: location.href, totalCampos: todos.length, visiveis: visiveis, relevantesOcultos: relevantesOcultos, botoes: botoes };
   });
 } catch (eDiag) {
   estruturaPasso3 = { erroDiagnostico: eDiag.message };
 }
-const diagnosticoTxt = JSON.stringify(estruturaPasso3).slice(0, 9000);
+const diagnosticoTxt = JSON.stringify(estruturaPasso3).slice(0, 9500);
 await pool.query(
 "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
 [
 'Cliente localizado/criado no Fandi com o CPF preenchido (Passo 2 concluido). O robo parou de proposito no Passo 3, porque a ficha ainda nao coleta Km e Placa do veiculo. Clique em Abrir Fandi pra terminar o cadastro (Dados do veiculo + Condicoes da venda), ja logado.',
-'DIAGNOSTICO_PASSO3_V2: ' + diagnosticoTxt,
+'DIAGNOSTICO_PASSO3_V3: ' + diagnosticoTxt,
 urlParada,
 fandi_id
 ]
