@@ -76,6 +76,21 @@ await pool.query(
 'expira_em TIMESTAMPTZ' +
 ')'
 );
+      await pool.query(
+        'CREATE TABLE IF NOT EXISTS padrao_agregado (' +
+        'id INT PRIMARY KEY,' +
+        'dados JSONB,' +
+        'atualizado_em TIMESTAMPTZ DEFAULT NOW()' +
+        ')'
+      );
+      await pool.query(
+        'CREATE TABLE IF NOT EXISTS padrao_execucoes (' +
+        'id TEXT PRIMARY KEY,' +
+        'quando TIMESTAMPTZ DEFAULT NOW(),' +
+        'usuario TEXT,' +
+        'quantidade INT' +
+        ')'
+      );
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS user_id TEXT');
 
 // Cria o primeiro admin automaticamente SE ainda nao existir nenhum admin
@@ -175,7 +190,7 @@ next();
 // pagina de ferramenta interna sem sessao valida nunca sai do servidor.
 // Publico continua livre: loja.html, /carro/:id e as duas telas de login.
 var PAGINAS_SO_DONO = ['/painel.html', '/roadmap.html', '/admin'];
-var PAGINAS_LOGIN_QUALQUER = ['/', '/voz.html', '/consorcio.html', '/leads.html', '/simulador.html', '/crm.html', '/demo-fandi.html', '/vendedor'];
+var PAGINAS_LOGIN_QUALQUER = ['/', '/voz.html', '/consorcio.html', '/leads.html', '/simulador.html', '/crm.html', '/demo-fandi.html', '/vendedor', '/padrao-clientes.html'];
 
 app.use(function (req, res, next) {
 if (req.method !== 'GET') return next();
@@ -835,6 +850,96 @@ app.post('/api/leads/:id/visto', exigePin, async function (req, res) {
 // URLs limpas pros 3 mundos (cliente / vendedor / dono). O controle de
 // quem pode ver o conteudo de verdade e feito no proprio HTML via /api/me
 // (client-side redirect), igual ja fazia leads.html com o PIN.
+// ---------- ANALISE DE PADRAO DE CLIENTES (v17.0) ----------
+// Ferramenta de acionamento MANUAL. O Vinicios cola um lote de conversas,
+// o sistema extrai so o PADRAO agregado (numeros) e nunca guarda o texto
+// da conversa em lugar nenhum - nem banco, nem log, nem cache. So fica
+// gravado: contadores agregados + auditoria de quando/quem/quantidade,
+// sem conteudo nenhum.
+function classificarBlocoPadrao(bloco) {
+  var m = /RESULTADO:\s*(comprou|quase|nao avancou|não avançou)/i.exec(bloco);
+  var raw = m ? m[1].toLowerCase() : null;
+  if (raw === 'comprou') return 'comprou';
+  if (raw === 'quase') return 'quaseComprou';
+  if (raw && /nao avancou|não avançou/.test(raw)) return 'naoAvancou';
+  return null;
+}
+function extrairSinaisPadrao(bloco) {
+  var texto = bloco.toLowerCase();
+  var linhas = bloco.split('\n').filter(function (l) { return l.trim().length > 0; });
+  var visitouLoja = /(fui (na|até a|a) loja|estou na loja|passei na loja|vim aqui na loja|fui ai na loja)/i.test(texto);
+  var primeirasLinhas = linhas.slice(0, 6).join(' ').toLowerCase();
+  var perguntouEntradaCedo = /entrada/.test(primeirasLinhas);
+  return { visitouLoja: visitouLoja, perguntouEntradaCedo: perguntouEntradaCedo, muitasMensagens: linhas.length >= 15 };
+}
+app.post('/api/padrao/analisar', exigeLogin(['admin', 'vendedor']), async function (req, res) {
+  try {
+    var textoColado = String((req.body && req.body.conversas) || '');
+    var blocos = textoColado.split(/\n-{3,}\n|\n={3,}\n/).map(function (b) { return b.trim(); }).filter(Boolean);
+    if (!blocos.length) {
+      return res.json({ success: false, message: 'Nao encontrei nenhuma conversa separada por ----- entre elas.' });
+    }
+    var resultado = { comprou: 0, quaseComprou: 0, naoAvancou: 0, semClassificacao: 0 };
+    var sinaisRodada = {
+      comprou: { visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0, total: 0 },
+      quaseComprou: { visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0, total: 0 },
+      naoAvancou: { visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0, total: 0 }
+    };
+    for (var i = 0; i < blocos.length; i++) {
+      var classe = classificarBlocoPadrao(blocos[i]);
+      if (!classe) { resultado.semClassificacao++; continue; }
+      resultado[classe]++;
+      var sinais = extrairSinaisPadrao(blocos[i]);
+      sinaisRodada[classe].total++;
+      if (sinais.visitouLoja) sinaisRodada[classe].visitouLoja++;
+      if (sinais.perguntouEntradaCedo) sinaisRodada[classe].perguntouEntradaCedo++;
+      if (sinais.muitasMensagens) sinaisRodada[classe].muitasMensagens++;
+    }
+    var atual = await pool.query('SELECT dados FROM padrao_agregado WHERE id = 1');
+    var acumulado = (atual.rows[0] && atual.rows[0].dados) || {
+      totalAnalisadas: 0,
+      comprou: { total: 0, visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0 },
+      quaseComprou: { total: 0, visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0 },
+      naoAvancou: { total: 0, visitouLoja: 0, perguntouEntradaCedo: 0, muitasMensagens: 0 }
+    };
+    ['comprou', 'quaseComprou', 'naoAvancou'].forEach(function (classe) {
+      acumulado[classe].total += sinaisRodada[classe].total;
+      acumulado[classe].visitouLoja += sinaisRodada[classe].visitouLoja;
+      acumulado[classe].perguntouEntradaCedo += sinaisRodada[classe].perguntouEntradaCedo;
+      acumulado[classe].muitasMensagens += sinaisRodada[classe].muitasMensagens;
+    });
+    acumulado.totalAnalisadas += (resultado.comprou + resultado.quaseComprou + resultado.naoAvancou);
+    await pool.query(
+      'INSERT INTO padrao_agregado (id, dados, atualizado_em) VALUES (1, $1, NOW()) ' +
+      'ON CONFLICT (id) DO UPDATE SET dados = $1, atualizado_em = NOW()',
+      [JSON.stringify(acumulado)]
+    );
+    var quemRodou = (req.usuario && req.usuario.nome) || 'desconhecido';
+    var idExec = 'PAD-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+    await pool.query(
+      'INSERT INTO padrao_execucoes (id, quando, usuario, quantidade) VALUES ($1, NOW(), $2, $3)',
+      [idExec, quemRodou, blocos.length]
+    );
+    return res.json({
+      success: true,
+      rodada: resultado,
+      acumulado: acumulado,
+      mensagem: 'Processado. Nenhuma conversa foi guardada - so os numeros acima ficaram salvos.'
+    });
+  } catch (e) {
+    console.error('[PADRAO ERRO] ' + e.message);
+    return res.json({ success: false, message: 'Erro ao processar: ' + e.message });
+  }
+});
+app.get('/api/padrao/resumo', exigeLogin(['admin', 'vendedor']), async function (req, res) {
+  try {
+    var r = await pool.query('SELECT dados, atualizado_em FROM padrao_agregado WHERE id = 1');
+    var execs = await pool.query('SELECT quando, usuario, quantidade FROM padrao_execucoes ORDER BY quando DESC LIMIT 20');
+    return res.json({ success: true, dados: (r.rows[0] && r.rows[0].dados) || null, atualizadoEm: (r.rows[0] && r.rows[0].atualizado_em) || null, execucoes: execs.rows });
+  } catch (e) {
+    return res.json({ success: false, message: e.message });
+  }
+});
 app.get('/vendedor/login', function (req, res) {
 res.sendFile(path.join(__dirname, 'public', 'vendedor-login.html'));
 });
