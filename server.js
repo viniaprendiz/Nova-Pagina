@@ -405,7 +405,9 @@ return 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode t
 if (/BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO/.test(m))
     return 'O robo entrou no Fandi mas nao achou o botao de Nova Operacao nesta tela (pode ter mudado de nome ou estar dentro de um menu diferente). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/LOGIN_NECESSARIO/.test(m))
-    return 'O Fandi pediu login e o robo do servidor nao tem sua sessao (por seguranca, o robo nunca guarda ou usa senha real do Fandi). A ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos, ja logado.';
+    return 'O Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
+if (/LOGIN_FALHOU/.test(m))
+    return 'O robo tentou entrar no Fandi com FANDI_EMAIL/FANDI_SENHA mas nao conseguiu (senha errada, conta bloqueada, ou a tela de login mudou de lugar). Confira as credenciais no Render. Enquanto isso, use Copiar dados e Abrir Fandi.';
 if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
 return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
 if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
@@ -425,6 +427,42 @@ return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostic
 // Ir direto nela evita a caca por botao no /operacao/monitor que falhava
 // (CAUSA 4 do Adendo 6: o robo as vezes so abria o dropdown sem escolher
 // "Financiada", e a navegacao real nunca acontecia).
+async function tentarLoginFandi(page) {
+  const email = process.env.FANDI_EMAIL || '';
+  const senha = process.env.FANDI_SENHA || '';
+  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
+  try {
+    const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
+    if (!campoEmail) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
+    await campoEmail.click({ clickCount: 3 });
+    await campoEmail.type(email, { delay: 60 });
+    let campoSenha = await page.$('input[type="password"]');
+    if (!campoSenha) {
+      const botaoProximo = await page.$('button[type="submit"]');
+      if (!botaoProximo) return { ok: false, motivo: 'BOTAO_PROXIMO_NAO_ENCONTRADO' };
+      await botaoProximo.click();
+      try { await page.waitForSelector('input[type="password"]', { timeout: 15000 }); } catch (eSenha) { return { ok: false, motivo: 'CAMPO_SENHA_NAO_APARECEU' }; }
+      campoSenha = await page.$('input[type="password"]');
+    }
+    if (!campoSenha) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
+    await campoSenha.click({ clickCount: 3 });
+    await campoSenha.type(senha, { delay: 60 });
+    const botaoEntrar = await page.$('button[type="submit"]');
+    if (botaoEntrar) {
+      await Promise.all([
+        botaoEntrar.click(),
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(function () {})
+      ]);
+    } else {
+      await page.keyboard.press('Enter');
+      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(function () {});
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, motivo: 'ERRO_AO_LOGAR: ' + e.message };
+  }
+}
+
 async function abrirTelaNovaOperacao(page) {
 await page.goto('https://jsl.fandi.com.br/operacao/cadastrar/financiada', { waitUntil: 'networkidle2', timeout: 60000 });
 }
@@ -513,11 +551,22 @@ async function processarFicha(fandi_id, dados) {
                 /login|entrar|autentica/i.test(location.pathname + location.search);
             };
             let precisaLogin = await page.evaluate(checagemLoginFandi);
-if (precisaLogin) {
-throw new Error('LOGIN_NECESSARIO: o robo nao tem sessao no Fandi. Por seguranca (decisao fixa do projeto), o robo NUNCA guarda nem usa senha real do Fandi para logar sozinho.');
-}
+  if (precisaLogin) {
+    const temCredencialFandi = !!(process.env.FANDI_EMAIL && process.env.FANDI_SENHA);
+    if (!temCredencialFandi) {
+      throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no servidor.');
+    }
+    const tentativaLoginFandi = await tentarLoginFandi(page);
+    if (!tentativaLoginFandi.ok) {
+      throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
+    }
+    const aindaPedeLoginFandi = await page.evaluate(checagemLoginFandi);
+    if (aindaPedeLoginFandi) {
+      throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO');
+    }
+  }
 
-await abrirTelaNovaOperacao(page);
+  await abrirTelaNovaOperacao(page);
 
 // PASSO 1 - Local da venda: Empresa/Ponto de venda/Vendedor ja vem
 // preenchidos pela sessao logada do vendedor. So falta escolher o
