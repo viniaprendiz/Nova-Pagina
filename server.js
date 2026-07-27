@@ -396,7 +396,13 @@ function erroAmigavel(msg) {
 const m = String(msg || '');
   if (/CAMPO_CPF_NAO_APARECEU/.test(m))
     return 'A tela de cadastro do Fandi nao abriu para o robo (provavelmente pediu login ou mudou de endereco). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
-  if (/BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO/.test(m))
+  if (/PASSO1_LOCAL_DA_VENDA_FALHOU/.test(m))
+return 'O robo nao conseguiu escolher o Departamento (SEMINOVOS) ou avancar do Passo 1 (Local da venda) no Fandi - a tela pode ter mudado. A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
+if (/PASSO2_BOTAO_PROXIMA_NAO_ENCONTRADO/.test(m))
+return 'O robo preencheu o CPF mas nao achou o botao Proxima do Passo 2 no Fandi. A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
+if (/CAMPO_NAO_ENCONTRADO/.test(m))
+return 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode ter mudado). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
+if (/BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO/.test(m))
     return 'O robo entrou no Fandi mas nao achou o botao de Nova Operacao nesta tela (pode ter mudado de nome ou estar dentro de um menu diferente). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/LOGIN_NECESSARIO/.test(m))
     return 'O Fandi pediu login e o robo do servidor nao tem sua sessao (por seguranca, o robo nunca guarda ou usa senha real do Fandi). A ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos, ja logado.';
@@ -413,57 +419,74 @@ return 'O servidor ficou sem memoria no meio do envio. Tente de novo; se repetir
 return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostico.';
 }
 
-// 27/07/2026 - nao sabemos a URL fixa da tela de nova operacao (varia com menu
-// responsivo / possivel traducao). Em vez de um goto direto, o robo abre o
-// monitor (tela pos-login conhecida) e PROCURA o botao/link de nova operacao
-// por texto (tolerante a acentos) ou href. Se nao achar na hora, tenta abrir
-// um menu hamburguer primeiro (layout responsivo) e procura de novo.
+// 27/07/2026 (tarde) - URL REAL CONFIRMADA inspecionando o menu ja logado:
+// o link do dropdown "Nova Operacao > Financiada" aponta sempre pra
+// /operacao/cadastrar/financiada (rota fixa, nao muda com layout responsivo).
+// Ir direto nela evita a caca por botao no /operacao/monitor que falhava
+// (CAUSA 4 do Adendo 6: o robo as vezes so abria o dropdown sem escolher
+// "Financiada", e a navegacao real nunca acontecia).
 async function abrirTelaNovaOperacao(page) {
-await page.goto('https://jsl.fandi.com.br/operacao/monitor', { waitUntil: 'networkidle2', timeout: 60000 });
-async function acharEClicar() {
-return await page.evaluate(function () {
-function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-var candidatos = Array.prototype.slice.call(document.querySelectorAll('a, button'));
+await page.goto('https://jsl.fandi.com.br/operacao/cadastrar/financiada', { waitUntil: 'networkidle2', timeout: 60000 });
+}
+
+// Helper generico: procura um elemento clicavel (botao/link/opcao de lista)
+// cujo texto bata EXATAMENTE com o alvo (tolerante a acentos/maiuscula) e
+// clica nele. Fica tentando ate o timeout porque a tela pode estar animando.
+async function clicarPorTexto(page, alvo, tentativasMs) {
+const fim = Date.now() + (tentativasMs || 10000);
+const alvoNorm = String(alvo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+while (Date.now() < fim) {
+const achou = await page.evaluate(function (alvoNorm) {
+function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+var els = Array.prototype.slice.call(document.querySelectorAll('button, a, [role="button"], [role="option"], li, span, div'));
+for (var i = 0; i < els.length; i++) {
+var texto = normaliza(els[i].textContent);
+if (texto === alvoNorm && els[i].offsetParent !== null) { els[i].click(); return true; }
+}
+return false;
+}, alvoNorm);
+if (achou) return true;
+await new Promise(function (r) { setTimeout(r, 300); });
+}
+return false;
+}
+
+// Helper generico: acha um campo (input/textarea) pelo rotulo/placeholder/
+// nome tecnico mais proximo e digita nele. O formulario do Fandi e um
+// componente Angular que pode nao usar o atributo name como o robo antigo
+// esperava; a busca e por pistas (placeholder, aria-label, formcontrolname)
+// ou pelo texto do rotulo mais perto no DOM.
+async function digitarCampoPorRotulo(page, rotulo, valor) {
+const rotuloNorm = String(rotulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+const achou = await page.evaluate(function (rotuloNorm) {
+function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+var candidatos = Array.prototype.slice.call(document.querySelectorAll('input, textarea'));
 for (var i = 0; i < candidatos.length; i++) {
 var el = candidatos[i];
-var texto = normaliza(el.textContent) + ' ' + normaliza(el.getAttribute('aria-label')) + ' ' + normaliza(el.getAttribute('title'));
-var href = normaliza(el.getAttribute('href'));
-if (/nova.*opera|novo.*opera|opera.*nov/.test(texto) || /operacao\/novo|nova-operacao|novaoperacao/.test(href)) {
-el.click();
-return true;
+var pistas = normaliza(el.placeholder) + ' ' + normaliza(el.getAttribute('aria-label')) + ' ' + normaliza(el.name) + ' ' + normaliza(el.getAttribute('formcontrolname'));
+if (pistas.indexOf(rotuloNorm) !== -1) { el.setAttribute('data-tdrive-alvo', 'x'); return true; }
 }
+var textos = Array.prototype.slice.call(document.querySelectorAll('label, span, div, p'));
+for (var j = 0; j < textos.length; j++) {
+if (normaliza(textos[j].textContent) === rotuloNorm) {
+var contentor = textos[j].closest('div');
+var passos = 0;
+while (contentor && passos < 4) {
+var campo = contentor.querySelector('input, textarea');
+if (campo) { campo.setAttribute('data-tdrive-alvo', 'x'); return true; }
+contentor = contentor.parentElement;
+passos++;
 }
-return false;
-});
-}
-let clicou = await acharEClicar();
-if (!clicou) {
-const abriuMenu = await page.evaluate(function () {
-var possiveis = Array.prototype.slice.call(document.querySelectorAll('button, a, [role="button"]'));
-for (var i = 0; i < possiveis.length; i++) {
-var el = possiveis[i];
-var atributos = (el.className || '') + ' ' + (el.getAttribute('aria-label') || '') + ' ' + (el.id || '');
-if (/menu|hamburguer|hamburger|toggle|nav-toggle/i.test(atributos)) {
-el.click();
-return true;
 }
 }
 return false;
-});
-if (abriuMenu) {
-await new Promise(function (r) { setTimeout(r, 800); });
-clicou = await acharEClicar();
-}
-}
-if (!clicou) {
-const vistos = await page.evaluate(function () {
-return Array.prototype.slice.call(document.querySelectorAll('a, button')).map(function (e) {
-return (e.textContent || '').trim().slice(0, 40);
-}).filter(Boolean).slice(0, 30);
-});
-throw new Error('BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO. Textos vistos na tela: ' + JSON.stringify(vistos));
-}
-await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(function () {});
+}, rotuloNorm);
+if (!achou) throw new Error('CAMPO_NAO_ENCONTRADO: ' + rotulo);
+const campo = await page.$('[data-tdrive-alvo="x"]');
+if (!campo) throw new Error('CAMPO_NAO_ENCONTRADO: ' + rotulo);
+await campo.click({ clickCount: 3 });
+await campo.type(String(valor || ''), { delay: 60 });
+await page.evaluate(function (el) { el.removeAttribute('data-tdrive-alvo'); }, campo);
 }
 
 async function processarFicha(fandi_id, dados) {
@@ -496,42 +519,59 @@ throw new Error('LOGIN_NECESSARIO: o robo nao tem sessao no Fandi. Por seguranca
 
 await abrirTelaNovaOperacao(page);
 
-      try {
-              await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
-            } catch (eCampo) {
-              // 26/07/2026: se o campo nao aparece, guarda O QUE O ROBO VIU (endereco, titulo,
-              // nomes dos campos, se tem campo de senha). Assim ninguem fica no escuro depois.
-              const oQueVi = await page.evaluate(function () {
-                const nomes = Array.prototype.slice.call(document.querySelectorAll('input,select'))
-                  .map(function (c) { return c.getAttribute('name') || c.getAttribute('id') || c.type || '?'; })
-                  .slice(0, 25);
-                return { titulo: document.title, endereco: location.href, temCampoSenha: !!document.querySelector('input[type="password"]'), campos: nomes };
-              }).catch(function () { return null; });
-              throw new Error('CAMPO_CPF_NAO_APARECEU. O robo viu: ' + JSON.stringify(oQueVi));
-            }
+// PASSO 1 - Local da venda: Empresa/Ponto de venda/Vendedor ja vem
+// preenchidos pela sessao logada do vendedor. So falta escolher o
+// Departamento (usa SEMINOVOS, que e o grosso do estoque desta loja).
+try {
+const abriuDropdown = await clicarPorTexto(page, 'selecione', 10000);
+if (!abriuDropdown) throw new Error('campo Departamento (Selecione) nao apareceu');
+await new Promise(function (r) { setTimeout(r, 400); });
+const escolheu = await clicarPorTexto(page, 'seminovos', 6000);
+if (!escolheu) throw new Error('opcao SEMINOVOS nao apareceu na lista');
+const avancouPasso1 = await clicarPorTexto(page, 'proxima', 8000);
+if (!avancouPasso1) throw new Error('botao Proxima do Passo 1 nao encontrado');
+await new Promise(function (r) { setTimeout(r, 800); });
+} catch (ePasso1) {
+throw new Error('PASSO1_LOCAL_DA_VENDA_FALHOU: ' + ePasso1.message);
+}
 
-            await page.type('input[name="cpf"]', dados.cpf || '', { delay: 80 });
-                  await page.type('input[name="name"]', dados.name || '', { delay: 80 });
-                  await page.type('input[name="mother_name"]', dados.mother || '', { delay: 80 });
-                  await page.type('input[name="phone"]', dados.phone || '', { delay: 80 });
-                  await page.type('input[name="salary"]', String(dados.salary || ''), { delay: 80 });
-                  await page.type('input[name="cep"]', dados.cep || '', { delay: 80 });
-                  await page.type('input[name="address"]', dados.address || '', { delay: 80 });
-                  await page.type('input[name="neighborhood"]', dados.neighborhood || '', { delay: 80 });
+// PASSO 2 - Dados do cliente: a tela real so pede CPF/CNPJ pra localizar
+// ou criar o cliente.
+try {
+await digitarCampoPorRotulo(page, 'cpf ou cnpj', dados.cpf || '');
+} catch (eCampo) {
+const oQueVi = await page.evaluate(function () {
+const nomes = Array.prototype.slice.call(document.querySelectorAll('input,select'))
+.map(function (c) { return c.getAttribute('placeholder') || c.getAttribute('name') || c.getAttribute('formcontrolname') || c.type || '?'; })
+.slice(0, 25);
+return { titulo: document.title, endereco: location.href, campos: nomes };
+}).catch(function () { return null; });
+throw new Error('CAMPO_CPF_NAO_APARECEU. O robo viu: ' + JSON.stringify(oQueVi));
+}
+const avancouPasso2 = await clicarPorTexto(page, 'proxima', 8000);
+if (!avancouPasso2) throw new Error('PASSO2_BOTAO_PROXIMA_NAO_ENCONTRADO');
+await new Promise(function (r) { setTimeout(r, 1000); });
 
-            const submitBtn = await page.$('button[type="submit"]');
-                  if (!submitBtn) throw new Error('Botao submit nao encontrado');
-
-            await Promise.all([
-                  submitBtn.click(),
-                  page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 45000 }).catch(function(){})
-                  ]);
-
-            const urlFinal = page.url();
-                  await pool.query('UPDATE fichas SET status=\'enviada\', fandi_url=$1 WHERE fandi_id=$2', [urlFinal, fandi_id]);
-                  console.log('[PUPPETEER] Ficha enviada:', fandi_id, urlFinal);
-                  await browser.close();
-                  return;
+// 27/07/2026 (tarde) - A PARTIR DAQUI o Fandi entra no Passo 3 (Dados do
+// veiculo), que exige Km e Placa. A ficha do TDrive Pro hoje NAO coleta
+// esses dois campos (so os 8 campos do cliente). Em vez de adivinhar e
+// arriscar um cadastro errado num sistema real, o robo para aqui DE
+// PROPOSITO: o cliente ja fica localizado/criado no Fandi com o CPF
+// preenchido, e o vendedor termina o resto (veiculo + condicoes da venda)
+// com o link direto, ja logado.
+const urlParada = page.url();
+await pool.query(
+"UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
+[
+'Cliente localizado/criado no Fandi com o CPF preenchido (Passo 2 concluido). O robo parou de proposito no Passo 3, porque a ficha ainda nao coleta Km e Placa do veiculo. Clique em Abrir Fandi pra terminar o cadastro (Dados do veiculo + Condicoes da venda), ja logado.',
+'Parada proposital apos Passo 2 (Dados do cliente), Departamento=SEMINOVOS. URL onde parou: ' + urlParada,
+urlParada,
+fandi_id
+]
+);
+console.log('[PUPPETEER] Ficha levada ate o Passo 2 no Fandi (falta Km/Placa):', fandi_id, urlParada);
+await browser.close();
+return;
             } catch (err) {
                   console.error('[ERRO] tentativa ' + tentativa + ' - ' + fandi_id + ': ' + err.message);
                   if (browser) { try { await browser.close(); } catch (e) {} }
