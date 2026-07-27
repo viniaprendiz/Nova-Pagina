@@ -55,3 +55,7 @@ html[data-tema="claro"] .dica code{ background:#e8effb; color:#1d4ed8 }
 html[data-tema="claro"] .notas small{ color:#7b8aa3 }
 
 /* barra da regua do simulador nao muda: as cores ali tem significado */
+
+/* Voltar (link de volta ao painel) - centralizado aqui pra nao duplicar em cada pagina */
+.voltar{display:inline-block;margin-bottom:16px;font-size:13px;color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.voltar:hover{border-color:var(--ac);color:var(--tx)}
