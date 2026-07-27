@@ -1,44 +1,52 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="escuro">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Area do vendedor - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"></script>
 <style>
 :root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
 *{box-sizing:border-box}
 body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
-.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.wrap{max-width:860px;margin:0 auto;padding:18px 16px 60px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px}
 .topo h1{font-size:19px;margin:0}
 .topo .sub{color:var(--tx2);font-size:13px;margin-top:2px}
 .bt{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
 .bt:hover{border-color:var(--ac)}
-.bt.pri{background:var(--ac);border-color:var(--ac);color:#fff}
-.acoesTopo{display:flex;gap:8px;flex-wrap:wrap}
-h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:22px 0 10px}
-.ficha{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
-.linha{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.nome{font-size:15px;font-weight:700}
-.meta{font-size:12.5px;color:var(--tx2);margin-top:3px}
-.badge{padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-.badge.enviando{background:rgba(245,158,11,.15);color:#fbcd76}
-.badge.enviada{background:rgba(34,197,94,.15);color:#7ee2a8}
-.badge.erro{background:rgba(239,68,68,.15);color:#f39a9a}
-.badge.demo{background:rgba(59,130,246,.18);color:#9cc2ff}
-.vazio{color:var(--tx2);font-size:14px;padding:22px;text-align:center;border:1px dashed var(--line);border-radius:14px}
-.carregando{color:var(--tx2);font-size:14px;padding:10px 0}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:0 0 12px}
+.hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:28px}
+.ferramenta{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-decoration:none;color:var(--tx);display:block}
+.ferramenta:hover{border-color:var(--ac)}
+.ferramenta.pri{background:var(--ac);border-color:var(--ac)}
+.ferramenta.pri b, .ferramenta.pri span{color:#fff}
+.ferramenta b{display:block;font-size:15px;margin-bottom:3px}
+.ferramenta span{font-size:12px;color:var(--tx2)}
+.carregando{color:var(--tx2);font-size:13.5px}
+.vazio{color:var(--tx2);font-size:13.5px;background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:16px;text-align:center}
+.ficha{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.linha{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.nome{font-weight:700;font-size:14px}
+.meta{font-size:12px;color:var(--tx2)}
+.badge{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11.5px;color:var(--tx2)}
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="topo">
 <div><h1 id="hOla">Ola</h1><div class="sub" id="hEmail"></div></div>
-<div class="acoesTopo">
-<a class="bt pri" href="/">Enviar ficha</a>
 <button class="bt" id="bSair">Sair</button>
 </div>
+
+<h2>Ferramentas</h2>
+<div class="hub">
+<a class="ferramenta pri" href="/"><b>Enviar ficha</b><span>Colar dados e subir uma ficha nova</span></a>
+<a class="ferramenta" href="/simulador.html"><b>Simulador</b><span>Calcular parcelas pro cliente</span></a>
+<a class="ferramenta" href="/consorcio.html"><b>Consórcio</b><span>Indicar cliente pra carta de consórcio</span></a>
 </div>
+
 <h2>Minhas fichas</h2>
 <div id="lista" class="carregando">Carregando...</div>
 </div>
