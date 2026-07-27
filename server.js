@@ -107,7 +107,6 @@ console.error('[AUTH] erro ao checar/criar admin inicial: ' + eAdmin.message);
 
 const agente = require('./agente');
 app.use(express.json());
-app.use(express.static('public', { index: false }));
 
 // ---------- LOGIN: helpers de senha, cookie e sessao (v15.0) ----------
 // Sem pacote novo no package.json (licao ja aprendida: dependencia extra ja
@@ -169,6 +168,31 @@ return res.status(403).json({ success: false, message: 'Seu usuario nao tem perm
 next();
 };
 }
+
+// ---------- PROTECAO DE PAGINAS POR TIPO DE ACESSO (v16.0) ----------
+// Antes so o JS do navegador escondia o conteudo chamando /api/me depois da
+// pagina carregar. Agora o servidor barra ANTES de mandar qualquer HTML:
+// pagina de ferramenta interna sem sessao valida nunca sai do servidor.
+// Publico continua livre: loja.html, /carro/:id e as duas telas de login.
+var PAGINAS_SO_DONO = ['/painel.html', '/roadmap.html', '/admin'];
+var PAGINAS_LOGIN_QUALQUER = ['/', '/voz.html', '/consorcio.html', '/leads.html', '/simulador.html', '/crm.html', '/demo-fandi.html', '/vendedor'];
+
+app.use(function (req, res, next) {
+if (req.method !== 'GET') return next();
+var caminho = req.path;
+var precisaDono = PAGINAS_SO_DONO.indexOf(caminho) !== -1;
+var precisaAlgumLogin = precisaDono || PAGINAS_LOGIN_QUALQUER.indexOf(caminho) !== -1;
+if (!precisaAlgumLogin) return next();
+if (!req.usuario) {
+return res.redirect(precisaDono ? '/admin/login' : '/vendedor/login');
+}
+if (precisaDono && req.usuario.role !== 'admin') {
+return res.redirect('/vendedor');
+}
+next();
+});
+
+app.use(express.static('public', { index: false }));
 
 const EMAIL_DESTINATARIOS = [
       'marcelo.sinhorine@tdrive.com.br',
