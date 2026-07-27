@@ -32,6 +32,7 @@ h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
 .projCard.andamento{border-left-color:var(--yel)}
 .projCard.concluido{border-left-color:#7ee2a8}
 .projCard.no-ar{border-left-color:var(--grn)}
+.negTag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--tx2);margin-bottom:5px}
 .projCard b{font-size:14px;display:block;margin-bottom:2px}
 .projCard .tipo{font-size:11.5px;color:var(--tx2);margin-bottom:8px;display:block}
 .barra{background:var(--card2);border-radius:999px;height:6px;overflow:hidden;margin:8px 0}
@@ -63,12 +64,14 @@ h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
 <script src="/tema.js"></script>
 <script>
 const PROJETOS = [
-  { nome: "TDrive PRO — Venda de carros", tipo: "Plataforma completa: vitrine, simulador, leads, CRM, consórcio", status: "no-ar", progresso: 85, obs: "Fluxo público testado ponta a ponta (vitrine → carro → simulador → lead → WhatsApp). Ainda faltam as telas de vendedor e gestor completas.", link: "/loja.html?v=1" },
-  { nome: "Automação Fandi", tipo: "Robô que envia fichas de financiamento sozinho", status: "no-ar", progresso: 100, obs: "Já roda sozinho, sem precisar de ninguém clicar em nada." },
-  { nome: "CRM de clientes", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 55, obs: "A tela já existe e funciona, mas ainda precisa de mais uso no dia a dia pra virar hábito." },
-  { nome: "Consórcio", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 40, obs: "A estrutura já existe, mas ainda precisa ser testada com clientes reais pra provar que funciona." },
-  { nome: "Painel por voz (Ditar)", tipo: "Ferramenta experimental", status: "andamento", progresso: 45, obs: "Funciona, mas é experimental — vale usar mais antes de confiar 100%." },
-  { nome: "Próximo negócio", tipo: "Ainda sem definição", status: "rascunho", progresso: 0, obs: "Espaço reservado pro próximo projeto pra ganhar dinheiro. Edite este arquivo pra descrever a ideia quando ela nascer." }
+  { nome: "TDrive PRO — Venda de carros", tipo: "Plataforma completa: vitrine, simulador, leads, CRM, consórcio", status: "no-ar", progresso: 85, obs: "Fluxo público testado ponta a ponta (vitrine → carro → simulador → lead → WhatsApp). Ainda faltam as telas de vendedor e gestor completas.", link: "/loja.html?v=1" , negocio: 'Carros' },
+  { nome: "Automação Fandi", tipo: "Robô que envia fichas de financiamento sozinho", status: "no-ar", progresso: 100, obs: "Já roda sozinho, sem precisar de ninguém clicar em nada." , negocio: 'Carros' },
+  { nome: "CRM de clientes", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 55, obs: "A tela já existe e funciona, mas ainda precisa de mais uso no dia a dia pra virar hábito." , negocio: 'Carros' },
+  { nome: "Consórcio", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 40, obs: "A estrutura já existe, mas ainda precisa ser testada com clientes reais pra provar que funciona." , negocio: 'Carros' },
+  { nome: "Painel por voz (Ditar)", tipo: "Ferramenta experimental", status: "andamento", progresso: 45, obs: "Funciona, mas é experimental — vale usar mais antes de confiar 100%." , negocio: 'Carros' },
+  { nome: "Próximo negócio", tipo: "Ainda sem definição", status: "rascunho", progresso: 0, obs: "Espaço reservado pro próximo projeto pra ganhar dinheiro. Edite este arquivo pra descrever a ideia quando ela nascer." , negocio: 'Novo' },
+  { nome: 'Pedido de venda', tipo: 'Processo dentro do negocio de Carros (ainda sem tela propria)', status: 'rascunho', progresso: 0, obs: 'Gerar o pedido de venda depois que o cliente fecha - hoje ainda e feito fora do sistema.', negocio: 'Carros' },
+  { nome: 'Documentacao e laudo ECV', tipo: 'Processo dentro do negocio de Carros (ainda sem tela propria)', status: 'rascunho', progresso: 0, obs: 'Verificar se o banco ja pagou pra poder pedir o laudo ECV e acompanhar a documentacao do carro - hoje ainda e feito fora do sistema.', negocio: 'Carros' },
 ];
 
 const nomesCol = { rascunho:"Ideia / Rascunho", andamento:"Em andamento", concluido:"Concluído", "no-ar":"No ar" };
@@ -82,7 +85,7 @@ function render(){
     if (!itens.length){ lista.innerHTML = '<div class="vazio">Nada aqui ainda.</div>'; return; }
     lista.innerHTML = itens.map(p => `
       <div class="projCard ${p.status}">
-        <b>${p.nome}</b>
+        <span class="negTag">${p.negocio||'Geral'}</span><b>${p.nome}</b>
         <span class="tipo">${p.tipo}</span>
         <div class="barra"><i style="width:${p.progresso}%"></i></div>
         <div class="pct">${p.progresso}%</div>
