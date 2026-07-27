@@ -862,8 +862,31 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                   let wizardInfoV5 = await lerWizardInfoV5();
                   diagLog.fases.push({ fase: 'wizard_info_0', resultado: wizardInfoV5 });
 
-                  while (tentativaWizardV5 < 4 && wizardInfoV5 && /local da venda/i.test(wizardInfoV5.ativoTextoInicio || '')) {
+                  while (tentativaWizardV5 < 6 && wizardInfoV5 && !/ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '')) {
                     tentativaWizardV5++;
+
+                    try {
+                      const cpfInfoV5 = await comTimeout(frameFandi.evaluate(function () {
+                        function visivel(el) {
+                          var r = el.getBoundingClientRect();
+                          if (r.width <= 0 || r.height <= 0) return false;
+                          var st = window.getComputedStyle(el);
+                          return st.visibility !== 'hidden' && st.display !== 'none';
+                        }
+                        var inputs = Array.prototype.slice.call(document.querySelectorAll('input')).filter(visivel);
+                        var cpfEl = inputs.find(function (el) {
+                          var lbl = '';
+                          if (el.id) { var lab = document.querySelector('label[for="' + el.id + '"]'); if (lab) lbl = lab.textContent; }
+                          return /cpf/i.test(el.id || '') || /cpf/i.test(el.name || '') || /cpf/i.test(el.placeholder || '') || /cpf/i.test(lbl);
+                        });
+                        if (!cpfEl) return { encontrado: false, totalVisiveis: inputs.length };
+                        return { encontrado: true, id: cpfEl.id || null, valorAtual: cpfEl.value };
+                      }), 6000, 'cpf_info').catch(function (e) { return { erro: e.message }; });
+                      diagLog.fases.push({ fase: 'cpf_info_' + tentativaWizardV5, resultado: cpfInfoV5 });
+                    } catch (eCpfV5) {
+                      diagLog.fases.push({ fase: 'cpf_info_erro_' + tentativaWizardV5, erro: eCpfV5.message });
+                    }
+
                     let cliqueOk = false;
                     if (wizardInfoV5.proximaAtivo) {
                       cliqueOk = await comTimeout(clicarPorTexto(frameFandi, wizardInfoV5.proximaAtivo), 6000, 'clicar_proxima_loop').catch(function () { return false; });
