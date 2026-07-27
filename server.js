@@ -470,6 +470,19 @@ await page.goto('https://jsl.fandi.com.br/operacao/cadastrar/financiada', { wait
 // Helper generico: procura um elemento clicavel (botao/link/opcao de lista)
 // cujo texto bata EXATAMENTE com o alvo (tolerante a acentos/maiuscula) e
 // clica nele. Fica tentando ate o timeout porque a tela pode estar animando.
+async function obterFrameFandi(page) {
+  for (let tentativa = 0; tentativa < 10; tentativa++) {
+    const frames = page.frames();
+    for (const f of frames) {
+      let urlFrame = '';
+      try { urlFrame = f.url(); } catch (e) {}
+      if (/fimanager-jsl\.fandi\.com\.br/.test(urlFrame)) return f;
+    }
+    await new Promise(function (r) { setTimeout(r, 500); });
+  }
+  return page.mainFrame();
+}
+
 async function clicarPorTexto(page, alvo, tentativasMs) {
 const fim = Date.now() + (tentativasMs || 10000);
 const alvoNorm = String(alvo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -567,17 +580,19 @@ async function processarFicha(fandi_id, dados) {
   }
 
   await abrirTelaNovaOperacao(page);
+  const frameFandi = await obterFrameFandi(page);
+
 
 // PASSO 1 - Local da venda: Empresa/Ponto de venda/Vendedor ja vem
 // preenchidos pela sessao logada do vendedor. So falta escolher o
 // Departamento (usa SEMINOVOS, que e o grosso do estoque desta loja).
 try {
-const abriuDropdown = await clicarPorTexto(page, 'selecione', 10000);
+const abriuDropdown = await clicarPorTexto(frameFandi, 'selecione', 10000);
 if (!abriuDropdown) throw new Error('campo Departamento (Selecione) nao apareceu');
 await new Promise(function (r) { setTimeout(r, 400); });
-const escolheu = await clicarPorTexto(page, 'seminovos', 6000);
+const escolheu = await clicarPorTexto(frameFandi, 'seminovos', 6000);
 if (!escolheu) throw new Error('opcao SEMINOVOS nao apareceu na lista');
-const avancouPasso1 = await clicarPorTexto(page, 'proxima', 8000);
+const avancouPasso1 = await clicarPorTexto(frameFandi, 'proxima', 8000);
 if (!avancouPasso1) throw new Error('botao Proxima do Passo 1 nao encontrado');
 await new Promise(function (r) { setTimeout(r, 800); });
 } catch (ePasso1) {
@@ -587,7 +602,7 @@ throw new Error('PASSO1_LOCAL_DA_VENDA_FALHOU: ' + ePasso1.message);
 // PASSO 2 - Dados do cliente: a tela real so pede CPF/CNPJ pra localizar
 // ou criar o cliente.
 try {
-await digitarCampoPorRotulo(page, 'cpf ou cnpj', dados.cpf || '');
+await digitarCampoPorRotulo(frameFandi, 'cpf ou cnpj', dados.cpf || '');
 } catch (eCampo) {
 const oQueVi = await page.evaluate(function () {
 const nomes = Array.prototype.slice.call(document.querySelectorAll('input,select'))
@@ -597,7 +612,7 @@ return { titulo: document.title, endereco: location.href, campos: nomes };
 }).catch(function () { return null; });
 throw new Error('CAMPO_CPF_NAO_APARECEU. O robo viu: ' + JSON.stringify(oQueVi));
 }
-const avancouPasso2 = await clicarPorTexto(page, 'proxima', 8000);
+const avancouPasso2 = await clicarPorTexto(frameFandi, 'proxima', 8000);
 if (!avancouPasso2) throw new Error('PASSO2_BOTAO_PROXIMA_NAO_ENCONTRADO');
 await new Promise(function (r) { setTimeout(r, 1000); });
 
