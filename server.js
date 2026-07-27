@@ -451,11 +451,15 @@ async function processarFicha(fandi_id, dados) {
                   page.setDefaultNavigationTimeout(60000);
                   page.setDefaultTimeout(60000);
 
-            await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2', timeout: 60000 });
-                  // 26/07/2026 - CAUSA RAIZ DO BUG DA FICHA (Joelma):
-            // o Fandi exige LOGIN do vendedor. O robo do servidor nao tem (e nao deve ter)
-            // a senha guardada, entao ele caia na tela de login e ficava esperando 60s por
-            // um campo que nunca aparece. Agora detecta e avisa na hora, em portugues.
+            await page.goto('https://jsl.fandi.com.br/', { waitUntil: 'networkidle2', timeout: 60000 });
+// 27/07/2026 - CAUSA RAIZ REAL (confirmada abrindo o site direto no navegador):
+            // pular pra /operacao/novo SEM logar antes NAO mostra tela de login - o Fandi
+// devolve um erro 404 (Pagina nao encontrada) pra quem nao tem sessao, porque
+// essa rota so existe navegando por dentro do site ja logado. Por isso o robo
+// ficava esperando um campo de CPF que nunca aparecia numa pagina de erro (dai
+// o log mostrar campos:[] e temCampoSenha:false - era literalmente o 404).
+// Correcao: SEMPRE entra pela raiz primeiro (e la que a tela de login
+// realmente aparece) e SO DEPOIS de logado vai para /operacao/novo.
             const checagemLoginFandi = function () {
               return !!document.querySelector('input[type="password"]') ||
                 /login|entrar|autentica/i.test(location.pathname + location.search);
@@ -467,15 +471,15 @@ async function processarFicha(fandi_id, dados) {
                 throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no servidor.');
               }
               const tentativaLoginFandi = await tentarLoginFandi(page);
-              if (!tentativaLoginFandi.ok) {
-                throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
-              }
-              await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2', timeout: 60000 });
-              const aindaPedeLoginFandi = await page.evaluate(checagemLoginFandi);
-              if (aindaPedeLoginFandi) {
-                throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO (senha errada ou conta bloqueada)');
-              }
-            }
+if (!tentativaLoginFandi.ok) {
+throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
+}
+}
+await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2', timeout: 60000 });
+const aindaPedeLoginFandi = await page.evaluate(checagemLoginFandi);
+if (aindaPedeLoginFandi) {
+throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO (senha errada ou conta bloqueada, ou a sessao nao persistiu)');
+}
 
       try {
               await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
