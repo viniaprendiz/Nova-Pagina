@@ -807,6 +807,23 @@ app.post('/api/leads/:id/visto', exigePin, async function (req, res) {
   }
 });
 
+// ---------- PAGINAS DE LOGIN E DASHBOARD (v15.0) ----------
+// URLs limpas pros 3 mundos (cliente / vendedor / dono). O controle de
+// quem pode ver o conteudo de verdade e feito no proprio HTML via /api/me
+// (client-side redirect), igual ja fazia leads.html com o PIN.
+app.get('/vendedor/login', function (req, res) {
+res.sendFile(path.join(__dirname, 'public', 'vendedor-login.html'));
+});
+app.get('/admin/login', function (req, res) {
+res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+});
+app.get('/vendedor', function (req, res) {
+res.sendFile(path.join(__dirname, 'public', 'vendedor.html'));
+});
+app.get('/admin', function (req, res) {
+res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 app.get('/', function (req, res) {
 res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
