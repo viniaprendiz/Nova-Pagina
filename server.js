@@ -1,4 +1,4 @@
-// TDrive Pro v14.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso
+// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -53,11 +53,122 @@ await pool.query(
 'criado_em TIMESTAMPTZ DEFAULT NOW()' +
 ')'
 );
+
+// ---------- LOGIN: tabelas de usuarios e sessoes (v15.0) ----------
+await pool.query(
+'CREATE TABLE IF NOT EXISTS users (' +
+'id TEXT PRIMARY KEY,' +
+'nome TEXT,' +
+'email TEXT UNIQUE,' +
+'senha_hash TEXT,' +
+'senha_salt TEXT,' +
+'role TEXT,' +
+'ativo BOOLEAN DEFAULT TRUE,' +
+'criado_em TIMESTAMPTZ DEFAULT NOW(),' +
+'ultimo_login TIMESTAMPTZ' +
+')'
+);
+await pool.query(
+'CREATE TABLE IF NOT EXISTS sessoes (' +
+'token TEXT PRIMARY KEY,' +
+'user_id TEXT REFERENCES users(id),' +
+'criado_em TIMESTAMPTZ DEFAULT NOW(),' +
+'expira_em TIMESTAMPTZ' +
+')'
+);
+await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS user_id TEXT');
+
+// Cria o primeiro admin automaticamente SE ainda nao existir nenhum admin
+// E as variaveis ADMIN_EMAIL / ADMIN_SENHA_INICIAL estiverem configuradas no Render.
+// O Vinicios escolhe o email e a senha (nunca o Claude). Depois de criado,
+// essas variaveis podem ser removidas do Render sem afetar o login.
+try {
+var qtdAdmin = await pool.query("SELECT COUNT(*)::int AS n FROM users WHERE role='admin'");
+if (qtdAdmin.rows[0].n === 0) {
+var emailAdmin = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+var senhaAdmin = process.env.ADMIN_SENHA_INICIAL || '';
+if (emailAdmin && senhaAdmin) {
+var saltA = gerarSalt();
+var hashA = hashSenha(senhaAdmin, saltA);
+var idA = 'U-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+await pool.query(
+'INSERT INTO users (id, nome, email, senha_hash, senha_salt, role) VALUES ($1,$2,$3,$4,$5,\'admin\') ON CONFLICT (email) DO NOTHING',
+[idA, 'Vinicios', emailAdmin, hashA, saltA]
+);
+console.log('[AUTH] Conta admin inicial criada para ' + emailAdmin + '. Pode remover ADMIN_EMAIL/ADMIN_SENHA_INICIAL do Render agora.');
+} else {
+console.warn('[AUTH] Nenhum admin existe ainda. Defina ADMIN_EMAIL e ADMIN_SENHA_INICIAL no Render (servico web Nova-Pagina) para criar o primeiro admin automaticamente.');
+}
+}
+} catch (eAdmin) {
+console.error('[AUTH] erro ao checar/criar admin inicial: ' + eAdmin.message);
+}
 }
 
 const agente = require('./agente');
 app.use(express.json());
 app.use(express.static('public', { index: false }));
+
+// ---------- LOGIN: helpers de senha, cookie e sessao (v15.0) ----------
+// Sem pacote novo no package.json (licao ja aprendida: dependencia extra ja
+// quebrou deploy antes). Usa so node:crypto (scrypt) e leitura manual do
+// cabecalho Cookie (nao precisamos do pacote cookie-parser pra isso).
+function gerarSalt() { return crypto.randomBytes(16).toString('hex'); }
+function hashSenha(senha, salt) { return crypto.scryptSync(String(senha), salt, 64).toString('hex'); }
+function senhaValida(senha, salt, hashGuardado) {
+var calc = hashSenha(senha, salt);
+var a = Buffer.from(calc, 'hex');
+var b = Buffer.from(hashGuardado, 'hex');
+if (a.length !== b.length) return false;
+return crypto.timingSafeEqual(a, b);
+}
+function pegaCookie(req, nome) {
+var cru = req.headers.cookie || '';
+var partes = cru.split(';');
+for (var i = 0; i < partes.length; i++) {
+var p = partes[i].trim();
+var idx = p.indexOf('=');
+if (idx === -1) continue;
+if (p.slice(0, idx) === nome) { try { return decodeURIComponent(p.slice(idx + 1)); } catch (e) { return null; } }
+}
+return null;
+}
+var DURACAO_SESSAO_MS = { admin: 7 * 24 * 60 * 60 * 1000, vendedor: 3 * 24 * 60 * 60 * 1000 };
+async function criarSessao(usuario) {
+var token = crypto.randomBytes(32).toString('hex');
+var duracao = DURACAO_SESSAO_MS[usuario.role] || DURACAO_SESSAO_MS.vendedor;
+var expira = new Date(Date.now() + duracao);
+await pool.query('INSERT INTO sessoes (token, user_id, expira_em) VALUES ($1,$2,$3)', [token, usuario.id, expira]);
+return { token: token, duracaoMs: duracao };
+}
+async function pegaUsuarioDaSessao(req) {
+var token = pegaCookie(req, 'tdrive_sessao');
+if (!token) return null;
+try {
+var r = await pool.query(
+'SELECT u.id, u.nome, u.email, u.role, u.ativo, s.expira_em FROM sessoes s JOIN users u ON u.id = s.user_id WHERE s.token = $1',
+[token]
+);
+if (!r.rows.length) return null;
+var row = r.rows[0];
+if (!row.ativo) return null;
+if (new Date(row.expira_em) < new Date()) return null;
+return { id: row.id, nome: row.nome, email: row.email, role: row.role };
+} catch (e) { return null; }
+}
+app.use(async function (req, res, next) {
+req.usuario = await pegaUsuarioDaSessao(req);
+next();
+});
+function exigeLogin(papeisPermitidos) {
+return function (req, res, next) {
+if (!req.usuario) return res.status(401).json({ success: false, precisaLogin: true, message: 'Faca login para continuar.' });
+if (papeisPermitidos && papeisPermitidos.length && papeisPermitidos.indexOf(req.usuario.role) === -1) {
+return res.status(403).json({ success: false, message: 'Seu usuario nao tem permissao para acessar isso.' });
+}
+next();
+};
+}
 
 const EMAIL_DESTINATARIOS = [
       'marcelo.sinhorine@tdrive.com.br',
@@ -99,8 +210,8 @@ app.post('/api/submit-fandi', async (req, res) => {
          const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
       try {
             await pool.query(
-                  'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\')',
-                  [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood]
+                  'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
+                  [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood, (req.usuario && req.usuario.id) || null]
                   );
             res.json({ success: true, fandi_id: fandi_id, message: 'Ficha recebida, enviando ao Fandi...' });
             processarFicha(fandi_id, dados);
@@ -136,6 +247,83 @@ function exigePin(req, res, next) {
   if (enviado === PIN) return next();
   return res.status(401).json({ success: false, semPermissao: true, message: 'Acesso protegido. Informe o PIN.' });
 }
+
+// ---------- LOGIN: rotas (v15.0) ----------
+// Vendedor e admin sao contas separadas na mesma tabela users (campo role).
+// Nao existe cadastro publico: so o admin cria conta de vendedor (Bloco B,
+// decisao registrada no Gist: sem servico de e-mail configurado ainda,
+// o admin cria a conta e passa a senha inicial pro vendedor).
+app.post('/api/login', async function (req, res) {
+var email = String((req.body && req.body.email) || '').trim().toLowerCase();
+var senha = String((req.body && req.body.senha) || '');
+if (!email || !senha) return res.json({ success: false, message: 'Preencha email e senha.' });
+try {
+var r = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+if (!r.rows.length) return res.json({ success: false, message: 'Email ou senha incorretos.' });
+var u = r.rows[0];
+if (!u.ativo) return res.json({ success: false, message: 'Este usuario esta desativado. Fale com o administrador.' });
+if (!senhaValida(senha, u.senha_salt, u.senha_hash)) return res.json({ success: false, message: 'Email ou senha incorretos.' });
+var sessao = await criarSessao(u);
+await pool.query('UPDATE users SET ultimo_login=NOW() WHERE id=$1', [u.id]);
+res.setHeader('Set-Cookie', 'tdrive_sessao=' + sessao.token + '; HttpOnly; Path=/; Max-Age=' + Math.floor(sessao.duracaoMs / 1000) + '; SameSite=Lax');
+res.json({ success: true, usuario: { id: u.id, nome: u.nome, email: u.email, role: u.role } });
+} catch (err) {
+res.json({ success: false, message: 'Erro ao entrar: ' + err.message });
+}
+});
+
+app.post('/api/logout', async function (req, res) {
+var token = pegaCookie(req, 'tdrive_sessao');
+if (token) { try { await pool.query('DELETE FROM sessoes WHERE token=$1', [token]); } catch (e) {} }
+res.setHeader('Set-Cookie', 'tdrive_sessao=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax');
+res.json({ success: true });
+});
+
+app.get('/api/me', function (req, res) {
+res.json({ success: true, usuario: req.usuario || null });
+});
+
+// Admin gerencia contas de vendedor. Nunca devolve senha_hash/senha_salt.
+app.post('/api/admin/vendedores', exigeLogin(['admin']), async function (req, res) {
+var nome = String((req.body && req.body.nome) || '').trim();
+var email = String((req.body && req.body.email) || '').trim().toLowerCase();
+var senha = String((req.body && req.body.senha) || '');
+if (!nome || !email || senha.length < 6) {
+return res.json({ success: false, message: 'Preencha nome, email e uma senha de pelo menos 6 caracteres.' });
+}
+var salt = gerarSalt();
+var hash = hashSenha(senha, salt);
+var id = 'U-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+try {
+await pool.query('INSERT INTO users (id, nome, email, senha_hash, senha_salt, role) VALUES ($1,$2,$3,$4,$5,\'vendedor\')', [id, nome, email, hash, salt]);
+res.json({ success: true, usuario: { id: id, nome: nome, email: email, role: 'vendedor' } });
+} catch (err) {
+if (/duplicate key|unique/i.test(err.message)) return res.json({ success: false, message: 'Ja existe um usuario com este email.' });
+res.json({ success: false, message: 'Erro ao criar vendedor: ' + err.message });
+}
+});
+
+app.get('/api/admin/vendedores', exigeLogin(['admin']), async function (req, res) {
+try {
+var r = await pool.query("SELECT id, nome, email, role, ativo, criado_em, ultimo_login FROM users WHERE role='vendedor' ORDER BY criado_em DESC");
+res.json({ success: true, vendedores: r.rows });
+} catch (err) { res.json({ success: false, message: err.message, vendedores: [] }); }
+});
+
+app.post('/api/admin/vendedores/:id/status', exigeLogin(['admin']), async function (req, res) {
+try {
+await pool.query("UPDATE users SET ativo = NOT COALESCE(ativo,true) WHERE id=$1 AND role='vendedor'", [req.params.id]);
+res.json({ success: true });
+} catch (err) { res.json({ success: false, message: err.message }); }
+});
+
+// Vendedor ve so as proprias fichas (isolamento por user_id).
+app.get('/api/vendedor/fichas', exigeLogin(['vendedor']), async function (req, res) {
+try {
+var r = await pool.query('SELECT * FROM fichas WHERE user_id=$1 ORDER BY criado_em DESC LIMIT 200', [req.usuario.id]);
+res.json({ success: true, total: r.rows.length, fichas: r.rows });
+} catch (err) { res.json({ success: false, message: err.message, fichas: [] }); }
+});
 
 // ---------- NAVEGADOR ----------
 function caminhoChrome() {
@@ -275,7 +463,7 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
 });
 
 app.get('/api/config', function (req, res) {
-res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '14.0', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
+res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '15.0', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
 });
 
 // Modo demonstracao: cria uma ficha FICTICIA. Nao abre o Fandi, nao envia nada.
@@ -298,7 +486,7 @@ res.json({ success: false, message: 'Erro ao criar demonstracao: ' + err.message
 
 // ---------- DIAGNOSTICO ----------
 app.get('/api/diagnostico', exigePin, async function (req, res) {
-const info = { versao: '14.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
+const info = { versao: '15.0', protegido: !!PIN, chrome: {}, banco: {}, erros: [] };
 try {
 const c = caminhoChrome();
 info.chrome.caminho = c;
