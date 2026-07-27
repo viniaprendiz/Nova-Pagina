@@ -54,7 +54,7 @@ input:focus{border-color:var(--ac)}
 <p class="lead" id="subPainel">O que voce quer fazer agora?</p>
 <div id="crumb" class="crumb"></div>
 
-<div class="topoNegocio"><div class="negAtivo">🚗 <b>Carros</b> · T-Drive Auto Shopping Aricanduva <span class="negFuturo">+ novo negocio em breve</span></div><a class="verSite" href="/loja.html?v=1" target="_blank" rel="noopener">Ver site (o que o cliente ve) ↗</a></div>
+<div class="topoNegocio"><div class="negAtivo">🚗 <b>Carros</b> · T-Drive Auto Shopping Aricanduva <span class="negFuturo">+ novo negocio em breve</span></div><a class="verSite" href="/loja.html?v=1" target="_blank" rel="noopener">Ver site (o que o cliente ve) ↗</a> <button class="verSite" id="bSairPainel" style="background:transparent;color:var(--tx2);border:1px solid var(--line);cursor:pointer">Sair</button></div>
 
 <div id="viewHub">
 <div class="hub">
@@ -246,5 +246,6 @@ if(sv){$("qCarro").value=sv.qc;$("vCarro").value=sv.vc;$("qCons").value=sv.qs;$(
 CH.forEach(function(id){$(id).addEventListener("input",calc)});
 calc();
 </script>
+<script>(function(){var b=document.getElementById("bSairPainel");if(b){b.onclick=function(){fetch("/api/logout",{method:"POST"}).then(function(){location.href="/entrar.html";});};}})();</script>
 </body>
 </html>
