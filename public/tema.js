@@ -121,6 +121,7 @@ fundo.innerHTML = '<div><h3>Entrar</h3>' +
 '<p>Escolha o tipo de acesso:</p>' +
 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
 '<button id="bVendedor" style="flex:1;min-width:150px">Sou vendedor</button>' +
+'<button id="bGestor" style="flex:1;min-width:150px">Sou gestor</button>' +
 '<button id="bAdmin" style="flex:1;min-width:150px">Sou o dono</button>' +
 '</div>' +
 '<p style="font-size:12px;opacity:.8">Ferramentas internas antigas (fichas, leads, estoque) ainda usam o PIN de acesso.</p>' +
@@ -132,6 +133,7 @@ fundo.querySelector("#bFechar").onclick = function () { fundo.remove(); };
 fundo.querySelector("#bPin").onclick = function () { if (window.tdrivePedirPin) window.tdrivePedirPin(); };
 fundo.querySelector("#bVendedor").onclick = function () { location.href = "/vendedor/login"; };
 fundo.querySelector("#bAdmin").onclick = function () { location.href = "/admin/login"; };
+fundo.querySelector("#bGestor").onclick = function () { location.href = "/adm/login"; };
 fetch("/api/config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (c) {
 var el = fundo.querySelector("#estadoPin");
 if (!el) return;
