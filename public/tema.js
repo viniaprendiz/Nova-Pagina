@@ -99,25 +99,33 @@
     document.head.appendChild(s);
   }
   function janelaEntrar() {
-    var fundo = document.createElement("div");
-    fundo.className = "jEntrar";
-    fundo.innerHTML = '<div><h3>Area do vendedor</h3>' +
-      '<p>O login com e-mail e senha esta em construcao (etapa P4). Enquanto isso, o acesso as telas internas e pelo PIN.</p>' +
-      '<p id="estadoPin">Verificando se o servidor esta protegido...</p>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="bPin">Digitar PIN</button><button id="bFechar">Fechar</button></div></div>';
-    document.body.appendChild(fundo);
-    fundo.addEventListener("click", function (e) { if (e.target === fundo) fundo.remove(); });
-    fundo.querySelector("#bFechar").onclick = function () { fundo.remove(); };
-    fundo.querySelector("#bPin").onclick = function () { if (window.tdrivePedirPin) window.tdrivePedirPin(); };
-    fetch("/api/config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (c) {
-      var el = fundo.querySelector("#estadoPin");
-      if (!el) return;
-      el.textContent = c.protegido
-        ? "Servidor protegido por PIN: SIM. As telas internas pedem o PIN."
-        : "Atencao: o servidor ainda NAO esta protegido por PIN. Crie a variavel TDRIVE_PIN no Render para trancar a lista de fichas.";
-    }).catch(function () {});
-  }
-  function montarMenu() {
+var fundo = document.createElement("div");
+fundo.className = "jEntrar";
+fundo.innerHTML = '<div><h3>Entrar</h3>' +
+'<p>Escolha o tipo de acesso:</p>' +
+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+'<button id="bVendedor" style="flex:1;min-width:150px">Sou vendedor</button>' +
+'<button id="bAdmin" style="flex:1;min-width:150px">Sou o dono</button>' +
+'</div>' +
+'<p style="font-size:12px;opacity:.8">Ferramentas internas antigas (fichas, leads, estoque) ainda usam o PIN de acesso.</p>' +
+'<p id="estadoPin">Verificando se o servidor esta protegido...</p>' +
+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="bPin">Digitar PIN</button><button id="bFechar">Fechar</button></div></div>';
+document.body.appendChild(fundo);
+fundo.addEventListener("click", function (e) { if (e.target === fundo) fundo.remove(); });
+fundo.querySelector("#bFechar").onclick = function () { fundo.remove(); };
+fundo.querySelector("#bPin").onclick = function () { if (window.tdrivePedirPin) window.tdrivePedirPin(); };
+fundo.querySelector("#bVendedor").onclick = function () { location.href = "/vendedor/login"; };
+fundo.querySelector("#bAdmin").onclick = function () { location.href = "/admin/login"; };
+fetch("/api/config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (c) {
+var el = fundo.querySelector("#estadoPin");
+if (!el) return;
+el.textContent = c.protegido
+? "Servidor protegido por PIN: SIM. As ferramentas antigas pedem o PIN."
+: "Atencao: o servidor ainda NAO esta protegido por PIN. Crie a variavel TDRIVE_PIN no Render para trancar a lista de fichas.";
+}).catch(function () {});
+}
+
+function montarMenu() {
     estilo();
     var caixas = document.querySelectorAll(".abas");
     for (var i = 0; i < caixas.length; i++) {
