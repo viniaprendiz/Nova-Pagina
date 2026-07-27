@@ -189,24 +189,28 @@ next();
 // pagina carregar. Agora o servidor barra ANTES de mandar qualquer HTML:
 // pagina de ferramenta interna sem sessao valida nunca sai do servidor.
 // Publico continua livre: loja.html, /carro/:id e as duas telas de login.
-var PAGINAS_SO_DONO = ['/painel.html', '/roadmap.html', '/admin'];
+var PAGINAS_SO_DONO = ['/roadmap.html'];
+var PAGINAS_DONO_E_GESTOR = ['/painel.html', '/admin'];
 var PAGINAS_LOGIN_QUALQUER = ['/', '/voz.html', '/consorcio.html', '/leads.html', '/simulador.html', '/crm.html', '/demo-fandi.html', '/vendedor', '/padrao-clientes.html'];
-
 app.use(function (req, res, next) {
-if (req.method !== 'GET') return next();
-var caminho = req.path;
-var precisaDono = PAGINAS_SO_DONO.indexOf(caminho) !== -1;
-var precisaAlgumLogin = precisaDono || PAGINAS_LOGIN_QUALQUER.indexOf(caminho) !== -1;
-if (!precisaAlgumLogin) return next();
-if (!req.usuario) {
-return res.redirect(precisaDono ? '/admin/login' : '/vendedor/login');
-}
-if (precisaDono && req.usuario.role !== 'admin') {
-return res.redirect('/vendedor');
-}
-next();
+  if (req.method !== 'GET') return next();
+  var caminho = req.path;
+  var precisaSoDono = PAGINAS_SO_DONO.indexOf(caminho) !== -1;
+  var precisaDonoOuGestor = precisaSoDono || PAGINAS_DONO_E_GESTOR.indexOf(caminho) !== -1;
+  var precisaAlgumLogin = precisaDonoOuGestor || PAGINAS_LOGIN_QUALQUER.indexOf(caminho) !== -1;
+  if (!precisaAlgumLogin) return next();
+  if (!req.usuario) {
+    return res.redirect(precisaDonoOuGestor ? '/admin/login' : '/vendedor/login');
+  }
+  var papel = req.usuario.role;
+  var acessoOk = true;
+  if (precisaSoDono && papel !== 'admin') acessoOk = false;
+  else if (precisaDonoOuGestor && papel !== 'admin' && papel !== 'gestor') acessoOk = false;
+  if (!acessoOk) {
+    return res.redirect((papel === 'admin' || papel === 'gestor') ? '/admin' : '/vendedor');
+  }
+  next();
 });
-
 app.use(express.static('public', { index: false }));
 
 const EMAIL_DESTINATARIOS = [
@@ -323,40 +327,46 @@ res.json({ success: true, usuario: req.usuario || null });
 });
 
 // Admin gerencia contas de vendedor. Nunca devolve senha_hash/senha_salt.
-app.post('/api/admin/vendedores', exigeLogin(['admin']), async function (req, res) {
-var nome = String((req.body && req.body.nome) || '').trim();
-var email = String((req.body && req.body.email) || '').trim().toLowerCase();
-var senha = String((req.body && req.body.senha) || '');
-if (!nome || !email || senha.length < 6) {
-return res.json({ success: false, message: 'Preencha nome, email e uma senha de pelo menos 6 caracteres.' });
-}
-var salt = gerarSalt();
-var hash = hashSenha(senha, salt);
-var id = 'U-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
-try {
-await pool.query('INSERT INTO users (id, nome, email, senha_hash, senha_salt, role) VALUES ($1,$2,$3,$4,$5,\'vendedor\')', [id, nome, email, hash, salt]);
-res.json({ success: true, usuario: { id: id, nome: nome, email: email, role: 'vendedor' } });
-} catch (err) {
-if (/duplicate key|unique/i.test(err.message)) return res.json({ success: false, message: 'Ja existe um usuario com este email.' });
-res.json({ success: false, message: 'Erro ao criar vendedor: ' + err.message });
-}
+app.post('/api/admin/vendedores', exigeLogin(['admin', 'gestor']), async function (req, res) {
+  var nome = String((req.body && req.body.nome) || '').trim();
+  var email = String((req.body && req.body.email) || '').trim().toLowerCase();
+  var senha = String((req.body && req.body.senha) || '');
+  var papel = String((req.body && req.body.papel) || 'vendedor').trim().toLowerCase();
+  if (papel !== 'vendedor' && papel !== 'gestor') papel = 'vendedor';
+  if (papel === 'gestor' && req.usuario.role !== 'admin') {
+    return res.json({ success: false, message: 'So o dono pode criar uma conta ADM.' });
+  }
+  if (!nome || !email || senha.length < 6) {
+    return res.json({ success: false, message: 'Preencha nome, email e uma senha de pelo menos 6 caracteres.' });
+  }
+  var salt = gerarSalt();
+  var hash = hashSenha(senha, salt);
+  var id = 'U-' + Date.now() + '-' + crypto.randomBytes(3).toString('hex');
+  try {
+    await pool.query('INSERT INTO users (id, nome, email, senha_hash, senha_salt, role) VALUES ($1,$2,$3,$4,$5,$6)', [id, nome, email, hash, salt, papel]);
+    res.json({ success: true, usuario: { id: id, nome: nome, email: email, role: papel } });
+  } catch (err) {
+    if (/duplicate key|unique/i.test(err.message)) return res.json({ success: false, message: 'Ja existe uma conta com este email.' });
+    res.json({ success: false, message: 'Erro ao criar conta: ' + err.message });
+  }
 });
-
-app.get('/api/admin/vendedores', exigeLogin(['admin']), async function (req, res) {
-try {
-var r = await pool.query("SELECT id, nome, email, role, ativo, criado_em, ultimo_login FROM users WHERE role='vendedor' ORDER BY criado_em DESC");
-res.json({ success: true, vendedores: r.rows });
-} catch (err) { res.json({ success: false, message: err.message, vendedores: [] }); }
+app.get('/api/admin/vendedores', exigeLogin(['admin', 'gestor']), async function (req, res) {
+  try {
+    var r = await pool.query("SELECT id, nome, email, role, ativo, criado_em, ultimo_login FROM users WHERE role IN ('vendedor','gestor') ORDER BY criado_em DESC");
+    res.json({ success: true, vendedores: r.rows });
+  } catch (err) { res.json({ success: false, message: err.message, vendedores: [] }); }
 });
-
-app.post('/api/admin/vendedores/:id/status', exigeLogin(['admin']), async function (req, res) {
-try {
-await pool.query("UPDATE users SET ativo = NOT COALESCE(ativo,true) WHERE id=$1 AND role='vendedor'", [req.params.id]);
-res.json({ success: true });
-} catch (err) { res.json({ success: false, message: err.message }); }
+app.post('/api/admin/vendedores/:id/status', exigeLogin(['admin', 'gestor']), async function (req, res) {
+  try {
+    var alvo = await pool.query('SELECT role FROM users WHERE id=$1', [req.params.id]);
+    if (!alvo.rows.length) return res.json({ success: false, message: 'Conta nao encontrada.' });
+    if (alvo.rows[0].role === 'gestor' && req.usuario.role !== 'admin') {
+      return res.json({ success: false, message: 'So o dono pode ativar/desativar uma conta ADM.' });
+    }
+    await pool.query("UPDATE users SET ativo = NOT COALESCE(ativo,true) WHERE id=$1 AND role IN ('vendedor','gestor')", [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.json({ success: false, message: err.message }); }
 });
-
-// Vendedor ve so as proprias fichas (isolamento por user_id).
 app.get('/api/vendedor/fichas', exigeLogin(['vendedor']), async function (req, res) {
 try {
 var r = await pool.query('SELECT * FROM fichas WHERE user_id=$1 ORDER BY criado_em DESC LIMIT 200', [req.usuario.id]);
@@ -872,7 +882,7 @@ function extrairSinaisPadrao(bloco) {
   var perguntouEntradaCedo = /entrada/.test(primeirasLinhas);
   return { visitouLoja: visitouLoja, perguntouEntradaCedo: perguntouEntradaCedo, muitasMensagens: linhas.length >= 15 };
 }
-app.post('/api/padrao/analisar', exigeLogin(['admin', 'vendedor']), async function (req, res) {
+app.post('/api/padrao/analisar', exigeLogin(['admin', 'vendedor', 'gestor']), async function (req, res) {
   try {
     var textoColado = String((req.body && req.body.conversas) || '');
     var blocos = textoColado.split(/\n-{3,}\n|\n={3,}\n/).map(function (b) { return b.trim(); }).filter(Boolean);
@@ -931,7 +941,7 @@ app.post('/api/padrao/analisar', exigeLogin(['admin', 'vendedor']), async functi
     return res.json({ success: false, message: 'Erro ao processar: ' + e.message });
   }
 });
-app.get('/api/padrao/resumo', exigeLogin(['admin', 'vendedor']), async function (req, res) {
+app.get('/api/padrao/resumo', exigeLogin(['admin', 'vendedor', 'gestor']), async function (req, res) {
   try {
     var r = await pool.query('SELECT dados, atualizado_em FROM padrao_agregado WHERE id = 1');
     var execs = await pool.query('SELECT quando, usuario, quantidade FROM padrao_execucoes ORDER BY quando DESC LIMIT 20');
@@ -945,6 +955,9 @@ res.sendFile(path.join(__dirname, 'public', 'vendedor-login.html'));
 });
 app.get('/admin/login', function (req, res) {
 res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+});
+app.get('/adm/login', function (req, res) {
+  res.sendFile(path.join(__dirname, 'public', 'adm-login.html'));
 });
 app.get('/vendedor', function (req, res) {
 res.sendFile(path.join(__dirname, 'public', 'vendedor.html'));
