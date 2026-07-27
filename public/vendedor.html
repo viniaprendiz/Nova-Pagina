@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Area do vendedor - TDrive PRO</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.topo h1{font-size:19px;margin:0}
+.topo .sub{color:var(--tx2);font-size:13px;margin-top:2px}
+.bt{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.bt:hover{border-color:var(--ac)}
+.bt.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.acoesTopo{display:flex;gap:8px;flex-wrap:wrap}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:22px 0 10px}
+.ficha{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.linha{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.nome{font-size:15px;font-weight:700}
+.meta{font-size:12.5px;color:var(--tx2);margin-top:3px}
+.badge{padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.badge.enviando{background:rgba(245,158,11,.15);color:#fbcd76}
+.badge.enviada{background:rgba(34,197,94,.15);color:#7ee2a8}
+.badge.erro{background:rgba(239,68,68,.15);color:#f39a9a}
+.badge.demo{background:rgba(59,130,246,.18);color:#9cc2ff}
+.vazio{color:var(--tx2);font-size:14px;padding:22px;text-align:center;border:1px dashed var(--line);border-radius:14px}
+.carregando{color:var(--tx2);font-size:14px;padding:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topo">
+<div><h1 id="hOla">Ola</h1><div class="sub" id="hEmail"></div></div>
+<div class="acoesTopo">
+<a class="bt pri" href="/">Enviar ficha</a>
+<button class="bt" id="bSair">Sair</button>
+</div>
+</div>
+<h2>Minhas fichas</h2>
+<div id="lista" class="carregando">Carregando...</div>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+function badge(s){return '<span class="badge '+s+'">'+s+'</span>';}
+function fmtData(d){try{return new Date(d).toLocaleString("pt-BR");}catch(e){return d;}}
+fetch("/api/me").then(function(r){return r.json()}).then(function(j){
+if(!j.usuario || j.usuario.role!=="vendedor"){ location.href="/vendedor/login"; return; }
+$("hOla").textContent="Ola, "+j.usuario.nome;
+$("hEmail").textContent=j.usuario.email;
+carregarFichas();
+}).catch(function(){ location.href="/vendedor/login"; });
+function carregarFichas(){
+fetch("/api/vendedor/fichas").then(function(r){return r.json()}).then(function(j){
+var el=$("lista");
+if(!j.success){ el.innerHTML='<div class="vazio">'+(j.message||"Nao consegui carregar")+'</div>'; return; }
+if(!j.fichas.length){ el.innerHTML='<div class="vazio">Voce ainda nao enviou nenhuma ficha.</div>'; return; }
+el.innerHTML=j.fichas.map(function(f){
+return '<div class="ficha"><div class="linha"><div><div class="nome">'+(f.name||"-")+'</div><div class="meta">CPF '+(f.cpf||"-")+' - '+fmtData(f.criado_em)+'</div></div>'+badge(f.status)+'</div></div>';
+}).join("");
+}).catch(function(){ $("lista").innerHTML='<div class="vazio">Falha ao carregar.</div>'; });
+}
+$("bSair").onclick=function(){ fetch("/api/logout",{method:"POST"}).then(function(){ location.href="/vendedor/login"; }); };
+</script>
+</body>
+</html>
