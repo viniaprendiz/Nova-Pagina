@@ -682,15 +682,58 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 // preenchido, e o vendedor termina o resto (veiculo + condicoes da venda)
 // com o link direto, ja logado.
 const urlParada = page.url();
+await new Promise(function (r) { setTimeout(r, 800); });
+let estruturaPasso3 = null;
+try {
+  estruturaPasso3 = await frameFandi.evaluate(function () {
+    function textoLabel(el) {
+      if (el.id) {
+        const lab = document.querySelector('label[for="' + el.id + '"]');
+        if (lab) return lab.textContent.trim();
+      }
+      const p = el.closest('label');
+      if (p) return p.textContent.trim();
+      const wrap = el.closest('div,section,fieldset');
+      if (wrap) {
+        const lab2 = wrap.querySelector('label');
+        if (lab2) return lab2.textContent.trim();
+      }
+      return null;
+    }
+    const campos = Array.prototype.slice.call(document.querySelectorAll('input,select,textarea')).map(function (el) {
+      const info = {
+        tag: el.tagName,
+        type: el.type || null,
+        name: el.name || null,
+        id: el.id || null,
+        placeholder: el.getAttribute('placeholder') || null,
+        ariaLabel: el.getAttribute('aria-label') || null,
+        label: textoLabel(el),
+        visible: !!(el.offsetWidth || el.offsetHeight)
+      };
+      if (el.tagName === 'SELECT') {
+        info.options = Array.prototype.slice.call(el.options).slice(0, 30).map(function (o) { return { value: o.value, text: o.text }; });
+      }
+      return info;
+    }).filter(function (c) { return c.visible; });
+    const botoes = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
+      return { text: (b.textContent || '').trim().slice(0, 40), tag: b.tagName };
+    }).filter(function (b) { return b.text; });
+    return { url: location.href, titulo: document.title, campos: campos, botoes: botoes };
+  });
+} catch (eDiag) {
+  estruturaPasso3 = { erroDiagnostico: eDiag.message };
+}
+const diagnosticoTxt = JSON.stringify(estruturaPasso3).slice(0, 8000);
 await pool.query(
 "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
 [
 'Cliente localizado/criado no Fandi com o CPF preenchido (Passo 2 concluido). O robo parou de proposito no Passo 3, porque a ficha ainda nao coleta Km e Placa do veiculo. Clique em Abrir Fandi pra terminar o cadastro (Dados do veiculo + Condicoes da venda), ja logado.',
-'Parada proposital apos Passo 2 (Dados do cliente), Departamento=SEMINOVOS. URL onde parou: ' + urlParada,
+'DIAGNOSTICO_PASSO3: ' + diagnosticoTxt,
 urlParada,
 fandi_id
 ]
-);
+)
 console.log('[PUPPETEER] Ficha levada ate o Passo 2 no Fandi (falta Km/Placa):', fandi_id, urlParada);
 try { if (page && !page.isClosed()) { await page.close(); } } catch (e) {}
       await browser.close();
