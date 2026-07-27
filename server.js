@@ -682,7 +682,17 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 // preenchido, e o vendedor termina o resto (veiculo + condicoes da venda)
 // com o link direto, ja logado.
 const urlParada = page.url();
-await new Promise(function (r) { setTimeout(r, 800); });
+for (let esperaP3 = 0; esperaP3 < 24; esperaP3++) {
+  let achouPasso3 = false;
+  try {
+    achouPasso3 = await frameFandi.evaluate(function () {
+      const t = (document.body.innerText || '').toLowerCase();
+      return t.indexOf('placa') > -1 || t.indexOf('quilometragem') > -1 || t.indexOf(' km') > -1 || t.indexOf('dados do veiculo') > -1 || t.indexOf('dados do veículo') > -1;
+    });
+  } catch (eEspera) {}
+  if (achouPasso3) break;
+  await new Promise(function (r) { setTimeout(r, 500); });
+}
 let estruturaPasso3 = null;
 try {
   estruturaPasso3 = await frameFandi.evaluate(function () {
@@ -712,24 +722,25 @@ try {
         visible: !!(el.offsetWidth || el.offsetHeight)
       };
       if (el.tagName === 'SELECT') {
-        info.options = Array.prototype.slice.call(el.options).slice(0, 30).map(function (o) { return { value: o.value, text: o.text }; });
+        info.options = Array.prototype.slice.call(el.options).slice(0, 15).map(function (o) { return { value: o.value, text: o.text }; });
       }
       return info;
-    }).filter(function (c) { return c.visible; });
+    });
     const botoes = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
       return { text: (b.textContent || '').trim().slice(0, 40), tag: b.tagName };
     }).filter(function (b) { return b.text; });
-    return { url: location.href, titulo: document.title, campos: campos, botoes: botoes };
+    const textoResumo = (document.body.innerText || '').slice(0, 600);
+    return { url: location.href, titulo: document.title, campos: campos, botoes: botoes, textoResumo: textoResumo };
   });
 } catch (eDiag) {
   estruturaPasso3 = { erroDiagnostico: eDiag.message };
 }
-const diagnosticoTxt = JSON.stringify(estruturaPasso3).slice(0, 8000);
+const diagnosticoTxt = JSON.stringify(estruturaPasso3).slice(0, 9000);
 await pool.query(
 "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
 [
 'Cliente localizado/criado no Fandi com o CPF preenchido (Passo 2 concluido). O robo parou de proposito no Passo 3, porque a ficha ainda nao coleta Km e Placa do veiculo. Clique em Abrir Fandi pra terminar o cadastro (Dados do veiculo + Condicoes da venda), ja logado.',
-'DIAGNOSTICO_PASSO3: ' + diagnosticoTxt,
+'DIAGNOSTICO_PASSO3_V2: ' + diagnosticoTxt,
 urlParada,
 fandi_id
 ]
