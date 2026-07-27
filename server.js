@@ -854,7 +854,7 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                         var elErro = Array.prototype.slice.call(ativo.querySelectorAll('[class*="invalid"], [class*="error"], [class*="danger"], .help-block, .field-validation-error'));
                         erros = elErro.map(function (e) { return (e.textContent || '').trim(); }).filter(function (t) { return t; }).slice(0, 10);
                       }
-                      return { totalBlocos: blocos.length, blocos: info, ativoTextoInicio: ativo ? (ativo.textContent || '').trim().slice(0, 80) : null, proximaAtivo: proximaAtivo, erros: erros };
+                      return { totalBlocos: blocos.length, blocos: info, ativoTextoInicio: ativo ? (ativo.textContent || '').trim().slice(0, 160) : null, proximaAtivo: proximaAtivo, erros: erros };
                     }), 8000, 'wizard_info').catch(function (e) { return { erro: e.message }; });
                   }
 
@@ -922,7 +922,9 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                   diagLog.fases.push({ fase: 'wizard_info_erro', erro: eWizardV5.message });
                 }
 let preencheuV5 = { tentou: false };
-              if (estadoV5.marca) {
+              const estamosEmDadosDoVeiculo = wizardInfoV5 && /ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '');
+              diagLog.fases.push({ fase: 'checagem_pre_preenchimento', estadoMarca: estadoV5.marca, estamosEmDadosDoVeiculo: estamosEmDadosDoVeiculo });
+              if (estadoV5.marca || estamosEmDadosDoVeiculo) {
                 preencheuV5.tentou = true;
                 try {
                   const opcoesMarcaV5 = await comTimeout(frameFandi.evaluate(function () {
