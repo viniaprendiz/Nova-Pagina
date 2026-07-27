@@ -183,7 +183,7 @@ Yaris XL Plus 2023 22.000 km R$ 94.900"></textarea>
     d.style.display = "block";
   }
 
-  function linkCarro(c) { return location.origin + "/loja.html?carro=" + encodeURIComponent(c.id); }
+  function linkCarro(c) { return location.origin + "/carro/" + encodeURIComponent(c.id); }
 
   function linkZap(c) {
     var num = limpaNum(estado.config.whats);
@@ -211,7 +211,8 @@ Yaris XL Plus 2023 22.000 km R$ 94.900"></textarea>
     if (c.preco) h += '<p class="preco">' + dinheiro(c.preco) + "</p>";
     if (c.obs) h += '<p class="esp">' + escapa(c.obs) + "</p>";
     h += '<div class="acoes">';
-    h += '<a class="bt pri mini" href="/simulador.html?valor=' + encodeURIComponent(c.preco || "") + '">Simular</a>';
+    h += '<a class="bt pri mini" href="/carro/' + encodeURIComponent(c.id) + '" target="_blank" rel="noopener">' + (modoCliente ? "Ver e simular" : "Pagina do carro") + '</a>';
+if (!modoCliente) h += '<a class="bt mini" href="/simulador.html?valor=' + encodeURIComponent(c.preco || "") + '">Regua de aprovacao</a>';
     var z = linkZap(c);
     if (z) h += '<a class="bt zap mini" href="' + z + '" target="_blank" rel="noopener">' + (modoCliente ? "Falar com o vendedor" : "Mandar pro cliente") + "</a>";
     if (!modoCliente) {
