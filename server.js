@@ -1001,6 +1001,20 @@ let preencheuV5 = { tentou: false };
                         var st = window.getComputedStyle(el);
                         return st.visibility !== 'hidden' && st.display !== 'none';
                       }
+                      var todosElementos = Array.prototype.slice.call(document.querySelectorAll('body *'));
+                      function acharCampoAno(el) {
+                        var idxEl = todosElementos.indexOf(el);
+                        if (idxEl === -1) return null;
+                        for (var i = idxEl - 1; i >= 0 && i > idxEl - 400; i--) {
+                          var node = todosElementos[i];
+                          if (node.children && node.children.length > 0) continue;
+                          var t = (node.textContent || '').trim();
+                          if (!t || t.length > 60) continue;
+                          if (/ano de fabrica/i.test(t)) return 'fabricacao';
+                          if (/ano do modelo/i.test(t)) return 'modelo';
+                        }
+                        return null;
+                      }
                       var radios = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"]')).filter(visivel);
                       var grupos = {};
                       radios.forEach(function (r, i) {
@@ -1016,13 +1030,42 @@ let preencheuV5 = { tentou: false };
                           var parentLabel = r.closest('label');
                           if (parentLabel) texto = parentLabel.textContent.trim();
                         }
-                        grupos[nome].push({ value: r.value, texto: texto, checked: r.checked, idx: i });
+                        var campo = acharCampoAno(r);
+                        grupos[nome].push({ value: r.value, texto: texto, checked: r.checked, idx: i, campo: campo });
                       });
                       var resultado = [];
                       Object.keys(grupos).forEach(function (nome) {
                         var itens = grupos[nome];
                         var todosAnos = itens.length > 0 && itens.every(function (it) { return /^(19|20)\d{2}$/.test(it.texto || it.value || ''); });
-                        if (todosAnos) {
+                        if (!todosAnos) return;
+                        var porCampo = {};
+                        var semCampo = [];
+                        itens.forEach(function (it) {
+                          if (it.campo) {
+                            if (!porCampo[it.campo]) porCampo[it.campo] = [];
+                            porCampo[it.campo].push(it);
+                          } else {
+                            semCampo.push(it);
+                          }
+                        });
+                        var chavesCampo = Object.keys(porCampo);
+                        if (chavesCampo.length > 0) {
+                          semCampo.forEach(function (it) {
+                            var melhorChave = null, melhorDist = Infinity;
+                            chavesCampo.forEach(function (ch) {
+                              porCampo[ch].forEach(function (it2) {
+                                var d = Math.abs(it2.idx - it.idx);
+                                if (d < melhorDist) { melhorDist = d; melhorChave = ch; }
+                              });
+                            });
+                            if (melhorChave) porCampo[melhorChave].push(it);
+                          });
+                          chavesCampo.forEach(function (campoKey, si) {
+                            var subItens = porCampo[campoKey];
+                            var jaMarcado = subItens.some(function (it) { return it.checked; });
+                            resultado.push({ nomeGrupo: nome + '::' + campoKey, subIndex: si, itens: subItens, jaMarcado: jaMarcado });
+                          });
+                        } else {
                           var subgrupos = [];
                           var atual = [];
                           itens.forEach(function (it, k) {
@@ -1044,7 +1087,7 @@ let preencheuV5 = { tentou: false };
                         }
                       });
                       return resultado;
-                    }), 8000, 'radios_ano').catch(function (e) { return { erro: e.message }; });
+                    }), 10000, 'radios_ano').catch(function (e) { return { erro: e.message }; });
                     diagLog.fases.push({ fase: 'radios_ano_info', resultado: radiosInfoV5 });
 
                     if (Array.isArray(radiosInfoV5)) {
