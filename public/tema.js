@@ -48,6 +48,8 @@
     });
   }
   function montarAbas(role) {
+    window.__tdriveRole = role;
+    if (window.__tdriveMontarMenu) window.__tdriveMontarMenu();
     var caixas = document.querySelectorAll(".abas");
     if (!caixas.length) return;
     var aqui = location.pathname.replace(/(index|app)\.html$/, "");
@@ -92,75 +94,53 @@
 // ---- v13.1: menu responsivo (hamburger no celular) + botao Entrar ----
 (function () {
   function estilo() {
-    if (document.getElementById("cssMenuTdrive")) return;
-    var s = document.createElement("style");
-    s.id = "cssMenuTdrive";
+    if (document.getElementById('cssMenuTdrive')) return;
+    var s = document.createElement('style');
+    s.id = 'cssMenuTdrive';
     s.textContent = [
-      ".abas{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
-      ".abas button{padding:8px 14px;border-radius:999px;border:1px solid var(--linha,#243352);background:var(--card,#121c30);color:var(--tx,#e8eefc);cursor:pointer;font:inherit;font-size:14px}",
-      ".abas button.btnEntrar{margin-left:auto;font-weight:700;border-color:var(--ac,#3b82f6)}",
-      ".abas button.btnMenu{display:none}",
-      "@media (max-width:700px){",
-      "  .abas{flex-wrap:wrap}",
-      "  .abas button.btnMenu{display:inline-block}",
-      "  .abas.fechado a{display:none}",
-      "  .abas a{flex:1 1 100%}",
-      "  .abas button.btnEntrar{margin-left:8px}",
-      "}",
-      ".jEntrar{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}",
-      ".jEntrar>div{background:var(--card,#121c30);color:var(--tx,#e8eefc);border:1px solid var(--linha,#243352);border-radius:14px;padding:18px;max-width:420px;width:100%}",
-      ".jEntrar h3{margin:0 0 8px}",
-      ".jEntrar p{margin:0 0 10px;font-size:14px;opacity:.9}"
-    ].join("");
+      '.abas{display:flex;gap:8px;align-items:center;flex-wrap:wrap}',
+      '.abas button{padding:8px 14px;border-radius:999px;border:1px solid var(--linha,#243352);background:var(--card,#121c30);color:var(--tx,#e8eefc);cursor:pointer;font:inherit;font-size:14px}',
+      '.abas .btnEntrar{margin-left:auto;font-weight:700;border-color:var(--ac,#3b82f6);text-decoration:none;display:inline-block;padding:8px 14px;border-radius:999px;border:1px solid var(--linha,#243352);background:var(--card,#121c30);color:var(--tx,#e8eefc);font-size:14px}',
+      '.abas button.btnMenu{display:none}',
+      '@media (max-width:700px){',
+      '  .abas{flex-wrap:wrap}',
+      '  .abas button.btnMenu{display:inline-block}',
+      '  .abas.fechado a:not(.btnEntrar){display:none}',
+      '  .abas a{flex:1 1 100%}',
+      '  .abas .btnEntrar{margin-left:8px;flex:0 0 auto}',
+      '}'
+    ].join('');
     document.head.appendChild(s);
   }
-  function janelaEntrar() {
-var fundo = document.createElement("div");
-fundo.className = "jEntrar";
-fundo.innerHTML = '<div><h3>Entrar</h3>' +
-'<p>Escolha o tipo de acesso:</p>' +
-'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
-'<button id="bVendedor" style="flex:1;min-width:150px">Sou vendedor</button>' +
-'<button id="bGestor" style="flex:1;min-width:150px">Sou gestor</button>' +
-'<button id="bAdmin" style="flex:1;min-width:150px">Sou o dono</button>' +
-'</div>' +
-'<p style="font-size:12px;opacity:.8">Ferramentas internas antigas (fichas, leads, estoque) ainda usam o PIN de acesso.</p>' +
-'<p id="estadoPin">Verificando se o servidor esta protegido...</p>' +
-'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="bPin">Digitar PIN</button><button id="bFechar">Fechar</button></div></div>';
-document.body.appendChild(fundo);
-fundo.addEventListener("click", function (e) { if (e.target === fundo) fundo.remove(); });
-fundo.querySelector("#bFechar").onclick = function () { fundo.remove(); };
-fundo.querySelector("#bPin").onclick = function () { if (window.tdrivePedirPin) window.tdrivePedirPin(); };
-fundo.querySelector("#bVendedor").onclick = function () { location.href = "/vendedor/login"; };
-fundo.querySelector("#bAdmin").onclick = function () { location.href = "/admin/login"; };
-fundo.querySelector("#bGestor").onclick = function () { location.href = "/adm/login"; };
-fetch("/api/config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (c) {
-var el = fundo.querySelector("#estadoPin");
-if (!el) return;
-el.textContent = c.protegido
-? "Servidor protegido por PIN: SIM. As ferramentas antigas pedem o PIN."
-: "Atencao: o servidor ainda NAO esta protegido por PIN. Crie a variavel TDRIVE_PIN no Render para trancar a lista de fichas.";
-}).catch(function () {});
-}
 
-function montarMenu() {
+  function montarMenu() {
     estilo();
-    var caixas = document.querySelectorAll(".abas");
+    var caixas = document.querySelectorAll('.abas');
     for (var i = 0; i < caixas.length; i++) {
       var c = caixas[i];
-      if (c.querySelector(".btnMenu")) continue;
-      var b = document.createElement("button");
-      b.type = "button"; b.className = "btnMenu"; b.textContent = "Menu";
-      b.onclick = (function (caixa) { return function () { caixa.classList.toggle("fechado"); }; })(c);
-      c.insertBefore(b, c.firstChild);
-      c.classList.add("fechado");
-      var e = document.createElement("button");
-      e.type = "button"; e.className = "btnEntrar"; e.textContent = "Entrar";
-      e.onclick = janelaEntrar;
-      c.appendChild(e);
+      var temLinks = c.querySelectorAll('a').length > 0;
+      if (temLinks && !c.querySelector('.btnMenu')) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'btnMenu'; b.textContent = 'Menu';
+        b.onclick = (function (caixa) { return function () { caixa.classList.toggle('fechado'); }; })(c);
+        c.insertBefore(b, c.firstChild);
+        c.classList.add('fechado');
+      }
+      var jaTemEntrar = c.querySelector('.btnEntrar');
+      var precisaEntrar = !window.__tdriveRole;
+      if (precisaEntrar && !jaTemEntrar) {
+        var e = document.createElement('a');
+        e.className = 'btnEntrar';
+        e.href = '/entrar.html';
+        e.textContent = 'Entrar';
+        c.appendChild(e);
+      } else if (!precisaEntrar && jaTemEntrar) {
+        jaTemEntrar.remove();
+      }
     }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montarMenu);
+  window.__tdriveMontarMenu = montarMenu;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', montarMenu);
   else montarMenu();
   setTimeout(montarMenu, 600);
 })();
