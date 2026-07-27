@@ -994,75 +994,68 @@ let preencheuV5 = { tentou: false };
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
 
                   try {
-                    async function lerAnosInfoV5() {
-                      return await comTimeout(frameFandi.evaluate(function () {
-                      function textoLabelProximo(el) {
-                        var cur = el;
-                        for (var i = 0; i < 6 && cur; i++) {
-                          cur = cur.parentElement;
-                          if (!cur) break;
-                          var lab = cur.querySelector('label');
-                          if (lab && lab.textContent.trim()) return lab.textContent.trim().slice(0, 40);
+                    const radiosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
+                      function visivel(el) {
+                        var r = el.getBoundingClientRect();
+                        if (r.width <= 0 || r.height <= 0) return false;
+                        var st = window.getComputedStyle(el);
+                        return st.visibility !== 'hidden' && st.display !== 'none';
+                      }
+                      var radios = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"]')).filter(visivel);
+                      var grupos = {};
+                      radios.forEach(function (r) {
+                        var nome = r.name || '';
+                        if (!nome) return;
+                        if (!grupos[nome]) grupos[nome] = [];
+                        var texto = '';
+                        if (r.id) {
+                          var lab = document.querySelector('label[for="' + r.id + '"]');
+                          if (lab) texto = lab.textContent.trim();
                         }
-                        return null;
-                      }
-                      var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
-                      var candidatos = selects.filter(function (s) {
-                        var opts = Array.prototype.slice.call(s.options).map(function (o) { return o.textContent.trim(); }).filter(function (t) { return t && !/^laga$/i.test(t); });
-                        return opts.length > 0 && opts.every(function (t) { return /^(19|20)\d{2}$/.test(t); });
+                        if (!texto) {
+                          var parentLabel = r.closest('label');
+                          if (parentLabel) texto = parentLabel.textContent.trim();
+                        }
+                        grupos[nome].push({ value: r.value, texto: texto, checked: r.checked });
                       });
-                      return candidatos.map(function (s) {
-                        return { id: s.id || null, valorAtual: s.value, label: textoLabelProximo(s), opcoes: Array.prototype.slice.call(s.options).map(function (o) { return o.value; }).filter(Boolean) };
+                      var resultado = [];
+                      Object.keys(grupos).forEach(function (nome) {
+                        var itens = grupos[nome];
+                        var todosAnos = itens.length > 0 && itens.every(function (it) { return /^(19|20)\d{2}$/.test(it.texto || it.value || ''); });
+                        if (todosAnos) {
+                          var jaMarcado = itens.some(function (it) { return it.checked; });
+                          resultado.push({ nomeGrupo: nome, itens: itens, jaMarcado: jaMarcado });
+                        }
                       });
-                    }), 8000, 'anos_info').catch(function (e) { return { erro: e.message }; });
-                    }
-                    let anosInfoV5 = await lerAnosInfoV5();
-                    for (let tentativaAnoV5 = 0; tentativaAnoV5 < 3 && Array.isArray(anosInfoV5) && anosInfoV5.length === 0; tentativaAnoV5++) {
-                      await new Promise(function (r) { setTimeout(r, 1500); });
-                      anosInfoV5 = await lerAnosInfoV5();
-                    }
-                    diagLog.fases.push({ fase: 'anos_info', resultado: anosInfoV5 });
+                      return resultado;
+                    }), 8000, 'radios_ano').catch(function (e) { return { erro: e.message }; });
+                    diagLog.fases.push({ fase: 'radios_ano_info', resultado: radiosInfoV5 });
 
-                    if (Array.isArray(anosInfoV5) && anosInfoV5.length === 0) {
-                      try {
-                        const todosSelectsV5 = await comTimeout(frameFandi.evaluate(function () {
-                          function visivel(el) {
-                            var r = el.getBoundingClientRect();
-                            if (r.width <= 0 || r.height <= 0) return false;
-                            var st = window.getComputedStyle(el);
-                            return st.visibility !== 'hidden' && st.display !== 'none';
-                          }
-                          var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
-                          return selects.filter(visivel).map(function (s) {
-                            var opts = Array.prototype.slice.call(s.options).slice(0, 6).map(function (o) { return o.textContent.trim(); });
-                            return { id: s.id || null, name: s.name || null, opcoes: opts, totalOpcoes: s.options.length };
-                          });
-                        }), 8000, 'todos_selects').catch(function (e) { return { erro: e.message }; });
-                        diagLog.fases.push({ fase: 'todos_selects_visiveis', resultado: todosSelectsV5 });
-                      } catch (eTodosV5) {
-                        diagLog.fases.push({ fase: 'erro_todos_selects', erro: eTodosV5.message });
-                      }
-                    }
-
-
-                    if (Array.isArray(anosInfoV5)) {
-                      for (const anoSel of anosInfoV5) {
-                        if (anoSel.id && !anoSel.valorAtual && anoSel.opcoes && anoSel.opcoes.length) {
-                          const valorEscolhido = anoSel.opcoes.includes('2024') ? '2024' : anoSel.opcoes[anoSel.opcoes.length - 1];
+                    if (Array.isArray(radiosInfoV5)) {
+                      for (const grupoAnoV5 of radiosInfoV5) {
+                        if (!grupoAnoV5.jaMarcado && grupoAnoV5.itens && grupoAnoV5.itens.length) {
+                          const item2024V5 = grupoAnoV5.itens.find(function (it) { return (it.texto || it.value) === '2024'; });
+                          const alvoAnoV5 = item2024V5 || grupoAnoV5.itens[grupoAnoV5.itens.length - 1];
                           try {
-                            await comTimeout(frameFandi.select('#' + anoSel.id, valorEscolhido), 8000, 'select_ano');
-                            diagLog.fases.push({ fase: 'selecionou_ano', id: anoSel.id, valor: valorEscolhido });
-                          } catch (eAnoV5) {
-                            diagLog.fases.push({ fase: 'erro_selecionou_ano', id: anoSel.id, erro: eAnoV5.message });
+                            const cliqueRadioV5 = await comTimeout(frameFandi.evaluate(function (nome2, valor2) {
+                              var el = document.querySelector('input[type="radio"][name="' + CSS.escape(nome2) + '"][value="' + CSS.escape(valor2) + '"]');
+                              if (!el) return false;
+                              el.click();
+                              el.checked = true;
+                              el.dispatchEvent(new Event('change', { bubbles: true }));
+                              return true;
+                            }, grupoAnoV5.nomeGrupo, alvoAnoV5.value), 6000, 'clicar_radio_ano').catch(function (e) { return false; });
+                            diagLog.fases.push({ fase: 'clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, valor: alvoAnoV5.value, ok: cliqueRadioV5 });
+                          } catch (eRadioV5) {
+                            diagLog.fases.push({ fase: 'erro_clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, erro: eRadioV5.message });
                           }
+                          await new Promise(function (r) { setTimeout(r, 500); });
                         }
                       }
-                      await new Promise(function (r) { setTimeout(r, 500); });
                     }
-                  } catch (eAnosV5) {
-                    diagLog.fases.push({ fase: 'erro_anos_info', erro: eAnosV5.message });
+                  } catch (eRadiosAnoV5) {
+                    diagLog.fases.push({ fase: 'erro_radios_ano', erro: eRadiosAnoV5.message });
                   }
-
 
                   const clicouProximaV5 = await comTimeout(clicarPorTexto(frameFandi, 'Próxima'), 6000, 'clicar_proxima').catch(function () { return false; });
                   preencheuV5.clicouProxima = clicouProximaV5;
