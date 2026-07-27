@@ -1003,7 +1003,7 @@ let preencheuV5 = { tentou: false };
                       }
                       var radios = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"]')).filter(visivel);
                       var grupos = {};
-                      radios.forEach(function (r) {
+                      radios.forEach(function (r, i) {
                         var nome = r.name || '';
                         if (!nome) return;
                         if (!grupos[nome]) grupos[nome] = [];
@@ -1016,15 +1016,31 @@ let preencheuV5 = { tentou: false };
                           var parentLabel = r.closest('label');
                           if (parentLabel) texto = parentLabel.textContent.trim();
                         }
-                        grupos[nome].push({ value: r.value, texto: texto, checked: r.checked });
+                        grupos[nome].push({ value: r.value, texto: texto, checked: r.checked, idx: i });
                       });
                       var resultado = [];
                       Object.keys(grupos).forEach(function (nome) {
                         var itens = grupos[nome];
                         var todosAnos = itens.length > 0 && itens.every(function (it) { return /^(19|20)\d{2}$/.test(it.texto || it.value || ''); });
                         if (todosAnos) {
-                          var jaMarcado = itens.some(function (it) { return it.checked; });
-                          resultado.push({ nomeGrupo: nome, itens: itens, jaMarcado: jaMarcado });
+                          var subgrupos = [];
+                          var atual = [];
+                          itens.forEach(function (it, k) {
+                            var numAtual = parseInt(it.texto || it.value, 10);
+                            if (k > 0) {
+                              var numAnterior = parseInt(itens[k - 1].texto || itens[k - 1].value, 10);
+                              if (numAtual > numAnterior) {
+                                subgrupos.push(atual);
+                                atual = [];
+                              }
+                            }
+                            atual.push(it);
+                          });
+                          if (atual.length) subgrupos.push(atual);
+                          subgrupos.forEach(function (sub, si) {
+                            var jaMarcado = sub.some(function (it) { return it.checked; });
+                            resultado.push({ nomeGrupo: nome, subIndex: si, itens: sub, jaMarcado: jaMarcado });
+                          });
                         }
                       });
                       return resultado;
@@ -1037,15 +1053,22 @@ let preencheuV5 = { tentou: false };
                           const item2024V5 = grupoAnoV5.itens.find(function (it) { return (it.texto || it.value) === '2024'; });
                           const alvoAnoV5 = item2024V5 || grupoAnoV5.itens[grupoAnoV5.itens.length - 1];
                           try {
-                            const cliqueRadioV5 = await comTimeout(frameFandi.evaluate(function (nome2, valor2) {
-                              var el = document.querySelector('input[type="radio"][name="' + CSS.escape(nome2) + '"][value="' + CSS.escape(valor2) + '"]');
+                            const cliqueRadioV5 = await comTimeout(frameFandi.evaluate(function (idxAlvo) {
+                              function visivel(el) {
+                                var r = el.getBoundingClientRect();
+                                if (r.width <= 0 || r.height <= 0) return false;
+                                var st = window.getComputedStyle(el);
+                                return st.visibility !== 'hidden' && st.display !== 'none';
+                              }
+                              var radios = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"]')).filter(visivel);
+                              var el = radios[idxAlvo];
                               if (!el) return false;
                               el.click();
                               el.checked = true;
                               el.dispatchEvent(new Event('change', { bubbles: true }));
                               return true;
-                            }, grupoAnoV5.nomeGrupo, alvoAnoV5.value), 6000, 'clicar_radio_ano').catch(function (e) { return false; });
-                            diagLog.fases.push({ fase: 'clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, valor: alvoAnoV5.value, ok: cliqueRadioV5 });
+                            }, alvoAnoV5.idx), 6000, 'clicar_radio_ano').catch(function (e) { return false; });
+                            diagLog.fases.push({ fase: 'clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, sub: grupoAnoV5.subIndex, valor: alvoAnoV5.value, ok: cliqueRadioV5 });
                           } catch (eRadioV5) {
                             diagLog.fases.push({ fase: 'erro_clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, erro: eRadioV5.message });
                           }
