@@ -1023,6 +1023,28 @@ let preencheuV5 = { tentou: false };
                     }
                     diagLog.fases.push({ fase: 'anos_info', resultado: anosInfoV5 });
 
+                    if (Array.isArray(anosInfoV5) && anosInfoV5.length === 0) {
+                      try {
+                        const todosSelectsV5 = await comTimeout(frameFandi.evaluate(function () {
+                          function visivel(el) {
+                            var r = el.getBoundingClientRect();
+                            if (r.width <= 0 || r.height <= 0) return false;
+                            var st = window.getComputedStyle(el);
+                            return st.visibility !== 'hidden' && st.display !== 'none';
+                          }
+                          var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
+                          return selects.filter(visivel).map(function (s) {
+                            var opts = Array.prototype.slice.call(s.options).slice(0, 6).map(function (o) { return o.textContent.trim(); });
+                            return { id: s.id || null, name: s.name || null, opcoes: opts, totalOpcoes: s.options.length };
+                          });
+                        }), 8000, 'todos_selects').catch(function (e) { return { erro: e.message }; });
+                        diagLog.fases.push({ fase: 'todos_selects_visiveis', resultado: todosSelectsV5 });
+                      } catch (eTodosV5) {
+                        diagLog.fases.push({ fase: 'erro_todos_selects', erro: eTodosV5.message });
+                      }
+                    }
+
+
                     if (Array.isArray(anosInfoV5)) {
                       for (const anoSel of anosInfoV5) {
                         if (anoSel.id && !anoSel.valorAtual && anoSel.opcoes && anoSel.opcoes.length) {
