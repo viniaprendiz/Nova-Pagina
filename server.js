@@ -483,62 +483,100 @@ async function obterFrameFandi(page) {
   return page.mainFrame();
 }
 
-async function clicarPorTexto(page, alvo, tentativasMs) {
-const fim = Date.now() + (tentativasMs || 10000);
-const alvoNorm = String(alvo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-while (Date.now() < fim) {
-const achou = await page.evaluate(function (alvoNorm) {
-function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
-var els = Array.prototype.slice.call(document.querySelectorAll('button, a, [role="button"], [role="option"], li, span, div'));
-for (var i = 0; i < els.length; i++) {
-var texto = normaliza(els[i].textContent);
-if (texto === alvoNorm && els[i].offsetParent !== null) { els[i].click(); return true; }
+async function clicarPorTexto(ctx, texto) {
+  for (let tentativa = 0; tentativa < 8; tentativa++) {
+    let handle;
+    try {
+      handle = await ctx.evaluateHandle(function (alvo) {
+        function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+        var alvoNorm = normaliza(alvo);
+        var candidatos = Array.prototype.slice.call(document.querySelectorAll('a, button, li, div, span, mat-option, option, [role="option"], [role="button"]'));
+        var melhor = null, melhorLen = Infinity;
+        for (var i = 0; i < candidatos.length; i++) {
+          var el = candidatos[i];
+          if (el.offsetParent === null && el.tagName !== 'OPTION') continue;
+          var texto2 = normaliza(el.textContent);
+          if (texto2.length === 0 || texto2.length > 80) continue;
+          if (texto2 === alvoNorm) { return el; }
+          if (texto2.indexOf(alvoNorm) !== -1 && texto2.length < melhorLen) { melhor = el; melhorLen = texto2.length; }
+        }
+        return melhor;
+      }, texto);
+    } catch (eEval) { handle = null; }
+    const el = handle ? handle.asElement() : null;
+    if (el) {
+      await el.click();
+      if (handle) await handle.dispose();
+      return true;
+    }
+    if (handle) await handle.dispose();
+    await new Promise(function (r) { setTimeout(r, 400); });
+  }
+  return false;
 }
-return false;
-}, alvoNorm);
-if (achou) return true;
-await new Promise(function (r) { setTimeout(r, 300); });
-}
-return false;
-}
+
+
 
 // Helper generico: acha um campo (input/textarea) pelo rotulo/placeholder/
 // nome tecnico mais proximo e digita nele. O formulario do Fandi e um
 // componente Angular que pode nao usar o atributo name como o robo antigo
 // esperava; a busca e por pistas (placeholder, aria-label, formcontrolname)
 // ou pelo texto do rotulo mais perto no DOM.
-async function digitarCampoPorRotulo(page, rotulo, valor) {
-const rotuloNorm = String(rotulo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-const achou = await page.evaluate(function (rotuloNorm) {
-function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
-var candidatos = Array.prototype.slice.call(document.querySelectorAll('input, textarea'));
-for (var i = 0; i < candidatos.length; i++) {
-var el = candidatos[i];
-var pistas = normaliza(el.placeholder) + ' ' + normaliza(el.getAttribute('aria-label')) + ' ' + normaliza(el.name) + ' ' + normaliza(el.getAttribute('formcontrolname'));
-if (pistas.indexOf(rotuloNorm) !== -1) { el.setAttribute('data-tdrive-alvo', 'x'); return true; }
+async function digitarCampoPorRotulo(ctx, rotulo, valor) {
+  for (let tentativa = 0; tentativa < 8; tentativa++) {
+    let handle;
+    try {
+      handle = await ctx.evaluateHandle(function (rot) {
+        function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+        var rotNorm = normaliza(rot);
+        var inputs = Array.prototype.slice.call(document.querySelectorAll('input, textarea'));
+        for (var i = 0; i < inputs.length; i++) {
+          var el = inputs[i];
+          if (el.offsetParent === null) continue;
+          if (el.disabled) continue;
+          var nome = normaliza(el.getAttribute('name'));
+          var ph = normaliza(el.getAttribute('placeholder'));
+          var aria = normaliza(el.getAttribute('aria-label'));
+          var idAttr = normaliza(el.id);
+          if (nome.indexOf(rotNorm) !== -1 || ph.indexOf(rotNorm) !== -1 || aria.indexOf(rotNorm) !== -1 || idAttr.indexOf(rotNorm) !== -1) {
+            return el;
+          }
+          if (el.id) {
+            var lbl = document.querySelector('label[for="' + el.id + '"]');
+            if (lbl && normaliza(lbl.textContent).indexOf(rotNorm) !== -1) return el;
+          }
+        }
+        var labels = Array.prototype.slice.call(document.querySelectorAll('label, span, div'));
+        for (var j = 0; j < labels.length; j++) {
+          var l = labels[j];
+          if (normaliza(l.textContent) === rotNorm) {
+            var container = l.closest('div');
+            var tentativas = 0;
+            while (container && tentativas < 4) {
+              var inp = container.querySelector('input, textarea');
+              if (inp) return inp;
+              container = container.parentElement;
+              tentativas++;
+            }
+          }
+        }
+        return null;
+      }, rotulo);
+    } catch (eEval) { handle = null; }
+    const el = handle ? handle.asElement() : null;
+    if (el) {
+      await el.click({ clickCount: 3 });
+      await el.type(String(valor || ''), { delay: 30 });
+      if (handle) await handle.dispose();
+      return true;
+    }
+    if (handle) await handle.dispose();
+    await new Promise(function (r) { setTimeout(r, 400); });
+  }
+  return false;
 }
-var textos = Array.prototype.slice.call(document.querySelectorAll('label, span, div, p'));
-for (var j = 0; j < textos.length; j++) {
-if (normaliza(textos[j].textContent) === rotuloNorm) {
-var contentor = textos[j].closest('div');
-var passos = 0;
-while (contentor && passos < 4) {
-var campo = contentor.querySelector('input, textarea');
-if (campo) { campo.setAttribute('data-tdrive-alvo', 'x'); return true; }
-contentor = contentor.parentElement;
-passos++;
-}
-}
-}
-return false;
-}, rotuloNorm);
-if (!achou) throw new Error('CAMPO_NAO_ENCONTRADO: ' + rotulo);
-const campo = await page.$('[data-tdrive-alvo="x"]');
-if (!campo) throw new Error('CAMPO_NAO_ENCONTRADO: ' + rotulo);
-await campo.click({ clickCount: 3 });
-await campo.type(String(valor || ''), { delay: 60 });
-await page.evaluate(function (el) { el.removeAttribute('data-tdrive-alvo'); }, campo);
-}
+
+
 
 async function processarFicha(fandi_id, dados) {
       const MAX_TENTATIVAS = 2;
