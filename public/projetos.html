@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Projetos - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:18px 16px 90px}
+h1{margin:0 0 4px;font-size:23px;letter-spacing:-.3px}
+.lead{margin:0 0 20px;color:var(--tx2);font-size:14px;max-width:640px;line-height:1.5}
+.voltar{display:inline-block;margin-bottom:16px;font-size:13px;color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.voltar:hover{border-color:var(--ac);color:var(--tx)}
+.resumo{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+.resumo .pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:12.5px;color:var(--tx2)}
+.resumo .pill b{color:var(--tx);font-size:14px}
+.colunas{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media (max-width:980px){.colunas{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.colunas{grid-template-columns:1fr}}
+.coluna{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:16px;padding:12px;min-height:120px}
+.coluna h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--tx2);margin:4px 6px 12px;display:flex;align-items:center;gap:6px}
+.coluna h2 .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.rascunho{background:var(--tx2)}
+.dot.andamento{background:var(--yel)}
+.dot.concluido{background:#7ee2a8}
+.dot.no-ar{background:var(--grn)}
+.projCard{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}
+.projCard.rascunho{border-left-color:var(--tx2)}
+.projCard.andamento{border-left-color:var(--yel)}
+.projCard.concluido{border-left-color:#7ee2a8}
+.projCard.no-ar{border-left-color:var(--grn)}
+.projCard b{font-size:14px;display:block;margin-bottom:2px}
+.projCard .tipo{font-size:11.5px;color:var(--tx2);margin-bottom:8px;display:block}
+.barra{background:var(--card2);border-radius:999px;height:6px;overflow:hidden;margin:8px 0}
+.barra i{display:block;height:100%;background:var(--ac)}
+.projCard.no-ar .barra i{background:var(--grn)}
+.pct{font-size:11px;color:var(--tx2);text-align:right;margin-top:2px}
+.projCard p{margin:8px 0 0;font-size:12.5px;color:var(--tx2);line-height:1.55}
+.projCard a.ir{display:inline-block;margin-top:10px;font-size:12px;color:var(--ac);text-decoration:none;font-weight:600}
+.projCard a.ir:hover{text-decoration:underline}
+.vazio{font-size:12.5px;color:var(--tx2);padding:10px 6px;font-style:italic}
+.dica{margin-top:26px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--tx2);line-height:1.6}
+.dica b{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="voltar" href="/painel.html">← Painel</a>
+<h1>Gerador de Projetos</h1>
+<p class="lead">Todo projeto pra ganhar dinheiro que a gente tiver (carros, automações, o que vier depois) aparece aqui, com o estágio real de cada um: da ideia até o dia em que começa a gerar dinheiro de verdade.</p>
+<div class="resumo" id="resumo"></div>
+<div class="colunas" id="colunas">
+<div class="coluna" data-col="rascunho"><h2><span class="dot rascunho"></span>Ideia / Rascunho</h2><div class="lista"></div></div>
+<div class="coluna" data-col="andamento"><h2><span class="dot andamento"></span>Em andamento</h2><div class="lista"></div></div>
+<div class="coluna" data-col="concluido"><h2><span class="dot concluido"></span>Concluído</h2><div class="lista"></div></div>
+<div class="coluna" data-col="no-ar"><h2><span class="dot no-ar"></span>No ar</h2><div class="lista"></div></div>
+</div>
+<div class="dica"><b>Como adicionar um projeto novo:</b> abra este arquivo (public/projetos.html) e edite a lista PROJETOS lá no início do script. Copie um bloco, troque nome, tipo, status (rascunho / andamento / concluido / no-ar), progresso (0 a 100) e a observação. Se o projeto já estiver no ar, pode incluir um link.</div>
+</div>
+<script src="/tema.js"></script>
+<script>
+const PROJETOS = [
+  { nome: "TDrive PRO — Venda de carros", tipo: "Plataforma completa: vitrine, simulador, leads, CRM, consórcio", status: "no-ar", progresso: 85, obs: "Fluxo público testado ponta a ponta (vitrine → carro → simulador → lead → WhatsApp). Ainda faltam as telas de vendedor e gestor completas.", link: "/loja.html?v=1" },
+  { nome: "Automação Fandi", tipo: "Robô que envia fichas de financiamento sozinho", status: "no-ar", progresso: 100, obs: "Já roda sozinho, sem precisar de ninguém clicar em nada." },
+  { nome: "CRM de clientes", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 55, obs: "A tela já existe e funciona, mas ainda precisa de mais uso no dia a dia pra virar hábito." },
+  { nome: "Consórcio", tipo: "Módulo dentro do TDrive PRO", status: "andamento", progresso: 40, obs: "A estrutura já existe, mas ainda precisa ser testada com clientes reais pra provar que funciona." },
+  { nome: "Painel por voz (Ditar)", tipo: "Ferramenta experimental", status: "andamento", progresso: 45, obs: "Funciona, mas é experimental — vale usar mais antes de confiar 100%." },
+  { nome: "Próximo negócio", tipo: "Ainda sem definição", status: "rascunho", progresso: 0, obs: "Espaço reservado pro próximo projeto pra ganhar dinheiro. Edite este arquivo pra descrever a ideia quando ela nascer." }
+];
+
+const nomesCol = { rascunho:"Ideia / Rascunho", andamento:"Em andamento", concluido:"Concluído", "no-ar":"No ar" };
+function render(){
+  const cont = { rascunho:[], andamento:[], concluido:[], "no-ar":[] };
+  PROJETOS.forEach(p => { if (cont[p.status]) cont[p.status].push(p); });
+  document.querySelectorAll('.coluna').forEach(col => {
+    const key = col.dataset.col;
+    const lista = col.querySelector('.lista');
+    const itens = cont[key] || [];
+    if (!itens.length){ lista.innerHTML = '<div class="vazio">Nada aqui ainda.</div>'; return; }
+    lista.innerHTML = itens.map(p => `
+      <div class="projCard ${p.status}">
+        <b>${p.nome}</b>
+        <span class="tipo">${p.tipo}</span>
+        <div class="barra"><i style="width:${p.progresso}%"></i></div>
+        <div class="pct">${p.progresso}%</div>
+        <p>${p.obs || ''}</p>
+        ${p.link ? '<a class="ir" href="'+p.link+'">Ver ao vivo →</a>' : ''}
+      </div>`).join('');
+  });
+  const resumo = document.getElementById('resumo');
+  const total = PROJETOS.length;
+  const noAr = cont["no-ar"].length;
+  resumo.innerHTML = `<div class="pill"><b>${total}</b> projetos no total</div><div class="pill"><b>${noAr}</b> já no ar gerando algo</div><div class="pill"><b>${cont.andamento.length}</b> em andamento</div><div class="pill"><b>${cont.rascunho.length}</b> em rascunho</div>`;
+}
+render();
+</script>
+</body>
+</html>
