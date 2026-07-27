@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leads - TDrive PRO</title>
+<link rel="stylesheet" href="/tema.css">
+<script src="/tema.js"><\/script>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--grn:#22c55e;--yel:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:18px 16px 80px}
+h1{margin:0 0 4px;font-size:23px}
+.lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
+.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
+.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px}
+.card.novo{border-left:3px solid var(--grn)}
+.topo{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
+.nome{font-size:17px;font-weight:800;margin:0}
+.quando{font-size:12px;color:var(--tx2)}
+.carro{font-size:14px;color:var(--tx2);margin:6px 0 0}
+.numeros{font-size:13px;color:var(--tx2);margin:8px 0 0;line-height:1.6}
+.numeros b{color:var(--tx)}
+.acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+button,.bt{padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
+.bt.zap{background:#128c7e;border-color:#128c7e;color:#fff}
+.selo{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(34,197,94,.18);color:#9ff0bd;margin-left:8px}
+.vazio{text-align:center;color:var(--tx2);padding:30px 10px;font-size:14px;line-height:1.6}
+.nota{font-size:13px;line-height:1.6;padding:12px;border-radius:8px;margin-bottom:14px;background:rgba(245,158,11,.10);border-left:3px solid var(--yel);color:var(--tx2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Leads da vitrine</h1>
+<p class="lead">Quem abriu o link de um carro, simulou a parcela e deixou o contato. Cada card aqui e um cliente que ja demonstrou interesse: quanto mais rapido voce responder, maior a chance de fechar.</p>
+<div class="abas"></div>
+<div id="avisoPin" class="nota" style="display:none"></div>
+<div id="lista"></div>
+<div id="vazio" class="vazio" style="display:none">Nenhum lead ainda.<br>Abra a Vitrine, copie o link de um carro e mande no WhatsApp do cliente.</div>
+</div>
+<script>
+(function () {
+  function el(i) { return document.getElementById(i); }
+  function esc(t) { return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function brl(n) { return "R$ " + (Number(n) || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function quando(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return "";
+    var min = Math.round((Date.now() - d.getTime()) / 60000);
+    if (min < 1) return "agora mesmo";
+    if (min < 60) return "ha " + min + " min";
+    if (min < 1440) return "ha " + Math.round(min / 60) + "h";
+    return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+  function telBonito(t) {
+    var d = String(t || "").replace(/[^0-9]/g, "");
+    if (d.length === 11) return "(" + d.slice(0, 2) + ") " + d.slice(2, 7) + "-" + d.slice(7);
+    if (d.length === 10) return "(" + d.slice(0, 2) + ") " + d.slice(2, 6) + "-" + d.slice(6);
+    return d;
+  }
+  function cartao(l) {
+    var tel = String(l.telefone || "").replace(/[^0-9]/g, "");
+    var msg = "Oi " + (l.nome || "") + ", aqui e o Vinicios da T-Drive. Vi que voce se interessou pelo " + (l.modelo || "carro") + ". Posso te passar as condicoes?";
+    var zap = tel ? "https://wa.me/55" + tel + "?text=" + encodeURIComponent(msg) : "";
+    var h = "";
+    h += '<div class="card' + (l.visto ? "" : " novo") + '">';
+    h += '<div class="topo"><p class="nome">' + esc(l.nome) + (l.visto ? "" : '<span class="selo">NOVO</span>') + '</p><span class="quando">' + esc(quando(l.criado_em)) + "</span></div>";
+    h += '<p class="carro">' + esc(l.modelo || "(sem carro)") + "</p>";
+    h += '<p class="numeros">Telefone: <b>' + esc(telBonito(tel)) + "</b><br>";
+    h += "Simulou: entrada <b>" + brl(l.entrada) + "</b> em <b>" + (l.parcelas || 0) + "x</b> de <b>" + brl(l.parcela_estimada) + "</b></p>";
+    h += '<div class="acoes">';
+    if (zap) h += '<a class="bt zap" target="_blank" rel="noopener" href="' + zap + '">Chamar no WhatsApp</a>';
+    if (l.carro_id) h += '<a class="bt" target="_blank" rel="noopener" href="/carro/' + encodeURIComponent(l.carro_id) + '">Ver o carro</a>';
+    h += '<button data-visto="' + esc(l.id) + '">' + (l.visto ? "Marcar como novo" : "Ja falei com ele") + "</button>";
+    h += "</div></div>";
+    return h;
+  }
+  function carregar() {
+    window.tdriveFetch("/api/leads").then(function (j) {
+      if (!j.success) {
+        el("avisoPin").style.display = "block";
+        el("avisoPin").innerHTML = esc(j.message || "Nao consegui ler os leads.");
+        return;
+      }
+      el("avisoPin").style.display = "none";
+      var lista = j.leads || [];
+      el("lista").innerHTML = lista.map(cartao).join("");
+      el("vazio").style.display = lista.length ? "none" : "block";
+    }).catch(function () {});
+  }
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-visto]");
+    if (!b) return;
+    window.tdriveFetch("/api/leads/" + encodeURIComponent(b.getAttribute("data-visto")) + "/visto", { method: "POST" })
+      .then(carregar).catch(function () {});
+  });
+  carregar();
+  setInterval(carregar, 60000);
+})();
+<\/script>
+</body>
+</html>
