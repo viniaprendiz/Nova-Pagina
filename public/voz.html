@@ -11,9 +11,6 @@ body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var
 .wrap{max-width:640px;margin:0 auto;padding:18px 16px 90px}
 h1{margin:0 0 4px;font-size:22px}
 .lead{margin:0 0 16px;color:var(--tx2);font-size:14px;line-height:1.55}
-.abas{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.abas a{padding:9px 16px;border-radius:999px;background:var(--card);color:var(--tx2);text-decoration:none;font-size:14px;border:1px solid var(--line)}
-.abas a.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px}
 #mic{width:100%;padding:22px;border:0;border-radius:16px;background:var(--ac);color:#fff;font-size:19px;font-weight:800;cursor:pointer}
 #mic.rec{background:var(--red);animation:pulse 1.2s infinite}
@@ -34,12 +31,7 @@ h2{font-size:14px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);
 <div class="wrap">
 <h1>Ditar pelo celular</h1>
 <p class="lead">Abra esta pagina no Chrome do celular, toque no botao e fale. O texto aparece pronto para copiar, virar ficha, WhatsApp ou email.</p>
-<div class="abas">
-<a href="/">Enviar Ficha</a>
-<a href="/simulador.html">Simulador</a>
-<a href="/painel.html">Painel</a>
-<a href="/voz.html" class="on">Ditar</a>
-</div>
+<a class="voltar" href="/painel.html">← Painel</a>
 
 <div class="card">
 <button id="mic">TOCAR E FALAR</button>
