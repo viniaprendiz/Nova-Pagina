@@ -25,30 +25,46 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montar);
   else montar();
 
-  // ---- Abas de navegacao: uma lista so para todo o site ----
-  var ABAS = [
+  // ---- Abas de navegacao: uma lista so para todo o site, filtrada pelo papel ----
+  var ABAS_BASE = [
     ["/", "Ficha"],
     ["/crm.html", "Clientes"],
-["/loja.html", "Vitrine"],
+    ["/loja.html", "Vitrine"],
     ["/leads.html", "Leads"],
-  ["/simulador.html", "Simulador"],
+    ["/simulador.html", "Simulador"],
     ["/consorcio.html", "Consorcio"],
     ["/voz.html", "Ditar"],
+    ["/padrao-clientes.html", "Padrao"],
     ["/painel.html", "Painel"],
     ["/roadmap.html", "Ideias"]
   ];
-  function montarAbas() {
+  var SO_DONO = ["/roadmap.html"];
+  var DONO_E_GESTOR = ["/painel.html"];
+  function abasPermitidas(role) {
+    return ABAS_BASE.filter(function (a) {
+      if (SO_DONO.indexOf(a[0]) !== -1) return role === "admin";
+      if (DONO_E_GESTOR.indexOf(a[0]) !== -1) return role === "admin" || role === "gestor";
+      return !!role;
+    });
+  }
+  function montarAbas(role) {
     var caixas = document.querySelectorAll(".abas");
     if (!caixas.length) return;
     var aqui = location.pathname.replace(/(index|app)\.html$/, "");
-    var html = ABAS.map(function (a) {
+    var lista = abasPermitidas(role);
+    var html = lista.map(function (a) {
       var on = (a[0] === aqui) ? ' class="on"' : "";
       return '<a href="' + a[0] + '"' + on + '>' + a[1] + '</a>';
     }).join("");
     for (var i = 0; i < caixas.length; i++) caixas[i].innerHTML = html;
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", montarAbas);
-  else montarAbas();
+  function iniciarAbas() {
+    fetch("/api/me").then(function (r) { return r.json(); }).then(function (j) {
+      montarAbas(j && j.usuario ? j.usuario.role : null);
+    }).catch(function () { montarAbas(null); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciarAbas);
+  else iniciarAbas();
 
   // ---- PIN de acesso (so entra em acao se o servidor exigir) ----
   var PK = "tdrive_pin";
