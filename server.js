@@ -790,7 +790,41 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                 }
               }
 
-              let preencheuV5 = { tentou: false };
+              
+                try {
+                  const wizardInfoV5 = await comTimeout(frameFandi.evaluate(function () {
+                    var blocos = Array.prototype.slice.call(document.querySelectorAll('[class*="wizard-content"]'));
+                    var info = blocos.map(function (el) {
+                      var st = window.getComputedStyle(el);
+                      return { id: el.id || null, className: (el.className || '').toString().slice(0, 80), display: st.display, textoInicio: (el.textContent || '').trim().slice(0, 120) };
+                    });
+                    var ativo = null;
+                    for (var i = 0; i < blocos.length; i++) {
+                      var st2 = window.getComputedStyle(blocos[i]);
+                      if (st2.display !== 'none') { ativo = blocos[i]; break; }
+                    }
+                    var proximaAtivo = null;
+                    if (ativo) {
+                      var btns = Array.prototype.slice.call(ativo.querySelectorAll('button, a[role="button"], [type="submit"]'));
+                      for (var j = 0; j < btns.length; j++) {
+                        var txt = (btns[j].textContent || '').trim();
+                        if (/pr[oó]xima|avan[çc]ar/i.test(txt)) { proximaAtivo = txt; break; }
+                      }
+                    }
+                    return { totalBlocos: blocos.length, blocos: info, ativoTextoInicio: ativo ? (ativo.textContent || '').trim().slice(0, 200) : null, proximaAtivo: proximaAtivo };
+                  }), 8000, 'wizard_info').catch(function (e) { return { erro: e.message }; });
+                  diagLog.fases.push({ fase: 'wizard_info', resultado: wizardInfoV5 });
+
+                  if (wizardInfoV5 && wizardInfoV5.proximaAtivo) {
+                    const cliqueAtivoV5 = await comTimeout(clicarPorTexto(frameFandi, wizardInfoV5.proximaAtivo), 6000, 'clicar_proxima_ativo').catch(function () { return false; });
+                    await new Promise(function (r) { setTimeout(r, 1500); });
+                    estadoV5 = await estadoCamposV5();
+                    diagLog.fases.push({ fase: 'apos_proxima_ativo', clicou: cliqueAtivoV5, estado: estadoV5 });
+                  }
+                } catch (eWizardV5) {
+                  diagLog.fases.push({ fase: 'wizard_info_erro', erro: eWizardV5.message });
+                }
+let preencheuV5 = { tentou: false };
               if (estadoV5.marca) {
                 preencheuV5.tentou = true;
                 try {
