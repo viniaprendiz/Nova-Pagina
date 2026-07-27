@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Area do dono - TDrive PRO</title>
+<style>
+:root{--card:#121c30;--card2:#18243d;--line:#243352;--tx:#e8eefc;--tx2:#93a4c4;--ac:#3b82f6;--red:#ef4444;--yel:#f59e0b;--grn:#22c55e}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0e1626 340px);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 60px}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.topo h1{font-size:19px;margin:0}
+.topo .sub{color:var(--tx2);font-size:13px;margin-top:2px}
+.bt{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:13.5px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.bt:hover{border-color:var(--ac)}
+.bt.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.acoesTopo{display:flex;gap:8px;flex-wrap:wrap}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin:22px 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--tx2);margin:12px 0 6px}
+label:first-of-type{margin-top:0}
+input{width:100%;padding:11px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:14.5px;font-family:inherit}
+input:focus{outline:none;border-color:var(--ac)}
+.linhaForm{display:flex;gap:10px;flex-wrap:wrap}
+.linhaForm>div{flex:1;min-width:150px}
+.vendedor{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.vendedor .nome{font-weight:700;font-size:14.5px}
+.vendedor .meta{font-size:12.5px;color:var(--tx2);margin-top:2px}
+.pill{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase}
+.pill.on{background:rgba(34,197,94,.15);color:#7ee2a8}
+.pill.off{background:rgba(239,68,68,.15);color:#f39a9a}
+.vazio{color:var(--tx2);font-size:14px;padding:18px;text-align:center;border:1px dashed var(--line);border-radius:14px}
+.msg{margin-top:10px;padding:10px;border-radius:9px;font-size:13px;display:none}
+.msg.err{display:block;background:rgba(239,68,68,.13);color:#f39a9a;border:1px solid rgba(239,68,68,.35)}
+.msg.ok{display:block;background:rgba(34,197,94,.13);color:#7ee2a8;border:1px solid rgba(34,197,94,.35)}
+.ferramentas{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topo">
+<div><h1 id="hOla">Area do dono</h1><div class="sub" id="hEmail"></div></div>
+<div class="acoesTopo"><button class="bt" id="bSair">Sair</button></div>
+</div>
+<h2>Criar vendedor</h2>
+<div class="card">
+<form id="fNovo">
+<div class="linhaForm">
+<div><label>Nome</label><input id="nNome" required></div>
+<div><label>Email</label><input id="nEmail" type="email" required></div>
+<div><label>Senha inicial</label><input id="nSenha" type="text" required></div>
+</div>
+<button class="bt pri" style="margin-top:12px" type="submit">CRIAR VENDEDOR</button>
+</form>
+<div class="msg" id="msgNovo"></div>
+</div>
+<h2>Vendedores</h2>
+<div id="listaVend" class="vazio">Carregando...</div>
+<h2>Ferramentas (ainda usam o PIN)</h2>
+<div class="card ferramentas">
+<a class="bt" href="/">Fichas / Enviar</a>
+<a class="bt" href="/leads.html">Leads da vitrine</a>
+<a class="bt" href="/loja.html">Vitrine / Estoque</a>
+<a class="bt" href="/painel.html">Painel do sistema</a>
+</div>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+fetch("/api/me").then(function(r){return r.json()}).then(function(j){
+if(!j.usuario || j.usuario.role!=="admin"){ location.href="/admin/login"; return; }
+$("hOla").textContent="Ola, "+j.usuario.nome;
+$("hEmail").textContent=j.usuario.email;
+carregarVendedores();
+}).catch(function(){ location.href="/admin/login"; });
+function fmtData(d){try{return new Date(d).toLocaleDateString("pt-BR");}catch(e){return d;}}
+function carregarVendedores(){
+fetch("/api/admin/vendedores").then(function(r){return r.json()}).then(function(j){
+var el=$("listaVend");
+if(!j.success){ el.innerHTML=(j.message||"Falha ao carregar"); return; }
+if(!j.vendedores.length){ el.className="vazio"; el.innerHTML="Nenhum vendedor cadastrado ainda."; return; }
+el.className="";
+el.innerHTML=j.vendedores.map(function(v){
+return '<div class="vendedor"><div><div class="nome">'+v.nome+'</div><div class="meta">'+v.email+' - criado em '+fmtData(v.criado_em)+'</div></div><div style="display:flex;align-items:center;gap:10px"><span class="pill '+(v.ativo?"on":"off")+'">'+(v.ativo?"ativo":"inativo")+'</span><button class="bt" data-id="'+v.id+'" onclick="alternar(this)">'+(v.ativo?"Desativar":"Ativar")+'</button></div></div>';
+}).join("");
+}).catch(function(){ $("listaVend").innerHTML="Falha ao carregar."; });
+}
+window.alternar=function(btn){
+var id=btn.getAttribute("data-id");
+btn.disabled=true;
+fetch("/api/admin/vendedores/"+id+"/status",{method:"POST"}).then(function(r){return r.json()}).then(function(){ carregarVendedores(); }).catch(function(){ btn.disabled=false; });
+};
+$("fNovo").addEventListener("submit", function(ev){
+ev.preventDefault();
+var nome=$("nNome").value.trim(), email=$("nEmail").value.trim(), senha=$("nSenha").value;
+var msg=$("msgNovo"); msg.className="msg";
+fetch("/api/admin/vendedores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome:nome,email:email,senha:senha})})
+.then(function(r){return r.json()}).then(function(j){
+if(!j.success){ msg.className="msg err"; msg.textContent=j.message||"Erro ao criar."; return; }
+msg.className="msg ok"; msg.textContent="Vendedor criado. Passe email e senha inicial pra ele.";
+$("nNome").value=""; $("nEmail").value=""; $("nSenha").value="";
+carregarVendedores();
+}).catch(function(){ msg.className="msg err"; msg.textContent="Falha ao conectar."; });
+});
+$("bSair").onclick=function(){ fetch("/api/logout",{method:"POST"}).then(function(){ location.href="/admin/login"; }); };
+</script>
+</body>
+</html>
