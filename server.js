@@ -383,7 +383,7 @@ try { return puppeteer.executablePath(); } catch (e) { return null; }
 async function abrirNavegador() {
 const opcoes = {
 headless: 'new',
-args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-gpu','--no-zygote','--disable-extensions','--disable-background-networking'],
+args: ['--no-sandbox','--disable-setuid-sandbox','--disable-dev-shm-usage','--disable-gpu','--no-zygote','--disable-extensions','--disable-background-networking', '--single-process', '--disable-extensions', '--disable-background-networking', '--js-flags=--max-old-space-size=256'],
 timeout: 60000
 };
 const caminho = caminhoChrome();
