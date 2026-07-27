@@ -43,19 +43,20 @@ input:focus{outline:none;border-color:var(--ac)}
 <div><h1 id="hOla">Area do dono</h1><div class="sub" id="hEmail"></div></div>
 <div class="acoesTopo"><button class="bt" id="bSair">Sair</button></div>
 </div>
-<h2>Criar vendedor</h2>
+<h2>Criar conta</h2>
 <div class="card">
 <form id="fNovo">
 <div class="linhaForm">
 <div><label>Nome</label><input id="nNome" required></div>
 <div><label>Email</label><input id="nEmail" type="email" required></div>
 <div><label>Senha inicial</label><input id="nSenha" type="text" required></div>
+<div id="campoPapel" style="display:none"><label>Papel</label><select id="nPapel"><option value="vendedor">Vendedor</option><option value="gestor">ADM</option></select></div>
 </div>
-<button class="bt pri" style="margin-top:12px" type="submit">CRIAR VENDEDOR</button>
+<button class="bt pri" style="margin-top:12px" type="submit">CRIAR</button>
 </form>
 <div class="msg" id="msgNovo"></div>
 </div>
-<h2>Vendedores</h2>
+<h2>Equipe</h2>
 <div id="listaVend" class="vazio">Carregando...</div>
 <h2>Ferramentas (ainda usam o PIN)</h2>
 <div class="card ferramentas">
@@ -64,13 +65,16 @@ input:focus{outline:none;border-color:var(--ac)}
 <a class="bt" href="/loja.html">Vitrine / Estoque</a>
 <a class="bt" href="/painel.html">Painel do sistema</a>
 </div>
-</div>
+</div
 <script>
 var $=function(i){return document.getElementById(i)};
+var papelAtual=null;
 fetch("/api/me").then(function(r){return r.json()}).then(function(j){
-if(!j.usuario || j.usuario.role!=="admin"){ location.href="/admin/login"; return; }
-$("hOla").textContent="Ola, "+j.usuario.nome;
-$("hEmail").textContent=j.usuario.email;
+if(!j.usuario || (j.usuario.role!=="admin" && j.usuario.role!=="gestor")){ location.href="/admin/login"; return; }
+papelAtual=j.usuario.role;
+$("hOla").textContent=(papelAtual==="admin"?"Area do dono":"Area administrativa")+" - Ola, "+j.usuario.nome;
+$("hEmail").textContent=j.usuario.email+" - "+(papelAtual==="admin"?"dono":"ADM");
+if(papelAtual==="admin"){ $("campoPapel").style.display=""; }
 carregarVendedores();
 }).catch(function(){ location.href="/admin/login"; });
 function fmtData(d){try{return new Date(d).toLocaleDateString("pt-BR");}catch(e){return d;}}
@@ -81,24 +85,26 @@ if(!j.success){ el.innerHTML=(j.message||"Falha ao carregar"); return; }
 if(!j.vendedores.length){ el.className="vazio"; el.innerHTML="Nenhum vendedor cadastrado ainda."; return; }
 el.className="";
 el.innerHTML=j.vendedores.map(function(v){
-return '<div class="vendedor"><div><div class="nome">'+v.nome+'</div><div class="meta">'+v.email+' - criado em '+fmtData(v.criado_em)+'</div></div><div style="display:flex;align-items:center;gap:10px"><span class="pill '+(v.ativo?"on":"off")+'">'+(v.ativo?"ativo":"inativo")+'</span><button class="bt" data-id="'+v.id+'" onclick="alternar(this)">'+(v.ativo?"Desativar":"Ativar")+'</button></div></div>';
+var tagPapel=v.role==="gestor"?"ADM":"Vendedor";
+return '<div class="vendedor"><div><div class="nome">'+v.nome+' <span class="pill" style="background:rgba(59,130,246,.15);color:#a9c7ff">'+tagPapel+'</span></div><div class="meta">'+v.email+' - criado em '+fmtData(v.criado_em)+'</div></div><div style="display:flex;align-items:center;gap:10px"><span class="pill '+(v.ativo?"on":"off")+'">'+(v.ativo?"ativo":"inativo")+'</span><button class="bt" data-id="'+v.id+'" onclick="alternar(this)">'+(v.ativo?"Desativar":"Ativar")+'</button></div></div>';
 }).join("");
 }).catch(function(){ $("listaVend").innerHTML="Falha ao carregar."; });
 }
 window.alternar=function(btn){
 var id=btn.getAttribute("data-id");
 btn.disabled=true;
-fetch("/api/admin/vendedores/"+id+"/status",{method:"POST"}).then(function(r){return r.json()}).then(function(){ carregarVendedores(); }).catch(function(){ btn.disabled=false; });
+fetch("/api/admin/vendedores/"+id+"/status",{method:"POST"}).then(function(r){return r.json()}).then(function(j){ if(!j.success){ alert(j.message||"Nao foi possivel alterar."); } carregarVendedores(); }).catch(function(){ btn.disabled=false; });
 };
 $("fNovo").addEventListener("submit", function(ev){
 ev.preventDefault();
 var nome=$("nNome").value.trim(), email=$("nEmail").value.trim(), senha=$("nSenha").value;
+var papel=$("nPapel")?$("nPapel").value:"vendedor";
 var msg=$("msgNovo"); msg.className="msg";
-fetch("/api/admin/vendedores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome:nome,email:email,senha:senha})})
+fetch("/api/admin/vendedores",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nome:nome,email:email,senha:senha,papel:papel})})
 .then(function(r){return r.json()}).then(function(j){
 if(!j.success){ msg.className="msg err"; msg.textContent=j.message||"Erro ao criar."; return; }
-msg.className="msg ok"; msg.textContent="Vendedor criado. Passe email e senha inicial pra ele.";
-$("nNome").value=""; $("nEmail").value=""; $("nSenha").value="";
+msg.className="msg ok"; msg.textContent="Conta criada. Passe email e senha inicial pra pessoa.";
+$("nNome").value="";$("nEmail").value="";$("nSenha").value="";
 carregarVendedores();
 }).catch(function(){ msg.className="msg err"; msg.textContent="Falha ao conectar."; });
 });
