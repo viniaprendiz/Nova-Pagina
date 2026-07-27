@@ -792,35 +792,50 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 
               
                 try {
-                  const wizardInfoV5 = await comTimeout(frameFandi.evaluate(function () {
-                    var blocos = Array.prototype.slice.call(document.querySelectorAll('[class*="wizard-content"]'));
-                    var info = blocos.map(function (el) {
-                      var st = window.getComputedStyle(el);
-                      return { id: el.id || null, className: (el.className || '').toString().slice(0, 80), display: st.display, textoInicio: (el.textContent || '').trim().slice(0, 120) };
-                    });
-                    var ativo = null;
-                    for (var i = 0; i < blocos.length; i++) {
-                      var st2 = window.getComputedStyle(blocos[i]);
-                      if (st2.display !== 'none') { ativo = blocos[i]; break; }
-                    }
-                    var proximaAtivo = null;
-                    if (ativo) {
-                      var btns = Array.prototype.slice.call(ativo.querySelectorAll('button, a[role="button"], [type="submit"]'));
-                      for (var j = 0; j < btns.length; j++) {
-                        var txt = (btns[j].textContent || '').trim();
-                        if (/pr[oó]xima|avan[çc]ar/i.test(txt)) { proximaAtivo = txt; break; }
+                  async function lerWizardInfoV5() {
+                    return await comTimeout(frameFandi.evaluate(function () {
+                      var blocos = Array.prototype.slice.call(document.querySelectorAll('[class*="wizard-content"]'));
+                      var info = blocos.map(function (el) {
+                        var st = window.getComputedStyle(el);
+                        return { className: (el.className || '').toString().slice(0, 80), display: st.display, textoInicio: (el.textContent || '').trim().slice(0, 60) };
+                      });
+                      var ativo = null;
+                      for (var i = 0; i < blocos.length; i++) {
+                        var st2 = window.getComputedStyle(blocos[i]);
+                        if (st2.display !== 'none') { ativo = blocos[i]; break; }
                       }
-                    }
-                    return { totalBlocos: blocos.length, blocos: info, ativoTextoInicio: ativo ? (ativo.textContent || '').trim().slice(0, 200) : null, proximaAtivo: proximaAtivo };
-                  }), 8000, 'wizard_info').catch(function (e) { return { erro: e.message }; });
-                  diagLog.fases.push({ fase: 'wizard_info', resultado: wizardInfoV5 });
-
-                  if (wizardInfoV5 && wizardInfoV5.proximaAtivo) {
-                    const cliqueAtivoV5 = await comTimeout(clicarPorTexto(frameFandi, wizardInfoV5.proximaAtivo), 6000, 'clicar_proxima_ativo').catch(function () { return false; });
-                    await new Promise(function (r) { setTimeout(r, 1500); });
-                    estadoV5 = await estadoCamposV5();
-                    diagLog.fases.push({ fase: 'apos_proxima_ativo', clicou: cliqueAtivoV5, estado: estadoV5 });
+                      var proximaAtivo = null;
+                      var erros = [];
+                      if (ativo) {
+                        var btns = Array.prototype.slice.call(ativo.querySelectorAll('button, a[role="button"], [type="submit"]'));
+                        for (var j = 0; j < btns.length; j++) {
+                          var txt = (btns[j].textContent || '').trim();
+                          if (/pr[oó]xima|avan[çc]ar/i.test(txt)) { proximaAtivo = txt; break; }
+                        }
+                        var elErro = Array.prototype.slice.call(ativo.querySelectorAll('[class*="invalid"], [class*="error"], [class*="danger"], .help-block, .field-validation-error'));
+                        erros = elErro.map(function (e) { return (e.textContent || '').trim(); }).filter(function (t) { return t; }).slice(0, 10);
+                      }
+                      return { totalBlocos: blocos.length, blocos: info, ativoTextoInicio: ativo ? (ativo.textContent || '').trim().slice(0, 80) : null, proximaAtivo: proximaAtivo, erros: erros };
+                    }), 8000, 'wizard_info').catch(function (e) { return { erro: e.message }; });
                   }
+
+                  let tentativaWizardV5 = 0;
+                  let wizardInfoV5 = await lerWizardInfoV5();
+                  diagLog.fases.push({ fase: 'wizard_info_0', resultado: wizardInfoV5 });
+
+                  while (tentativaWizardV5 < 4 && wizardInfoV5 && /local da venda/i.test(wizardInfoV5.ativoTextoInicio || '')) {
+                    tentativaWizardV5++;
+                    let cliqueOk = false;
+                    if (wizardInfoV5.proximaAtivo) {
+                      cliqueOk = await comTimeout(clicarPorTexto(frameFandi, wizardInfoV5.proximaAtivo), 6000, 'clicar_proxima_loop').catch(function () { return false; });
+                    }
+                    await new Promise(function (r) { setTimeout(r, 1800); });
+                    wizardInfoV5 = await lerWizardInfoV5();
+                    diagLog.fases.push({ fase: 'wizard_info_' + tentativaWizardV5, clicou: cliqueOk, resultado: wizardInfoV5 });
+                  }
+
+                  estadoV5 = await estadoCamposV5();
+                  diagLog.fases.push({ fase: 'apos_loop_wizard', estado: estadoV5, ativoFinal: wizardInfoV5 ? wizardInfoV5.ativoTextoInicio : null });
                 } catch (eWizardV5) {
                   diagLog.fases.push({ fase: 'wizard_info_erro', erro: eWizardV5.message });
                 }
