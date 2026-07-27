@@ -702,6 +702,45 @@ await new Promise(function (r) { setTimeout(r, 1000); });
             async function executarPasso3ComSeguranca() {
               await new Promise(function (r) { setTimeout(r, 2500); });
 
+              try {
+                const infoTipoOperacaoV5 = await comTimeout(frameFandi.evaluate(function () {
+                  function visivel(el) {
+                    var r = el.getBoundingClientRect();
+                    if (r.width <= 0 || r.height <= 0) return false;
+                    var st = window.getComputedStyle(el);
+                    return st.visibility !== 'hidden' && st.display !== 'none';
+                  }
+                  var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
+                  var alvo = null;
+                  for (var i = 0; i < selects.length; i++) {
+                    var textoOpcoes = Array.prototype.slice.call(selects[i].options).map(function (o) { return o.textContent.trim().toUpperCase(); }).join('|');
+                    if (/SEMINOVOS/.test(textoOpcoes) && /NOVOS/.test(textoOpcoes)) { alvo = selects[i]; break; }
+                  }
+                  if (!alvo) return { encontrado: false };
+                  var jaSelecionado = alvo.value && alvo.value.length > 0;
+                  return { encontrado: true, id: alvo.id || null, name: alvo.name || null, valorAtual: alvo.value, jaSelecionado: jaSelecionado, visivel: visivel(alvo), opcoes: Array.prototype.slice.call(alvo.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }) };
+                }), 8000, 'info_tipo_operacao').catch(function (e) { return { erro: e.message }; });
+                diagLog.fases.push({ fase: 'info_tipo_operacao', resultado: infoTipoOperacaoV5 });
+
+                if (infoTipoOperacaoV5 && infoTipoOperacaoV5.encontrado && !infoTipoOperacaoV5.jaSelecionado && infoTipoOperacaoV5.id) {
+                  const opcaoSeminovos = infoTipoOperacaoV5.opcoes.find(function (o) { return /SEMINOVOS/i.test(o.text) && o.value; });
+                  if (opcaoSeminovos) {
+                    try {
+                      await comTimeout(frameFandi.select('#' + infoTipoOperacaoV5.id, opcaoSeminovos.value), 8000, 'select_tipo_operacao');
+                      diagLog.fases.push({ fase: 'selecionou_tipo_operacao', valor: opcaoSeminovos });
+                    } catch (eSelTipo) {
+                      diagLog.fases.push({ fase: 'erro_select_tipo_operacao', erro: eSelTipo.message });
+                    }
+                  } else {
+                    const clicouOpcaoV5 = await comTimeout(clicarPorTexto(frameFandi, 'SEMINOVOS'), 6000, 'clicar_seminovos').catch(function () { return false; });
+                    diagLog.fases.push({ fase: 'clicou_seminovos_fallback', clicou: clicouOpcaoV5 });
+                  }
+                  await new Promise(function (r) { setTimeout(r, 800); });
+                }
+              } catch (eTipoOperacaoV5) {
+                diagLog.fases.push({ fase: 'erro_tipo_operacao', erro: eTipoOperacaoV5.message });
+              }
+
               let txtInicialV5 = await comTimeout(corpoTextoV5(), 8000, 'corpo_inicial').catch(function () { return ''; });
               let modalDetectadoV5 = /outras opera|pend[eê]ncias vizualizada/i.test(txtInicialV5);
               diagLog.fases.push({ fase: 'deteccao_modal', modalDetectado: modalDetectadoV5, trecho: txtInicialV5.slice(0, 300) });
