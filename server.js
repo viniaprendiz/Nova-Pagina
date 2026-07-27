@@ -1008,7 +1008,7 @@ let preencheuV5 = { tentou: false };
                       }
                       var selects = Array.prototype.slice.call(document.querySelectorAll('select'));
                       var candidatos = selects.filter(function (s) {
-                        var opts = Array.prototype.slice.call(s.options).map(function (o) { return o.textContent.trim(); }).filter(Boolean);
+                        var opts = Array.prototype.slice.call(s.options).map(function (o) { return o.textContent.trim(); }).filter(function (t) { return t && !/^laga$/i.test(t); });
                         return opts.length > 0 && opts.every(function (t) { return /^(19|20)\d{2}$/.test(t); });
                       });
                       return candidatos.map(function (s) {
