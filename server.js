@@ -994,7 +994,8 @@ let preencheuV5 = { tentou: false };
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
 
                   try {
-                    const anosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
+                    async function lerAnosInfoV5() {
+                      return await comTimeout(frameFandi.evaluate(function () {
                       function textoLabelProximo(el) {
                         var cur = el;
                         for (var i = 0; i < 6 && cur; i++) {
@@ -1014,6 +1015,12 @@ let preencheuV5 = { tentou: false };
                         return { id: s.id || null, valorAtual: s.value, label: textoLabelProximo(s), opcoes: Array.prototype.slice.call(s.options).map(function (o) { return o.value; }).filter(Boolean) };
                       });
                     }), 8000, 'anos_info').catch(function (e) { return { erro: e.message }; });
+                    }
+                    let anosInfoV5 = await lerAnosInfoV5();
+                    for (let tentativaAnoV5 = 0; tentativaAnoV5 < 3 && Array.isArray(anosInfoV5) && anosInfoV5.length === 0; tentativaAnoV5++) {
+                      await new Promise(function (r) { setTimeout(r, 1500); });
+                      anosInfoV5 = await lerAnosInfoV5();
+                    }
                     diagLog.fases.push({ fase: 'anos_info', resultado: anosInfoV5 });
 
                     if (Array.isArray(anosInfoV5)) {
