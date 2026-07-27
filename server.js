@@ -575,6 +575,35 @@ app.get('/api/status/:fandi_id', exigePin, async function (req, res) {
       }
 });
 
+// ---------- ATUALIZAR DADOS DA FICHA (v17.1) ----------
+// Completa dados que faltavam na hora do envio (telefone, renda, cep,
+// endereco, bairro) quando o vendedor descobre isso depois, manualmente.
+// So atualiza os campos enviados no corpo; nunca mexe em cpf/name/mother/status.
+app.post('/api/fichas/:fandi_id/atualizar', exigePin, async function (req, res) {
+try {
+var campos = ['phone', 'salary', 'cep', 'address', 'neighborhood'];
+var sets = [];
+var valores = [];
+var i = 1;
+var usados = [];
+campos.forEach(function (campo) {
+if (req.body && req.body[campo] !== undefined && req.body[campo] !== null) {
+sets.push(campo + '=$' + i);
+valores.push(String(req.body[campo]));
+usados.push(campo);
+i++;
+}
+});
+if (!sets.length) return res.json({ success: false, message: 'Nenhum campo valido para atualizar (use phone, salary, cep, address ou neighborhood).' });
+valores.push(req.params.fandi_id);
+var r = await pool.query('UPDATE fichas SET ' + sets.join(', ') + ' WHERE fandi_id=$' + i, valores);
+if (!r.rowCount) return res.json({ success: false, message: 'Ficha nao encontrada.' });
+res.json({ success: true, message: 'Ficha atualizada.', campos: usados });
+} catch (err) {
+res.json({ success: false, message: 'Erro ao atualizar: ' + err.message });
+}
+});
+
 app.get('/api/config', function (req, res) {
 res.json({ destinatarios: EMAIL_DESTINATARIOS, versao: '15.0', protegido: !!PIN, pinAusente: !PIN, variaveisParecidas: NOMES_PARECIDOS });
 });
