@@ -45,6 +45,7 @@ input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--lin
 input:focus{border-color:var(--ac)}
 .total{font-size:30px;font-weight:800;margin-top:12px}
 .crumb{font-size:13px;color:var(--tx2);margin:0 0 16px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.crumb a{color:var(--tx2);text-decoration:none}.crumb a:hover{color:var(--ac)}.crumb b{color:var(--tx)}.hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:6px}.porta{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 20px;text-decoration:none;color:var(--tx);display:block;transition:border-color .15s,transform .15s}.porta:hover{border-color:var(--ac);transform:translateY(-2px)}.porta .ic{font-size:30px;margin-bottom:10px}.porta h3{margin:0 0 6px;font-size:18px}.porta p{margin:0;font-size:13px;color:var(--tx2);line-height:1.55}.porta.ganhar{border-top:3px solid var(--grn)}.porta.pensar{border-top:3px solid var(--ac)}.porta.olhar{border-top:3px solid var(--yel)}.acoesGrandes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:22px}.acaoG{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-decoration:none;color:var(--tx);display:block}.acaoG:hover{border-color:var(--ac)}.acaoG.pri{background:var(--ac);border-color:var(--ac)}.acaoG.pri h3, .acaoG.pri p{color:#fff}.acaoG h3{margin:0 0 6px;font-size:16px}.acaoG p{margin:0;font-size:13px;color:var(--tx2);line-height:1.5}.voltar{display:inline-block;margin-bottom:16px;font-size:13px;color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}.voltar:hover{border-color:var(--ac);color:var(--tx)}
+.topoNegocio{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 20px;padding:12px 16px;background:var(--card2);border:1px solid var(--line);border-radius:12px}.negAtivo{font-size:13.5px;color:var(--tx2)}.negAtivo b{color:var(--tx)}.negFuturo{display:inline-block;margin-left:10px;font-size:11px;padding:3px 9px;border-radius:999px;border:1px dashed var(--line);color:var(--tx2)}.verSite{font-size:13px;font-weight:700;color:#fff;background:var(--grn);border:1px solid var(--grn);padding:9px 15px;border-radius:9px;text-decoration:none;white-space:nowrap}.verSite:hover{opacity:.9}
 </style>
 </head>
 <body>
@@ -53,6 +54,8 @@ input:focus{border-color:var(--ac)}
 <p class="lead" id="subPainel">O que voce quer fazer agora?</p>
 <div class="abas"></div>
 <div id="crumb" class="crumb"></div>
+
+<div class="topoNegocio"><div class="negAtivo">🚗 <b>Carros</b> · T-Drive Auto Shopping Aricanduva <span class="negFuturo">+ novo negocio em breve</span></div><a class="verSite" href="/loja.html?v=1" target="_blank" rel="noopener">Ver site (o que o cliente ve) ↗</a></div>
 
 <div id="viewHub">
 <div class="hub">
@@ -67,7 +70,6 @@ input:focus{border-color:var(--ac)}
 <div class="acoesGrandes">
 <a class="acaoG pri" href="/"><h3>+ Nova ficha</h3><p>Colar dados do cliente, validar e subir no Fandi. E a tarefa principal: 1 clique a partir daqui.</p></a>
 <a class="acaoG" href="/leads.html"><h3>Leads da vitrine</h3><p>Quem abriu o link de um carro, simulou a parcela e deixou o contato.</p></a>
-<a class="acaoG" href="/loja.html"><h3>Vitrine / estoque</h3><p>Publicar carro, copiar link, marcar vendido.</p></a>
 <a class="acaoG" href="/consorcio.html"><h3>Consorcio</h3><p>Calcula sua comissao de 1% e monta a indicacao pro Vandre.</p></a>
 </div>
 </div>
