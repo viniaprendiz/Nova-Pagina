@@ -167,7 +167,7 @@ var rotulo=st==="demo"?"Ver no Fandi (simulado)":"Ver no Fandi";
 h+='<div class="ficha"><div class="topo"><div class="info"><div class="nome">'+esc(f.name||"(sem nome)")+'</div><div class="meta">CPF '+esc(f.cpf||"-")+" &middot; "+new Date(f.criadoEm).toLocaleString("pt-BR")+'</div></div>';
 h+='<span class="badge '+esc(st)+'">'+esc(st)+'</span>';
 h+='<div class="acoes"><a class="'+(f.fandiUrl?"":"off")+'" href="'+esc(f.fandiUrl||"#")+'" target="_blank">'+rotulo+'</a><a href="'+linkEmail(f)+'" target="_blank">Ver Email</a>';
-if(st==="erro"){h+='<button onclick="retry(\''+esc(f.fandi_id)+'\')">Tentar de novo</button><button onclick="copiar(\''+esc(f.fandi_id)+'\')">Copiar dados</button><a href="https://jsl.fandi.com.br/operacao/novo" target="_blank">Abrir Fandi</a>'}
+if(st==="erro"){h+='<button onclick="retry(\''+esc(f.fandi_id)+'\')">Tentar de novo</button><button onclick="copiar(\''+esc(f.fandi_id)+'\')">Copiar dados</button><a href="https://jsl.fandi.com.br/operacao/monitor" target="_blank">Abrir Fandi</a>'}
 h+='</div></div>';
 if(st==="erro"&&f.erro){h+='<div class="falha"><b>Nao subiu:</b> '+esc(f.erro)+'</div>'}
 h+='</div>';
