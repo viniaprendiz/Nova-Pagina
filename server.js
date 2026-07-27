@@ -743,6 +743,51 @@ await new Promise(function (r) { setTimeout(r, 1000); });
                 await new Promise(function (r) { setTimeout(r, 1000); });
                 estadoV5 = await estadoCamposV5();
                 diagLog.fases.push({ fase: 'apos_usado', clicouUsado: clicouUsadoV5, estado: estadoV5 });
+
+                try {
+                  const diagnosticoExtraV5 = await comTimeout(frameFandi.evaluate(function () {
+                    function infoEl(el) {
+                      if (!el) return null;
+                      var st = window.getComputedStyle(el);
+                      var r = el.getBoundingClientRect();
+                      return { tag: el.tagName, id: el.id || null, className: (el.className || '').toString().slice(0, 80), display: st.display, visibility: st.visibility, w: r.width, h: r.height };
+                    }
+                    function cadeiaAncestral(id) {
+                      var el = document.getElementById(id);
+                      if (!el) return { existe: false };
+                      var cadeia = [infoEl(el)];
+                      var cur = el;
+                      for (var i = 0; i < 6 && cur.parentElement; i++) {
+                        cur = cur.parentElement;
+                        cadeia.push(infoEl(cur));
+                      }
+                      return { existe: true, cadeia: cadeia };
+                    }
+                    function visivel(el) {
+                      var r = el.getBoundingClientRect();
+                      if (r.width <= 0 || r.height <= 0) return false;
+                      var st = window.getComputedStyle(el);
+                      return st.visibility !== 'hidden' && st.display !== 'none';
+                    }
+                    var re = /ve[ií]culo|dados do|condi[çc][õo]es|usado|novo\b|passo\s*[23]|avan[çc]ar/i;
+                    var candidatos = Array.prototype.slice.call(document.querySelectorAll('a, button, li, div, span, [role="tab"], [role="button"], label')).filter(function (el) {
+                      return visivel(el) && re.test((el.textContent || '').trim()) && (el.textContent || '').trim().length < 60;
+                    }).map(function (el) {
+                      return { tag: el.tagName, text: (el.textContent || '').trim(), className: (el.className || '').toString().slice(0, 60) };
+                    });
+                    var vistos = {};
+                    var unicos = candidatos.filter(function (c) {
+                      var chave = c.tag + '|' + c.text;
+                      if (vistos[chave]) return false;
+                      vistos[chave] = true;
+                      return true;
+                    });
+                    return { marcaCadeia: cadeiaAncestral('opo_slctMarca'), usadoCadeia: cadeiaAncestral('usado'), elementosRelevantes: unicos.slice(0, 40) };
+                  }), 8000, 'diagnostico_extra').catch(function (e) { return { erro: e.message }; });
+                  diagLog.fases.push({ fase: 'diagnostico_extra', resultado: diagnosticoExtraV5 });
+                } catch (eExtraV5) {
+                  diagLog.fases.push({ fase: 'diagnostico_extra_erro', erro: eExtraV5.message });
+                }
               }
 
               let preencheuV5 = { tentou: false };
