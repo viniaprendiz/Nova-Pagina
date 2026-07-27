@@ -418,7 +418,7 @@ async function tentarLoginFandi(page) {
   const senha = process.env.FANDI_SENHA || '';
   if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
   try {
-    const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"]');
+    const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
     const campoSenha = await page.$('input[type="password"]');
     if (!campoEmail || !campoSenha) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
     await campoEmail.click({ clickCount: 3 });
