@@ -1,4 +1,4 @@
-// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
+undefined// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -397,7 +397,9 @@ const m = String(msg || '');
   if (/CAMPO_CPF_NAO_APARECEU/.test(m))
     return 'A tela de cadastro do Fandi nao abriu para o robo (provavelmente pediu login ou mudou de endereco). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
   if (/LOGIN_NECESSARIO/.test(m))
-    return 'O Fandi pediu login e o robo do servidor nao tem acesso a sua conta. A ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
+    return 'O Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
+  if (/LOGIN_FALHOU/.test(m))
+    return 'O robo tentou entrar no Fandi com FANDI_EMAIL/FANDI_SENHA mas nao conseguiu (senha errada, conta bloqueada, ou a tela de login mudou de lugar). Confira as credenciais no Render. Enquanto isso, use Copiar dados e Abrir Fandi.';
 if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
 return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
 if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
@@ -409,6 +411,34 @@ return 'A tela de cadastro do Fandi mudou de lugar. O robo precisa ser reajustad
 if (/Target closed|Protocol error|out of memory|Killed/i.test(m))
 return 'O servidor ficou sem memoria no meio do envio. Tente de novo; se repetir, o plano gratuito nao aguenta o robo.';
 return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostico.';
+}
+
+async function tentarLoginFandi(page) {
+  const email = process.env.FANDI_EMAIL || '';
+  const senha = process.env.FANDI_SENHA || '';
+  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
+  try {
+    const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"]');
+    const campoSenha = await page.$('input[type="password"]');
+    if (!campoEmail || !campoSenha) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
+    await campoEmail.click({ clickCount: 3 });
+    await campoEmail.type(email, { delay: 60 });
+    await campoSenha.click({ clickCount: 3 });
+    await campoSenha.type(senha, { delay: 60 });
+    const botaoEntrar = await page.$('button[type="submit"]');
+    if (botaoEntrar) {
+      await Promise.all([
+        botaoEntrar.click(),
+        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(function () {})
+      ]);
+    } else {
+      await page.keyboard.press('Enter');
+      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(function () {});
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, motivo: 'ERRO_AO_LOGAR: ' + e.message };
+  }
 }
 
 async function processarFicha(fandi_id, dados) {
@@ -426,11 +456,26 @@ async function processarFicha(fandi_id, dados) {
             // o Fandi exige LOGIN do vendedor. O robo do servidor nao tem (e nao deve ter)
             // a senha guardada, entao ele caia na tela de login e ficava esperando 60s por
             // um campo que nunca aparece. Agora detecta e avisa na hora, em portugues.
-            const precisaLogin = await page.evaluate(function () {
+            const checagemLoginFandi = function () {
               return !!document.querySelector('input[type="password"]') ||
                 /login|entrar|autentica/i.test(location.pathname + location.search);
-            });
-            if (precisaLogin) throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e o robo nao tem acesso a conta.');
+            };
+            let precisaLogin = await page.evaluate(checagemLoginFandi);
+            if (precisaLogin) {
+              const temCredencialFandi = !!(process.env.FANDI_EMAIL && process.env.FANDI_SENHA);
+              if (!temCredencialFandi) {
+                throw new Error('LOGIN_NECESSARIO: o Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no servidor.');
+              }
+              const tentativaLoginFandi = await tentarLoginFandi(page);
+              if (!tentativaLoginFandi.ok) {
+                throw new Error('LOGIN_FALHOU: ' + tentativaLoginFandi.motivo);
+              }
+              await page.goto('https://jsl.fandi.com.br/operacao/novo', { waitUntil: 'networkidle2', timeout: 60000 });
+              const aindaPedeLoginFandi = await page.evaluate(checagemLoginFandi);
+              if (aindaPedeLoginFandi) {
+                throw new Error('LOGIN_FALHOU: FEZ_LOGIN_MAS_CONTINUOU_PEDINDO (senha errada ou conta bloqueada)');
+              }
+            }
 
       try {
               await page.waitForSelector('input[name="cpf"]', { timeout: 30000 });
