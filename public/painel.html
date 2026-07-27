@@ -44,19 +44,46 @@ label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;
 input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:15px;outline:none;font-family:inherit}
 input:focus{border-color:var(--ac)}
 .total{font-size:30px;font-weight:800;margin-top:12px}
+.crumb{font-size:13px;color:var(--tx2);margin:0 0 16px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.crumb a{color:var(--tx2);text-decoration:none}.crumb a:hover{color:var(--ac)}.crumb b{color:var(--tx)}.hub{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:6px}.porta{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 20px;text-decoration:none;color:var(--tx);display:block;transition:border-color .15s,transform .15s}.porta:hover{border-color:var(--ac);transform:translateY(-2px)}.porta .ic{font-size:30px;margin-bottom:10px}.porta h3{margin:0 0 6px;font-size:18px}.porta p{margin:0;font-size:13px;color:var(--tx2);line-height:1.55}.porta.ganhar{border-top:3px solid var(--grn)}.porta.pensar{border-top:3px solid var(--ac)}.porta.olhar{border-top:3px solid var(--yel)}.acoesGrandes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:22px}.acaoG{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-decoration:none;color:var(--tx);display:block}.acaoG:hover{border-color:var(--ac)}.acaoG.pri{background:var(--ac);border-color:var(--ac)}.acaoG.pri h3, .acaoG.pri p{color:#fff}.acaoG h3{margin:0 0 6px;font-size:16px}.acaoG p{margin:0;font-size:13px;color:var(--tx2);line-height:1.5}.voltar{display:inline-block;margin-bottom:16px;font-size:13px;color:var(--tx2);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}.voltar:hover{border-color:var(--ac);color:var(--tx)}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>Painel TDrive PRO</h1>
-<p class="lead">O que ja esta no ar, o que esta em obra e o que depende de alguem. Atualizado a cada deploy.</p>
-<div class="abas">
-<a href="/">Enviar Ficha</a>
-<a href="/simulador.html">Simulador</a>
-<a href="/consorcio.html">Consorcio</a>
-<a href="/painel.html" class="on">Painel</a>
-<a href="/voz.html">Ditar</a>
+<h1 id="tituloPainel">Painel TDrive PRO</h1>
+<p class="lead" id="subPainel">O que voce quer fazer agora?</p>
+<div class="abas"></div>
+<div id="crumb" class="crumb"></div>
+
+<div id="viewHub">
+<div class="hub">
+<a class="porta ganhar" href="/painel.html?modo=ganhar"><div class="ic">💰</div><h3>Ganhar</h3><p>O operacional que vende: nova ficha, leads da vitrine, estoque e consorcio.</p></a>
+<a class="porta pensar" href="/painel.html?modo=pensar"><div class="ic">🧠</div><h3>Pensar</h3><p>Ideias em fila, o que ainda depende de voce e os principios que guiam as decisoes.</p></a>
+<a class="porta olhar" href="/painel.html?modo=olhar"><div class="ic">📊</div><h3>Olhar</h3><p>Saude do sistema agora, diagnostico de falhas e a projecao de receita mensal.</p></a>
 </div>
+</div>
+
+<div id="viewGanhar" style="display:none">
+<a class="voltar" href="/painel.html">← Painel</a>
+<div class="acoesGrandes">
+<a class="acaoG pri" href="/"><h3>+ Nova ficha</h3><p>Colar dados do cliente, validar e subir no Fandi. E a tarefa principal: 1 clique a partir daqui.</p></a>
+<a class="acaoG" href="/leads.html"><h3>Leads da vitrine</h3><p>Quem abriu o link de um carro, simulou a parcela e deixou o contato.</p></a>
+<a class="acaoG" href="/loja.html"><h3>Vitrine / estoque</h3><p>Publicar carro, copiar link, marcar vendido.</p></a>
+<a class="acaoG" href="/consorcio.html"><h3>Consorcio</h3><p>Calcula sua comissao de 1% e monta a indicacao pro Vandre.</p></a>
+</div>
+</div>
+
+<div id="viewPensar" style="display:none">
+<a class="voltar" href="/painel.html">← Painel</a>
+<div class="acoesGrandes">
+<a class="acaoG" href="/roadmap.html"><h3>Ideias e roadmap</h3><p>Visao geral do projeto e o que entra na fila do proximo ciclo.</p></a>
+<a class="acaoG" href="/crm.html"><h3>Clientes (CRM)</h3><p>Gestao de clientes, so neste aparelho.</p></a>
+</div>
+<h2>Principios que guiam as decisoes</h2>
+<div id="gers"></div>
+</div>
+
+<div id="viewOlhar" style="display:none">
+<a class="voltar" href="/painel.html">← Painel</a>
 
 <h2>Saude do sistema agora</h2>
 <div class="saude">
@@ -92,8 +119,7 @@ input:focus{border-color:var(--ac)}
 <h2>Modulos</h2>
 <div class="cards" id="mods"></div>
 
-<h2>Gerentes de melhoria continua</h2>
-<div id="gers"></div>
+</div>
 
 </div>
 <script>
@@ -125,6 +151,27 @@ var GERS=[
 {n:"Gerente do Cerebro",p:"Nada se perde: cada problema vira registro datado com causa raiz, solucao e armadilha. O cerebro esta virando painel navegavel em vez de so um arquivo de texto."}
 ];
 var $=function(i){return document.getElementById(i)};
+
+(function roteador(){
+  var modo = new URLSearchParams(location.search).get('modo') || '';
+  var NOMES = { ganhar: 'Ganhar', pensar: 'Pensar', olhar: 'Olhar' };
+  ['viewHub','viewGanhar','viewPensar','viewOlhar'].forEach(function(id){
+    var alvoId = modo ? ('view' + modo.charAt(0).toUpperCase() + modo.slice(1)) : 'viewHub';
+    $(id).style.display = (id === alvoId) ? '' : 'none';
+  });
+  var c = $('crumb');
+  if (!modo) {
+    $('tituloPainel').textContent = 'Painel TDrive PRO';
+    $('subPainel').textContent = 'O que voce quer fazer agora?';
+    c.innerHTML = '';
+  } else {
+    var nome = NOMES[modo] || modo;
+    $('tituloPainel').textContent = 'Painel · ' + nome;
+    $('subPainel').textContent = modo === 'ganhar' ? 'O operacional que vende.' : (modo === 'pensar' ? 'Ideias, fila e principios.' : 'Saude do sistema e projecao de receita.');
+    c.innerHTML = '<a href="/painel.html">Painel</a><span>›</span><b>' + nome + '</b>';
+  }
+})();
+
 function brl(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function num(s){return parseFloat(String(s||"").replace(/\D/g,""))||0}
 
