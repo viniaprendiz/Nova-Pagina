@@ -937,6 +937,16 @@ let preencheuV5 = { tentou: false };
                   if (opcoesMarcaV5.length) {
                     try {
                       await comTimeout(frameFandi.select('#opo_slctMarca', opcoesMarcaV5[0].value), 8000, 'select_marca');
+                      preencheuV5.valorMarcaConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
+                        var el = document.getElementById(id);
+                        if (!el) return null;
+                        if (window.jQuery) {
+                          try { window.jQuery(el).trigger('change'); } catch (e) {}
+                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
+                        }
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        return el.value;
+                      }, 'opo_slctMarca'), 5000, 'jquery_trigger_opo_slctMarca').catch(function () { return null; });
                     } catch (eSelMarca) {
                       preencheuV5.erroSelectMarca = eSelMarca.message;
                       try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
@@ -952,6 +962,16 @@ let preencheuV5 = { tentou: false };
                     if (opcoesModeloV5.length) {
                       try {
                         await comTimeout(frameFandi.select('#opo_slctModelo', opcoesModeloV5[0].value), 8000, 'select_modelo');
+                      preencheuV5.valorModeloConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
+                        var el = document.getElementById(id);
+                        if (!el) return null;
+                        if (window.jQuery) {
+                          try { window.jQuery(el).trigger('change'); } catch (e) {}
+                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
+                        }
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        return el.value;
+                      }, 'opo_slctModelo'), 5000, 'jquery_trigger_opo_slctModelo').catch(function () { return null; });
                       } catch (eSelModelo) {
                         preencheuV5.erroSelectModelo = eSelModelo.message;
                       }
@@ -966,6 +986,16 @@ let preencheuV5 = { tentou: false };
                       if (opcoesVersaoV5.length) {
                         try {
                           await comTimeout(frameFandi.select('#opo_slctVersao', opcoesVersaoV5[0].value), 8000, 'select_versao');
+                      preencheuV5.valorVersaoConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
+                        var el = document.getElementById(id);
+                        if (!el) return null;
+                        if (window.jQuery) {
+                          try { window.jQuery(el).trigger('change'); } catch (e) {}
+                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
+                        }
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        return el.value;
+                      }, 'opo_slctVersao'), 5000, 'jquery_trigger_opo_slctVersao').catch(function () { return null; });
                         } catch (eSelVersao) {
                           preencheuV5.erroSelectVersao = eSelVersao.message;
                         }
