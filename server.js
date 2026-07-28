@@ -590,15 +590,24 @@ async function selecionarSelect2(frameFandi, campoId, comTimeout) {
     const estadoFinal = await comTimeout(frameFandi.evaluate(function (id) {
       var containerSpan = document.getElementById('select2-' + id + '-container');
       var sel = document.getElementById(id);
+      var frameworkInfo = { ngVersionAttr: (function () { var e2 = document.querySelector('[ng-version]'); return e2 ? e2.getAttribute('ng-version') : null; })(), hasAngularGlobal: !!window.angular, hasNgApp: !!document.querySelector('[ng-app]'), selectClasses: sel ? sel.className : null };
       if (sel) {
         sel.dispatchEvent(new Event('input', { bubbles: true }));
         sel.dispatchEvent(new Event('change', { bubbles: true }));
+        if (window.angular) {
+          try {
+            var elNg = window.angular.element(sel);
+            var scopeNg = elNg.scope ? elNg.scope() : null;
+            if (scopeNg && scopeNg.$apply) { scopeNg.$apply(); }
+          } catch (eNg) {}
+        }
       }
       return {
         textoRenderizado: containerSpan ? containerSpan.textContent.trim() : null,
         aindaAberto: !!document.querySelector('.select2-container--open'),
         valorNativo: sel ? sel.value : null,
-        dispatchNativo: !!sel
+        dispatchNativo: !!sel,
+        frameworkInfo: frameworkInfo
       };
     }, campoId), 4000, 'estado_final_' + campoId).catch(function (eEstado) { return { erro: eEstado.message }; });
     diag.estadoFinal = estadoFinal;
@@ -610,6 +619,58 @@ async function selecionarSelect2(frameFandi, campoId, comTimeout) {
   }
 }
 
+
+async function preencherCampoPorRotuloNativo(ctx, rotulo, valor) {
+  return await ctx.evaluate(function (rot, val) {
+    function normaliza(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+    var rotNorm = normaliza(rot);
+    function visivel(el) { return el.offsetParent !== null; }
+    var alvo = null;
+    var inputs = Array.prototype.slice.call(document.querySelectorAll('input, textarea'));
+    for (var i = 0; i < inputs.length; i++) {
+      var el = inputs[i];
+      if (!visivel(el) || el.disabled) continue;
+      var nome = normaliza(el.getAttribute('name'));
+      var ph = normaliza(el.getAttribute('placeholder'));
+      var aria = normaliza(el.getAttribute('aria-label'));
+      var idAttr = normaliza(el.id);
+      if (nome.indexOf(rotNorm) !== -1 || ph.indexOf(rotNorm) !== -1 || aria.indexOf(rotNorm) !== -1 || idAttr.indexOf(rotNorm) !== -1) { alvo = el; break; }
+      if (el.id) {
+        var lbl = document.querySelector('label[for="' + el.id + '"]');
+        if (lbl && normaliza(lbl.textContent).indexOf(rotNorm) !== -1) { alvo = el; break; }
+      }
+    }
+    if (!alvo) {
+      var labels = Array.prototype.slice.call(document.querySelectorAll('label, span, div'));
+      for (var j = 0; j < labels.length; j++) {
+        var l = labels[j];
+        if (normaliza(l.textContent) === rotNorm) {
+          var container = l.closest('div');
+          var tentativas = 0;
+          while (container && tentativas < 4 && !alvo) {
+            var inp = container.querySelector('input, textarea');
+            if (inp && visivel(inp)) { alvo = inp; break; }
+            container = container.parentElement;
+            tentativas++;
+          }
+          if (alvo) break;
+        }
+      }
+    }
+    if (!alvo) return { ok: false, motivo: 'nao_encontrado' };
+    try {
+      alvo.focus();
+      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      setter.call(alvo, val);
+      alvo.dispatchEvent(new Event('input', { bubbles: true }));
+      alvo.dispatchEvent(new Event('change', { bubbles: true }));
+      alvo.blur();
+      return { ok: true, valorFinal: alvo.value, id: alvo.id || null, name: alvo.name || null };
+    } catch (eSet) {
+      return { ok: false, motivo: 'erro_set: ' + eSet.message };
+    }
+  }, rotulo, valor);
+}
 
 async function digitarCampoPorRotulo(ctx, rotulo, valor) {
   for (let tentativa = 0; tentativa < 8; tentativa++) {
@@ -1062,7 +1123,7 @@ let preencheuV5 = { tentou: false };
                   preencheuV5.renavam = await preencheTextoV5('renavam', '00123456789');
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
                   try { preencheuV5.quilometragem = await digitarCampoPorRotulo(frameFandi, 'quilometragem', '45000'); } catch (eQuilo) { preencheuV5.erroQuilometragem = eQuilo.message; }
-                  try { preencheuV5.valorVeiculo = await digitarCampoPorRotulo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
+                  try { preencheuV5.valorVeiculo = await preencherCampoPorRotuloNativo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
 
                   try {
                     const radiosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
