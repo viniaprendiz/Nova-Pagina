@@ -1,4 +1,4 @@
-// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
+h// v25.0 HOTFIX// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
 const express = require('express');
 const puppeteer = require('puppeteer');
@@ -10,7 +10,7 @@ const fs = require('fs');
 const app = express();
 
 // ---------- REDE DE SEGURANCA GLOBAL (v24.45) ----------
-// Causa raiz encontrada nesta sessao: o UPDATE de erro dentro do catch de
+// Causa raiz encontrada nesta sessao: o UPDATE hde erro dentro do catch de
 // processarFicha (ultima tentativa) NAO tinha try/catch proprio. Se esse UPDATE
 // falhasse por qualquer motivo (banco instavel, timeout), a excecao virava uma
 // promise rejeitada sem .catch() no chamador (processarFicha(fandi_id, dados) e
@@ -2107,17 +2107,6 @@ initDb().then(function () {
                             );
         return { sucesso: true, mensagem: 'Ficha enviada com sucesso!' };
 
-                      // v25.0 HOTFIX: Detectar sucesso real do Passo 4 antes de marcar como "enviada"if (!passo4SucessoV5) {
-                        // Aguardar até 20 segundos por indicadores de sucesso  let successDetected = false;  let detectionStart = Date.now();
-                        while (!successDetected && (Date.now() - detectionStart) < 20000) {
-                              try {
-                                      const urlAtual = frameFandi.url();
-                                      const conteudo = await frameFandi.evaluate(() => document.body.innerText);
-                                      if ((urlAtual && !urlAtual.includes('/operacao/novo') && urlAtual.includes('/operacao/')) ||
-                                                    (conteudo && (conteudo.includes('sucesso') || conteudo.includes('Operação cadastrada')))) {
-                                                passo4SucessoV5 = true;
-                                                successDetected = true;
-                                                diagLog.fases.push({ fase: 'sucesso_detectado', url: urlAtual });
                                       }
                                       await new Promise(r => setTimeout(r, 1000));
                               } catch (e) { break; }
