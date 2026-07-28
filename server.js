@@ -93,6 +93,25 @@ await pool.query(
       );
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS user_id TEXT');
 
+// ---------- LIMPEZA AUTOMATICA DE FICHAS TRAVADAS (v18.0) ----------
+// Se o robo (Puppeteer) cair no meio do envio (ex: falta de memoria no plano
+// gratuito do Render), a ficha fica com status='enviando' PARA SEMPRE, porque
+// nenhum codigo roda depois pra atualizar ela. Isso causava o bug relatado:
+// varias fichas do mesmo cliente aparecendo 'enviando' ao mesmo tempo. Toda
+// vez que o servidor sobe (deploy ou reinicio), marca como 'travada' qualquer
+// ficha parada em 'enviando' ha mais de 15 minutos.
+try {
+  var limpezaTravadas = await pool.query(
+    "UPDATE fichas SET status='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '15 minutes' RETURNING fandi_id",
+    ["Ficha ficou travada em 'enviando' por mais de 15 minutos (provavel queda do robo) e foi marcada automaticamente ao reiniciar o servidor."]
+  );
+  if (limpezaTravadas.rows.length) {
+    console.log('[LIMPEZA] ' + limpezaTravadas.rows.length + ' ficha(s) travada(s) em enviando foram marcadas ao iniciar o servidor: ' + limpezaTravadas.rows.map(function (r) { return r.fandi_id; }).join(', '));
+  }
+} catch (eLimpezaTravadas) {
+  console.error('[LIMPEZA ERRO] nao consegui limpar fichas travadas: ' + eLimpezaTravadas.message);
+}
+
 // Cria o primeiro admin automaticamente SE ainda nao existir nenhum admin
 // E as variaveis ADMIN_EMAIL / ADMIN_SENHA_INICIAL estiverem configuradas no Render.
 // O Vinicios escolhe o email e a senha (nunca o Claude). Depois de criado,
@@ -250,7 +269,16 @@ app.post('/api/submit-fandi', async (req, res) => {
                console.error('[DB ERRO ao checar duplicidade]', err.message);
          }
 
-         const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
+         try {
+  await pool.query(
+    "UPDATE fichas SET status='travada', erro=$1 WHERE cpf=$2 AND status='enviando'",
+    ["Substituida automaticamente: esta ficha ficou travada em 'enviando' e uma nova tentativa foi enviada para este mesmo CPF.", dados.cpf]
+  );
+} catch (errCancela) {
+  console.error('[DB ERRO ao cancelar fichas antigas travadas]', errCancela.message);
+}
+
+const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
       try {
             await pool.query(
                   'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
