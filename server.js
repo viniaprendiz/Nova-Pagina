@@ -1395,21 +1395,21 @@ async function preencheTextoV5(id, valor) {
               diagLog.fases.push({ fase: 'ajuste_parcelas_passo4', resultado: parcelasResultadoV5 });
 
               let calcularResultadoV5 = { tentou: false, tentativas: 0 };
-              for (let tCalcV5 = 0; tCalcV5 < 8; tCalcV5++) {
+              for (let tCalcV5 = 0; tCalcV5 < 4; tCalcV5++) {
                 calcularResultadoV5.tentou = true;
                 calcularResultadoV5.tentativas = tCalcV5 + 1;
                 let clicouTentV5 = false;
                 try {
-                  clicouTentV5 = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 5000, 'clicar_calcular_' + tCalcV5).catch(function () { return false; });
+                  clicouTentV5 = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 4000, 'clicar_calcular_' + tCalcV5).catch(function () { return false; });
                 } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
                 if (clicouTentV5) { calcularResultadoV5.clicou = true; break; }
-                await new Promise(function (r) { setTimeout(r, 2000); });
+                await new Promise(function (r) { setTimeout(r, 1500); });
               }
               diagLog.fases.push({ fase: 'clique_calcular', resultado: calcularResultadoV5 });
 
               let snapshotsCalculoV5 = [];
               let calculoTerminouV5 = false;
-              for (let tentCalcV5 = 0; tentCalcV5 < 14; tentCalcV5++) {
+              for (let tentCalcV5 = 0; tentCalcV5 < 8; tentCalcV5++) {
                 await new Promise(function (r) { setTimeout(r, 2500); });
                 let snapV5 = null;
                 try {
@@ -1429,7 +1429,7 @@ async function preencheTextoV5(id, valor) {
                 } catch (eSnapV5) { snapV5 = { erro: eSnapV5.message }; }
                 snapshotsCalculoV5.push(snapV5);
                 if (snapV5 && snapV5.temValorReal) { calculoTerminouV5 = true; break; }
-                if (snapV5 && snapV5.semPlanos && tentCalcV5 >= 4) { break; }
+                if (snapV5 && snapV5.semPlanos && tentCalcV5 >= 3) { break; }
               }
               diagLog.fases.push({ fase: 'aguardo_calculo_passo4', snapshots: snapshotsCalculoV5, terminouDetectado: calculoTerminouV5 });
 
