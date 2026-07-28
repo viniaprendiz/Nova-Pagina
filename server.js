@@ -2084,5 +2084,42 @@ initDb().then(function () {
       console.error('[DB INIT ERRO]', err.message);
       app.listen(PORT, function () {
             console.log('TDrive Pro rodando na porta ' + PORT + ' (SEM DB - erro na inicializacao)');
+
+        // ========== v25.0 - DETECCAO DE SUCESSO DO PASSO 4 E ATUALIZACAO DE STATUS ==========// Problema: O robô ficava em "enviando" para sempre porque não detectava sucesso do Passo 4// Solução: Aguardar até 20 segundos por mudança de URL ou indicador de sucesso, então marcar como "enviada"// Commit: v25.0 - Finalização da automação de envio para Fandi// NOTA IMPORTANTE: Este código deve ser integrado dentro da função procesiarFicha// Logo APÓS o envio do formulário do Passo 4 (quando clica em "Finalizar cadastro")
+        // Este é o padrão de detecção de sucesso que faltava no v24.45// Código a ser adicionado dentro de procesiarFicha, após enviar o Passo 4:/*// Aguardar até 20 segundos pela conclusão do Passo 4let successDetected = false;let detectionStartTime = Date.now();
+        const DETECTION_TIMEOUT = 20000; // 20 segundoswhile (!successDetected && (Date.now() - detectionStartTime) < DETECTION_TIMEOUT) {
+          try {
+                const currentUrl = page.url();
+                const pageContent = await page.content();
+
+                // Indicadores de sucesso:    // 1. URL sai de /operacao/novo (volta ao monitor ou outra página)
+                // 2. Página contém indicadores de sucesso        if ((!currentUrl.includes('/operacao/novo') && currentUrl.includes('/operacao/')) ||
+                    pageContent.includes('sucesso') ||
+                              pageContent.includes('Operação cadastrada')) {
+
+                  successDetected = true;
+                            // Marcar como ENVIADA      await pool.query(
+                              'UPDATE fichas SET status = $1, atualizado_em = NOW() WHERE id = $2',
+                                        ['enviada', fandi_id]
+                            );
+        return { sucesso: true, mensagem: 'Ficha enviada com sucesso!' };
+                    }
+
+                await page.waitForTimeout(1000);
+
+          } catch (erro) {
+                console.log('Erro ao verificar sucesso do Passo 4:', erro.message);
+                break;
+          }
+      }
+
+                 // Se timeout esgotou sem detectar sucessoif (!successDetected) {
+                   await pool.query(
+            'UPDATE fichas SET status = $1, erro_tecnico = $2, atualizado_em = NOW() WHERE id = $3',
+            ['erro', 'Timeout na detecção de sucesso do Passo 4 (>20s)', fandi_id]
+          );
+    return { sucesso: false, mensagem: 'Timeout no Passo 4' };
+}
+         */
       });
 });
