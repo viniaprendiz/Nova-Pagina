@@ -1279,7 +1279,7 @@ let preencheuV5 = { tentou: false };
                   var botoesFinais = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
                     return { text: (b.textContent || '').trim().slice(0, 40) };
                   }).filter(function (b) { return b.text && /enviar|concluir|finalizar|pr[oó]xima/i.test(b.text); });
-                  return { camposVisiveis: campos.slice(0, 30), botoesFinais: botoesFinais };
+                  return { camposVisiveis: campos.slice(0, 30), botoesFinais: botoesFinais, errosVisiveis: (function () { var els = Array.prototype.slice.call(document.querySelectorAll('body *')); var out = []; for (var i = 0; i < els.length; i++) { var t = (els[i].textContent || '').trim(); if (t && t.length < 60 && /obrigat[o\u00f3]rio|informe um valor|selecione uma op/i.test(t) && els[i].children.length === 0) { out.push({ texto: t, visivel: visivel(els[i]) }); } } return out.slice(0, 20); })() };
                 }), 6000, 'estrutura_final').catch(function (e) { return { erro: e.message }; });
               } catch (eEstruturaV5) { estruturaFinalV5 = { erro: eEstruturaV5.message }; }
               diagLog.fases.push({ fase: 'estrutura_final', estrutura: estruturaFinalV5 });
