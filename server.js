@@ -1082,82 +1082,7 @@ await new Promise(function (r) { setTimeout(r, 1000); });
 let preencheuV5 = { tentou: false };
               const estamosEmDadosDoVeiculo = wizardInfoV5 && /dados do ve[ií]culo/i.test(wizardInfoV5.ativoTextoInicio || '');
               diagLog.fases.push({ fase: 'checagem_pre_preenchimento', estadoMarca: estadoV5.marca, estamosEmDadosDoVeiculo: estamosEmDadosDoVeiculo });
-              if (estadoV5.marca || estamosEmDadosDoVeiculo) {
-                preencheuV5.tentou = true;
-                try {
-                  const opcoesMarcaV5 = await comTimeout(frameFandi.evaluate(function () {
-                    var sel = document.getElementById('opo_slctMarca');
-                    return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
-                  }), 6000, 'opcoes_marca').catch(function () { return []; });
-                  preencheuV5.opcoesMarca = opcoesMarcaV5.slice(0, 5);
-
-                  if (opcoesMarcaV5.length) {
-                    try {
-                                            preencheuV5.marcaDiag = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout);
-                    } catch (eSelMarca) {
-                      preencheuV5.erroSelectMarca = eSelMarca.message;
-                      try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
-                    }
-                    await new Promise(function (r) { setTimeout(r, 1800); });
-
-                    const opcoesModeloV5 = await comTimeout(frameFandi.evaluate(function () {
-                      var sel = document.getElementById('opo_slctModelo');
-                      return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
-                    }), 6000, 'opcoes_modelo').catch(function () { return []; });
-                    preencheuV5.opcoesModelo = opcoesModeloV5.slice(0, 5);
-
-                    if (opcoesModeloV5.length) {
-                      try {
-                                              preencheuV5.modeloDiag = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout);
-                      } catch (eSelModelo) {
-                        preencheuV5.erroSelectModelo = eSelModelo.message;
-                      }
-                      await new Promise(function (r) { setTimeout(r, 1800); });
-
-                      const opcoesVersaoV5 = await comTimeout(frameFandi.evaluate(function () {
-                        var sel = document.getElementById('opo_slctVersao');
-                        return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
-                      }), 6000, 'opcoes_versao').catch(function () { return []; });
-                      preencheuV5.opcoesVersao = opcoesVersaoV5.slice(0, 5);
-
-                      if (opcoesVersaoV5.length) {
-                        try {
-                                                preencheuV5.versaoDiag = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout);
-                        } catch (eSelVersao) {
-                          preencheuV5.erroSelectVersao = eSelVersao.message;
-                        }
-                        await new Promise(function (r) { setTimeout(r, 800); });
-                      }
-                    }
-                  }
-
-                                    try {
-                    const checkPosSelecaoV5 = await comTimeout(frameFandi.evaluate(function () {
-                      function valorDe(id) { var el = document.getElementById(id); return el ? el.value : undefined; }
-                      return { marca: valorDe('opo_slctMarca'), modelo: valorDe('opo_slctModelo'), versao: valorDe('opo_slctVersao') };
-                    }), 4000, 'check_pos_selecao').catch(function (e) { return { erro: e.message }; });
-                    diagLog.fases.push({ fase: 'check_pos_selecao_veiculo', valores: checkPosSelecaoV5 });
-                  } catch (eCheckPos) {}
-
-async function preencheTextoV5(id, valor) {
-                    return await comTimeout(frameFandi.evaluate(function (id2, valor2) {
-                      var el = document.getElementById(id2);
-                      if (!el) return false;
-                      el.focus();
-                      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                      setter.call(el, valor2);
-                      el.dispatchEvent(new Event('input', { bubbles: true }));
-                      el.dispatchEvent(new Event('change', { bubbles: true }));
-                      el.blur();
-                      return true;
-                    }, id, valor), 6000, 'preenche_campo').catch(function () { return false; });
-                  }
-
-                  preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
-                  try { preencheuV5.quilometragem = await digitarCampoPorRotulo(frameFandi, 'quilometragem', '45000'); } catch (eQuilo) { preencheuV5.erroQuilometragem = eQuilo.message; }
-                  try { preencheuV5.valorVeiculo = await preencherCampoPorRotuloNativo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
-
-                  try {
+              try {
                     const radiosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
                       function visivel(el) {
                         var r = el.getBoundingClientRect();
@@ -1286,6 +1211,83 @@ async function preencheTextoV5(id, valor) {
                   } catch (eRadiosAnoV5) {
                     diagLog.fases.push({ fase: 'erro_radios_ano', erro: eRadiosAnoV5.message });
                   }
+
+                  if (estadoV5.marca || estamosEmDadosDoVeiculo) {
+                preencheuV5.tentou = true;
+                try {
+                  const opcoesMarcaV5 = await comTimeout(frameFandi.evaluate(function () {
+                    var sel = document.getElementById('opo_slctMarca');
+                    return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                  }), 6000, 'opcoes_marca').catch(function () { return []; });
+                  preencheuV5.opcoesMarca = opcoesMarcaV5.slice(0, 5);
+
+                  if (opcoesMarcaV5.length) {
+                    try {
+                                            preencheuV5.marcaDiag = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout);
+                    } catch (eSelMarca) {
+                      preencheuV5.erroSelectMarca = eSelMarca.message;
+                      try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
+                    }
+                    await new Promise(function (r) { setTimeout(r, 1800); });
+
+                    const opcoesModeloV5 = await comTimeout(frameFandi.evaluate(function () {
+                      var sel = document.getElementById('opo_slctModelo');
+                      return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                    }), 6000, 'opcoes_modelo').catch(function () { return []; });
+                    preencheuV5.opcoesModelo = opcoesModeloV5.slice(0, 5);
+
+                    if (opcoesModeloV5.length) {
+                      try {
+                                              preencheuV5.modeloDiag = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout);
+                      } catch (eSelModelo) {
+                        preencheuV5.erroSelectModelo = eSelModelo.message;
+                      }
+                      await new Promise(function (r) { setTimeout(r, 1800); });
+
+                      const opcoesVersaoV5 = await comTimeout(frameFandi.evaluate(function () {
+                        var sel = document.getElementById('opo_slctVersao');
+                        return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+                      }), 6000, 'opcoes_versao').catch(function () { return []; });
+                      preencheuV5.opcoesVersao = opcoesVersaoV5.slice(0, 5);
+
+                      if (opcoesVersaoV5.length) {
+                        try {
+                                                preencheuV5.versaoDiag = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout);
+                        } catch (eSelVersao) {
+                          preencheuV5.erroSelectVersao = eSelVersao.message;
+                        }
+                        await new Promise(function (r) { setTimeout(r, 800); });
+                      }
+                    }
+                  }
+
+                                    try {
+                    const checkPosSelecaoV5 = await comTimeout(frameFandi.evaluate(function () {
+                      function valorDe(id) { var el = document.getElementById(id); return el ? el.value : undefined; }
+                      return { marca: valorDe('opo_slctMarca'), modelo: valorDe('opo_slctModelo'), versao: valorDe('opo_slctVersao') };
+                    }), 4000, 'check_pos_selecao').catch(function (e) { return { erro: e.message }; });
+                    diagLog.fases.push({ fase: 'check_pos_selecao_veiculo', valores: checkPosSelecaoV5 });
+                  } catch (eCheckPos) {}
+
+async function preencheTextoV5(id, valor) {
+                    return await comTimeout(frameFandi.evaluate(function (id2, valor2) {
+                      var el = document.getElementById(id2);
+                      if (!el) return false;
+                      el.focus();
+                      var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                      setter.call(el, valor2);
+                      el.dispatchEvent(new Event('input', { bubbles: true }));
+                      el.dispatchEvent(new Event('change', { bubbles: true }));
+                      el.blur();
+                      return true;
+                    }, id, valor), 6000, 'preenche_campo').catch(function () { return false; });
+                  }
+
+                  preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
+                  try { preencheuV5.quilometragem = await digitarCampoPorRotulo(frameFandi, 'quilometragem', '45000'); } catch (eQuilo) { preencheuV5.erroQuilometragem = eQuilo.message; }
+                  try { preencheuV5.valorVeiculo = await preencherCampoPorRotuloNativo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
+
+                  
 
                                     try {
                     const reforcoCheckV5 = await comTimeout(frameFandi.evaluate(function () {
