@@ -590,10 +590,15 @@ async function selecionarSelect2(frameFandi, campoId, comTimeout) {
     const estadoFinal = await comTimeout(frameFandi.evaluate(function (id) {
       var containerSpan = document.getElementById('select2-' + id + '-container');
       var sel = document.getElementById(id);
+      if (sel) {
+        sel.dispatchEvent(new Event('input', { bubbles: true }));
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       return {
         textoRenderizado: containerSpan ? containerSpan.textContent.trim() : null,
         aindaAberto: !!document.querySelector('.select2-container--open'),
-        valorNativo: sel ? sel.value : null
+        valorNativo: sel ? sel.value : null,
+        dispatchNativo: !!sel
       };
     }, campoId), 4000, 'estado_final_' + campoId).catch(function (eEstado) { return { erro: eEstado.message }; });
     diag.estadoFinal = estadoFinal;
@@ -1056,6 +1061,8 @@ let preencheuV5 = { tentou: false };
                   preencheuV5.chassi = await preencheTextoV5('chassi', '9BWZZZ377VT004251');
                   preencheuV5.renavam = await preencheTextoV5('renavam', '00123456789');
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
+                  try { preencheuV5.quilometragem = await digitarCampoPorRotulo(frameFandi, 'quilometragem', '45000'); } catch (eQuilo) { preencheuV5.erroQuilometragem = eQuilo.message; }
+                  try { preencheuV5.valorVeiculo = await digitarCampoPorRotulo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
 
                   try {
                     const radiosInfoV5 = await comTimeout(frameFandi.evaluate(function () {
@@ -1217,7 +1224,7 @@ let preencheuV5 = { tentou: false };
               diagLog.fases.push({ fase: 'estrutura_final', estrutura: estruturaFinalV5 });
 
               const txtFinalV5 = await comTimeout(corpoTextoV5(), 6000, 'corpo_final').catch(function () { return ''; });
-              diagLog.trechoFinal = txtFinalV5.slice(0, 400);
+              diagLog.trechoFinal = txtFinalV5.slice(0, 3000);
               try { diagLog.urlFinal = frameFandi.url(); } catch (eUrlV5) { diagLog.urlFinal = 'erro: ' + eUrlV5.message; }
             }
 
