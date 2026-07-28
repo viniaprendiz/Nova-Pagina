@@ -594,12 +594,29 @@ async function selecionarSelect2(frameFandi, campoId, comTimeout) {
       if (sel) {
         sel.dispatchEvent(new Event('input', { bubbles: true }));
         sel.dispatchEvent(new Event('change', { bubbles: true }));
+        sel.dispatchEvent(new Event('focus', { bubbles: true }));
+        sel.dispatchEvent(new Event('focusout', { bubbles: true }));
+        sel.dispatchEvent(new Event('blur', { bubbles: true }));
         if (window.angular) {
           try {
             var elNg = window.angular.element(sel);
             var scopeNg = elNg.scope ? elNg.scope() : null;
             if (scopeNg && scopeNg.$apply) { scopeNg.$apply(); }
           } catch (eNg) {}
+        }
+        if (window.jQuery) {
+          try {
+            var jSel = window.jQuery(sel);
+            jSel.trigger('input');
+            jSel.trigger('change');
+            jSel.trigger('blur');
+            jSel.trigger('focusout');
+            var opcaoSel = sel.options[sel.selectedIndex];
+            jSel.trigger({ type: 'select2:select', params: { data: { id: sel.value, text: opcaoSel ? opcaoSel.textContent : '' } } });
+            if (jSel.valid) { jSel.valid(); }
+            var formEl = sel.closest('form');
+            if (formEl && window.jQuery(formEl).valid) { window.jQuery(formEl).valid(); }
+          } catch (eJq) {}
         }
       }
       return {
