@@ -38,6 +38,7 @@ h2{font-size:15px;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);
 .badge.enviada{background:rgba(34,197,94,.15);color:#7ee2a8}
 .badge.erro{background:rgba(239,68,68,.15);color:#f39a9a}
 .badge.demo{background:rgba(59,130,246,.18);color:#9cc2ff}
+.badge.travada{background:rgba(148,163,184,.16);color:#c3cddf}
 .acoes{display:flex;gap:8px;flex-wrap:wrap}
 .acoes a,.acoes button{font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--tx);text-decoration:none;font-weight:600;cursor:pointer}
 .acoes a:hover,.acoes button:hover{border-color:var(--ac)}
@@ -167,9 +168,9 @@ var rotulo=st==="demo"?"Ver no Fandi (simulado)":"Ver no Fandi";
 h+='<div class="ficha"><div class="topo"><div class="info"><div class="nome">'+esc(f.name||"(sem nome)")+'</div><div class="meta">CPF '+esc(f.cpf||"-")+" &middot; "+new Date(f.criadoEm).toLocaleString("pt-BR")+'</div></div>';
 h+='<span class="badge '+esc(st)+'">'+esc(st)+'</span>';
 h+='<div class="acoes"><a class="'+(f.fandiUrl?"":"off")+'" href="'+esc(f.fandiUrl||"#")+'" target="_blank">'+rotulo+'</a><a href="'+linkEmail(f)+'" target="_blank">Ver Email</a>';
-if(st==="erro"){h+='<button onclick="retry(\''+esc(f.fandi_id)+'\')">Tentar de novo</button><button onclick="copiar(\''+esc(f.fandi_id)+'\')">Copiar dados</button><a href="https://jsl.fandi.com.br/operacao/monitor" target="_blank">Abrir Fandi</a>'}
+if(st==="erro"||st==="travada"){h+='<button onclick="retry(\''+esc(f.fandi_id)+'\')">Tentar de novo</button><button onclick="copiar(\''+esc(f.fandi_id)+'\')">Copiar dados</button><a href="https://jsl.fandi.com.br/operacao/monitor" target="_blank">Abrir Fandi</a>'}
 h+='</div></div>';
-if(st==="erro"&&f.erro){h+='<div class="falha"><b>Nao subiu:</b> '+esc(f.erro)+'</div>'}
+if((st==="erro"||st==="travada")&&f.erro){h+='<div class="falha"><b>Nao subiu:</b> '+esc(f.erro)+'</div>'}
 h+='</div>';
 }
 div.innerHTML=h;
