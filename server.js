@@ -936,17 +936,22 @@ let preencheuV5 = { tentou: false };
 
                   if (opcoesMarcaV5.length) {
                     try {
-                      await comTimeout(frameFandi.select('#opo_slctMarca', opcoesMarcaV5[0].value), 8000, 'select_marca');
-                      preencheuV5.valorMarcaConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
-                        var el = document.getElementById(id);
-                        if (!el) return null;
-                        if (window.jQuery) {
-                          try { window.jQuery(el).trigger('change'); } catch (e) {}
-                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
-                        }
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                        return el.value;
-                      }, 'opo_slctMarca'), 5000, 'jquery_trigger_opo_slctMarca').catch(function () { return null; });
+                                            const textoAlvoMarca = opcoesMarcaV5[0].text;
+                      await comTimeout(frameFandi.evaluate(function () {
+                        if (window.jQuery) { try { window.jQuery('#opo_slctMarca').select2('open'); } catch (e) {} }
+                      }), 5000, 'abrir_select2_opo_slctMarca').catch(function () {});
+                      await new Promise(function (r) { setTimeout(r, 700); });
+                      preencheuV5.valorMarcaConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
+                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
+                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
+                        if (!alvo) return null;
+                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                        alvo.click();
+                        var sel = document.getElementById('opo_slctMarca');
+                        return sel ? sel.value : null;
+                      }, textoAlvoMarca), 5000, 'clicar_opcao_select2_opo_slctMarca').catch(function () { return null; });
                     } catch (eSelMarca) {
                       preencheuV5.erroSelectMarca = eSelMarca.message;
                       try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
@@ -961,17 +966,22 @@ let preencheuV5 = { tentou: false };
 
                     if (opcoesModeloV5.length) {
                       try {
-                        await comTimeout(frameFandi.select('#opo_slctModelo', opcoesModeloV5[0].value), 8000, 'select_modelo');
-                      preencheuV5.valorModeloConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
-                        var el = document.getElementById(id);
-                        if (!el) return null;
-                        if (window.jQuery) {
-                          try { window.jQuery(el).trigger('change'); } catch (e) {}
-                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
-                        }
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                        return el.value;
-                      }, 'opo_slctModelo'), 5000, 'jquery_trigger_opo_slctModelo').catch(function () { return null; });
+                                              const textoAlvoModelo = opcoesModeloV5[0].text;
+                      await comTimeout(frameFandi.evaluate(function () {
+                        if (window.jQuery) { try { window.jQuery('#opo_slctModelo').select2('open'); } catch (e) {} }
+                      }), 5000, 'abrir_select2_opo_slctModelo').catch(function () {});
+                      await new Promise(function (r) { setTimeout(r, 700); });
+                      preencheuV5.valorModeloConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
+                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
+                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
+                        if (!alvo) return null;
+                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                        alvo.click();
+                        var sel = document.getElementById('opo_slctModelo');
+                        return sel ? sel.value : null;
+                      }, textoAlvoModelo), 5000, 'clicar_opcao_select2_opo_slctModelo').catch(function () { return null; });
                       } catch (eSelModelo) {
                         preencheuV5.erroSelectModelo = eSelModelo.message;
                       }
@@ -985,17 +995,22 @@ let preencheuV5 = { tentou: false };
 
                       if (opcoesVersaoV5.length) {
                         try {
-                          await comTimeout(frameFandi.select('#opo_slctVersao', opcoesVersaoV5[0].value), 8000, 'select_versao');
-                      preencheuV5.valorVersaoConfirmado = await comTimeout(frameFandi.evaluate(function (id) {
-                        var el = document.getElementById(id);
-                        if (!el) return null;
-                        if (window.jQuery) {
-                          try { window.jQuery(el).trigger('change'); } catch (e) {}
-                          try { window.jQuery(el).trigger('change.select2'); } catch (e) {}
-                        }
-                        el.dispatchEvent(new Event('change', { bubbles: true }));
-                        return el.value;
-                      }, 'opo_slctVersao'), 5000, 'jquery_trigger_opo_slctVersao').catch(function () { return null; });
+                                                const textoAlvoVersao = opcoesVersaoV5[0].text;
+                      await comTimeout(frameFandi.evaluate(function () {
+                        if (window.jQuery) { try { window.jQuery('#opo_slctVersao').select2('open'); } catch (e) {} }
+                      }), 5000, 'abrir_select2_opo_slctVersao').catch(function () {});
+                      await new Promise(function (r) { setTimeout(r, 700); });
+                      preencheuV5.valorVersaoConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
+                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
+                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
+                        if (!alvo) return null;
+                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+                        alvo.click();
+                        var sel = document.getElementById('opo_slctVersao');
+                        return sel ? sel.value : null;
+                      }, textoAlvoVersao), 5000, 'clicar_opcao_select2_opo_slctVersao').catch(function () { return null; });
                         } catch (eSelVersao) {
                           preencheuV5.erroSelectVersao = eSelVersao.message;
                         }
