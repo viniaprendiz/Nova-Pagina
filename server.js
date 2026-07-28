@@ -2103,6 +2103,23 @@ initDb().then(function () {
                                         ['enviada', fandi_id]
                             );
         return { sucesso: true, mensagem: 'Ficha enviada com sucesso!' };
+
+                      // v25.0 HOTFIX: Detectar sucesso real do Passo 4 antes de marcar como "enviada"if (!passo4SucessoV5) {
+                        // Aguardar até 20 segundos por indicadores de sucesso  let successDetected = false;  let detectionStart = Date.now();
+                        while (!successDetected && (Date.now() - detectionStart) < 20000) {
+                              try {
+                                      const urlAtual = frameFandi.url();
+                                      const conteudo = await frameFandi.evaluate(() => document.body.innerText);
+                                      if ((urlAtual && !urlAtual.includes('/operacao/novo') && urlAtual.includes('/operacao/')) ||
+                                                    (conteudo && (conteudo.includes('sucesso') || conteudo.includes('Operação cadastrada')))) {
+                                                passo4SucessoV5 = true;
+                                                successDetected = true;
+                                                diagLog.fases.push({ fase: 'sucesso_detectado', url: urlAtual });
+                                      }
+                                      await new Promise(r => setTimeout(r, 1000));
+                              } catch (e) { break; }
+                        }
+                    }
                     }
 
                 await page.waitForTimeout(1000);
@@ -2113,13 +2130,5 @@ initDb().then(function () {
           }
       }
 
-                 // Se timeout esgotou sem detectar sucessoif (!successDetected) {
-                   await pool.query(
-            'UPDATE fichas SET status = $1, erro_tecnico = $2, atualizado_em = NOW() WHERE id = $3',
-            ['erro', 'Timeout na detecção de sucesso do Passo 4 (>20s)', fandi_id]
-          );
-    return { sucesso: false, mensagem: 'Timeout no Passo 4' };
-}
-         */
       });
 });
