@@ -1394,29 +1394,42 @@ async function preencheTextoV5(id, valor) {
               } catch (eParcV5) { parcelasResultadoV5.erro = eParcV5.message; }
               diagLog.fases.push({ fase: 'ajuste_parcelas_passo4', resultado: parcelasResultadoV5 });
 
-              let calcularResultadoV5 = { tentou: false };
-              try {
+              let calcularResultadoV5 = { tentou: false, tentativas: 0 };
+              for (let tCalcV5 = 0; tCalcV5 < 8; tCalcV5++) {
                 calcularResultadoV5.tentou = true;
-                calcularResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 6000, 'clicar_calcular').catch(function () { return false; });
-              } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
+                calcularResultadoV5.tentativas = tCalcV5 + 1;
+                let clicouTentV5 = false;
+                try {
+                  clicouTentV5 = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 5000, 'clicar_calcular_' + tCalcV5).catch(function () { return false; });
+                } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
+                if (clicouTentV5) { calcularResultadoV5.clicou = true; break; }
+                await new Promise(function (r) { setTimeout(r, 2000); });
+              }
               diagLog.fases.push({ fase: 'clique_calcular', resultado: calcularResultadoV5 });
 
               let snapshotsCalculoV5 = [];
               let calculoTerminouV5 = false;
-              for (let tentCalcV5 = 0; tentCalcV5 < 8; tentCalcV5++) {
+              for (let tentCalcV5 = 0; tentCalcV5 < 14; tentCalcV5++) {
                 await new Promise(function (r) { setTimeout(r, 2500); });
                 let snapV5 = null;
                 try {
                   snapV5 = await comTimeout(frameFandi.evaluate(function () {
                     var txt = document.body.innerText || '';
                     var temSpinner = !!document.querySelector('[class*="spinner" i], [class*="loading" i]');
-                    var temEnviar = txt.indexOf('Enviar') !== -1;
-                    var temValorParcela = txt.indexOf('R$') !== -1;
-                    return { len: txt.length, temSpinner: temSpinner, temEnviar: temEnviar, temValorParcela: temValorParcela };
+                    var semPlanos = txt.indexOf('Nao existem planos') !== -1 || txt.indexOf('Não existem planos') !== -1;
+                    var idxParc = txt.indexOf('parcelas de');
+                    var trechoParc = idxParc !== -1 ? txt.slice(idxParc, idxParc + 40) : '';
+                    var temValorReal = idxParc !== -1 && trechoParc.indexOf('R$') !== -1 && trechoParc.indexOf('R$ 0,00') === -1 && trechoParc.indexOf('R$\n0,00') === -1;
+                    var selects = Array.prototype.slice.call(document.querySelectorAll('select')).map(function (s) {
+                      var opt = s.options && s.selectedIndex >= 0 ? s.options[s.selectedIndex] : null;
+                      return { id: s.id || null, name: s.name || null, selecionado: opt ? opt.text : null, numOpcoes: s.options ? s.options.length : 0 };
+                    });
+                    return { len: txt.length, temSpinner: temSpinner, semPlanos: semPlanos, trechoParc: trechoParc, temValorReal: temValorReal, selects: selects.slice(0, 15) };
                   }), 5000, 'snapshot_calculo_' + tentCalcV5).catch(function (e) { return { erro: e.message }; });
                 } catch (eSnapV5) { snapV5 = { erro: eSnapV5.message }; }
                 snapshotsCalculoV5.push(snapV5);
-                if (snapV5 && !snapV5.temSpinner && snapV5.temValorParcela) { calculoTerminouV5 = true; break; }
+                if (snapV5 && snapV5.temValorReal) { calculoTerminouV5 = true; break; }
+                if (snapV5 && snapV5.semPlanos && tentCalcV5 >= 4) { break; }
               }
               diagLog.fases.push({ fase: 'aguardo_calculo_passo4', snapshots: snapshotsCalculoV5, terminouDetectado: calculoTerminouV5 });
 
@@ -1425,12 +1438,17 @@ async function preencheTextoV5(id, valor) {
               } catch (eScrollV5) { }
               await new Promise(function (r) { setTimeout(r, 1000); });
 
-              let enviarResultadoV5 = { tentou: false };
-              try {
-                enviarResultadoV5.tentou = true;
-                enviarResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Enviar'), 6000, 'clicar_enviar').catch(function () { return false; });
-                await new Promise(function (r) { setTimeout(r, 3000); });
-              } catch (eEnvV5) { enviarResultadoV5.erro = eEnvV5.message; }
+              let enviarResultadoV5 = { tentou: false, pulou: false };
+              if (!calculoTerminouV5) {
+                enviarResultadoV5.pulou = true;
+                enviarResultadoV5.motivo = 'calculo_nao_concluido';
+              } else {
+                try {
+                  enviarResultadoV5.tentou = true;
+                  enviarResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Enviar'), 6000, 'clicar_enviar').catch(function () { return false; });
+                  await new Promise(function (r) { setTimeout(r, 3000); });
+                } catch (eEnvV5) { enviarResultadoV5.erro = eEnvV5.message; }
+              }
               diagLog.fases.push({ fase: 'clique_enviar_passo4', resultado: enviarResultadoV5 });
 
               const txtFinalPasso4V5 = await comTimeout(corpoTextoV5(), 6000, 'corpo_final_passo4').catch(function () { return ''; });
