@@ -541,7 +541,71 @@ async function clicarPorTexto(ctx, texto) {
 // nome tecnico mais proximo e digita nele. O formulario do Fandi e um
 // componente Angular que pode nao usar o atributo name como o robo antigo
 // esperava; a busca e por pistas (placeholder, aria-label, formcontrolname)
-// ou pelo texto do rotulo mais perto no DOM.
+// ou pelo texto do rotulo mais perto no DOM.// Selecao robusta de campos Select2 (Marca/Modelo/Versao do Passo 3 do Fandi).
+// Setar sel.value direto NAO basta: o Select2 fica com o texto 'Selecione uma
+// opcao' e o Fandi acusa 'Campo obrigatorio' mesmo com o <select> nativo com
+// valor. Preciso simular a interacao real (abrir + clicar na opcao renderizada)
+// e confirmar pelo TEXTO renderizado do Select2, nao pelo .value do select
+// (que sempre devolve a primeira opcao mesmo sem nada selecionado).
+async function selecionarSelect2(frameFandi, campoId) {
+  const diag = { campoId: campoId };
+  try {
+    const opcoes = await comTimeout(frameFandi.evaluate(function (id) {
+      var sel = document.getElementById(id);
+      return sel ? Array.prototype.slice.call(sel.options).map(function (o) { return { value: o.value, text: o.textContent.trim() }; }).filter(function (o) { return o.value; }) : [];
+    }, campoId), 6000, 'opcoes_' + campoId).catch(function () { return []; });
+    diag.opcoes = opcoes.slice(0, 5);
+    if (!opcoes.length) { diag.erro = 'sem_opcoes'; return diag; }
+    const textoAlvo = opcoes[0].text;
+    diag.textoAlvo = textoAlvo;
+
+    const abriu = await comTimeout(frameFandi.evaluate(function (id) {
+      if (!window.jQuery) return { ok: false, motivo: 'sem_jquery' };
+      var campo = window.jQuery('#' + id);
+      if (!campo.data('select2')) return { ok: false, motivo: 'sem_instancia_select2' };
+      try { campo.select2('open'); } catch (eOpen) { return { ok: false, motivo: 'erro_open: ' + eOpen.message }; }
+      return { ok: true };
+    }, campoId), 5000, 'abrir_' + campoId).catch(function (eAbrir) { return { ok: false, motivo: 'excecao: ' + eAbrir.message }; });
+    diag.abriu = abriu;
+
+    await new Promise(function (r) { setTimeout(r, 900); });
+
+    const clique = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
+      var opcoesRender = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
+      if (!opcoesRender.length) return { ok: false, motivo: 'sem_opcoes_renderizadas', qtd: 0 };
+      var alvo = opcoesRender.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoesRender[0];
+      try { alvo.scrollIntoView({ block: 'center' }); } catch (eScroll) {}
+      alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      alvo.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+      alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      alvo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      alvo.click();
+      return { ok: true, textoClicado: alvo.textContent.trim(), qtd: opcoesRender.length };
+    }, textoAlvo), 5000, 'clicar_' + campoId).catch(function (eClicar) { return { ok: false, motivo: 'excecao: ' + eClicar.message }; });
+    diag.clique = clique;
+
+    await new Promise(function (r) { setTimeout(r, 600); });
+
+    const estadoFinal = await comTimeout(frameFandi.evaluate(function (id) {
+      var containerSpan = document.getElementById('select2-' + id + '-container');
+      var sel = document.getElementById(id);
+      return {
+        textoRenderizado: containerSpan ? containerSpan.textContent.trim() : null,
+        aindaAberto: !!document.querySelector('.select2-container--open'),
+        valorNativo: sel ? sel.value : null
+      };
+    }, campoId), 4000, 'estado_final_' + campoId).catch(function (eEstado) { return { erro: eEstado.message }; });
+    diag.estadoFinal = estadoFinal;
+
+    return diag;
+  } catch (eGeralSelect2) {
+    diag.erroGeral = eGeralSelect2.message;
+    return diag;
+  }
+}
+
+
 async function digitarCampoPorRotulo(ctx, rotulo, valor) {
   for (let tentativa = 0; tentativa < 8; tentativa++) {
     let handle;
@@ -936,22 +1000,7 @@ let preencheuV5 = { tentou: false };
 
                   if (opcoesMarcaV5.length) {
                     try {
-                                            const textoAlvoMarca = opcoesMarcaV5[0].text;
-                      await comTimeout(frameFandi.evaluate(function () {
-                        if (window.jQuery) { try { window.jQuery('#opo_slctMarca').select2('open'); } catch (e) {} }
-                      }), 5000, 'abrir_select2_opo_slctMarca').catch(function () {});
-                      await new Promise(function (r) { setTimeout(r, 700); });
-                      preencheuV5.valorMarcaConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
-                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
-                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
-                        if (!alvo) return null;
-                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                        alvo.click();
-                        var sel = document.getElementById('opo_slctMarca');
-                        return sel ? sel.value : null;
-                      }, textoAlvoMarca), 5000, 'clicar_opcao_select2_opo_slctMarca').catch(function () { return null; });
+                                            preencheuV5.marcaDiag = await selecionarSelect2(frameFandi, 'opo_slctMarca');
                     } catch (eSelMarca) {
                       preencheuV5.erroSelectMarca = eSelMarca.message;
                       try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
@@ -966,22 +1015,7 @@ let preencheuV5 = { tentou: false };
 
                     if (opcoesModeloV5.length) {
                       try {
-                                              const textoAlvoModelo = opcoesModeloV5[0].text;
-                      await comTimeout(frameFandi.evaluate(function () {
-                        if (window.jQuery) { try { window.jQuery('#opo_slctModelo').select2('open'); } catch (e) {} }
-                      }), 5000, 'abrir_select2_opo_slctModelo').catch(function () {});
-                      await new Promise(function (r) { setTimeout(r, 700); });
-                      preencheuV5.valorModeloConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
-                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
-                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
-                        if (!alvo) return null;
-                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                        alvo.click();
-                        var sel = document.getElementById('opo_slctModelo');
-                        return sel ? sel.value : null;
-                      }, textoAlvoModelo), 5000, 'clicar_opcao_select2_opo_slctModelo').catch(function () { return null; });
+                                              preencheuV5.modeloDiag = await selecionarSelect2(frameFandi, 'opo_slctModelo');
                       } catch (eSelModelo) {
                         preencheuV5.erroSelectModelo = eSelModelo.message;
                       }
@@ -995,22 +1029,7 @@ let preencheuV5 = { tentou: false };
 
                       if (opcoesVersaoV5.length) {
                         try {
-                                                const textoAlvoVersao = opcoesVersaoV5[0].text;
-                      await comTimeout(frameFandi.evaluate(function () {
-                        if (window.jQuery) { try { window.jQuery('#opo_slctVersao').select2('open'); } catch (e) {} }
-                      }), 5000, 'abrir_select2_opo_slctVersao').catch(function () {});
-                      await new Promise(function (r) { setTimeout(r, 700); });
-                      preencheuV5.valorVersaoConfirmado = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
-                        var opcoes = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
-                        var alvo = opcoes.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoes[0];
-                        if (!alvo) return null;
-                        alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-                        alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-                        alvo.click();
-                        var sel = document.getElementById('opo_slctVersao');
-                        return sel ? sel.value : null;
-                      }, textoAlvoVersao), 5000, 'clicar_opcao_select2_opo_slctVersao').catch(function () { return null; });
+                                                preencheuV5.versaoDiag = await selecionarSelect2(frameFandi, 'opo_slctVersao');
                         } catch (eSelVersao) {
                           preencheuV5.erroSelectVersao = eSelVersao.message;
                         }
