@@ -1195,10 +1195,10 @@ let preencheuV5 = { tentou: false };
                               var radios = Array.prototype.slice.call(document.querySelectorAll('input[type="radio"]')).filter(visivel);
                               var el = radios[idxAlvo];
                               if (!el) return false;
-                              el.click();
-                              el.checked = true;
-                              el.dispatchEvent(new Event('change', { bubbles: true }));
-                              return true;
+                              // v24.39: NAO clicar - testes confirmaram que clicar aqui reseta Marca/Modelo/Versao para vazio
+                              // e as opcoes nunca sao recarregadas (fica 'sem_opcoes' mesmo esperando). Ano de fabricacao
+                              // tambem nunca apareceu como erro obrigatorio bloqueando o avanco nos testes.
+                              return false;
                             }, alvoAnoV5.idx), 6000, 'clicar_radio_ano').catch(function (e) { return false; });
                             diagLog.fases.push({ fase: 'clicou_radio_ano', grupo: grupoAnoV5.nomeGrupo, sub: grupoAnoV5.subIndex, valor: alvoAnoV5.value, ok: cliqueRadioV5 });
                           } catch (eRadioV5) {
