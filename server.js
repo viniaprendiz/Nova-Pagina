@@ -1287,6 +1287,27 @@ async function preencheTextoV5(id, valor) {
                     diagLog.fases.push({ fase: 'erro_radios_ano', erro: eRadiosAnoV5.message });
                   }
 
+                                    try {
+                    const reforcoCheckV5 = await comTimeout(frameFandi.evaluate(function () {
+                      function valorDe(id) { var el = document.getElementById(id); return el ? el.value : undefined; }
+                      return { marca: valorDe('opo_slctMarca'), modelo: valorDe('opo_slctModelo'), versao: valorDe('opo_slctVersao') };
+                    }), 4000, 'reforco_check').catch(function (e) { return { erro: e.message }; });
+                    const reforcoResultadoV5 = { antes: reforcoCheckV5 };
+                    if (reforcoCheckV5 && (!reforcoCheckV5.marca || !reforcoCheckV5.modelo || !reforcoCheckV5.versao)) {
+                      reforcoResultadoV5.reselecionou = true;
+                      try {
+                        if (!reforcoCheckV5.marca) { reforcoResultadoV5.marcaDiag2 = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
+                        if (!reforcoCheckV5.modelo) { reforcoResultadoV5.modeloDiag2 = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
+                        if (!reforcoCheckV5.versao) { reforcoResultadoV5.versaoDiag2 = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
+                      } catch (eReforcoV5) { reforcoResultadoV5.erroReforco = eReforcoV5.message; }
+                    } else {
+                      reforcoResultadoV5.reselecionou = false;
+                    }
+                    diagLog.fases.push({ fase: 'reforco_veiculo_pos_ano', resultado: reforcoResultadoV5 });
+                  } catch (eReforcoOuterV5) {
+                    diagLog.fases.push({ fase: 'erro_reforco_veiculo', erro: eReforcoOuterV5.message });
+                  }
+
                   const clicouProximaV5 = await comTimeout(clicarPorTexto(frameFandi, 'Próxima'), 6000, 'clicar_proxima').catch(function () { return false; });
                   preencheuV5.clicouProxima = clicouProximaV5;
                   await new Promise(function (r) { setTimeout(r, 1500); });
