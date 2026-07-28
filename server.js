@@ -570,19 +570,29 @@ async function selecionarSelect2(frameFandi, campoId, comTimeout) {
 
     await new Promise(function (r) { setTimeout(r, 900); });
 
-    const clique = await comTimeout(frameFandi.evaluate(function (textoAlvo) {
-      var opcoesRender = Array.prototype.slice.call(document.querySelectorAll('.select2-container--open .select2-results__option'));
-      if (!opcoesRender.length) return { ok: false, motivo: 'sem_opcoes_renderizadas', qtd: 0 };
-      var alvo = opcoesRender.find(function (o) { return o.textContent.trim() === textoAlvo; }) || opcoesRender[0];
-      try { alvo.scrollIntoView({ block: 'center' }); } catch (eScroll) {}
-      alvo.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
-      alvo.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-      alvo.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-      alvo.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-      alvo.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      alvo.click();
-      return { ok: true, textoClicado: alvo.textContent.trim(), qtd: opcoesRender.length };
-    }, textoAlvo), 5000, 'clicar_' + campoId).catch(function (eClicar) { return { ok: false, motivo: 'excecao: ' + eClicar.message }; });
+    const clique = await (async function () {
+      try {
+        const handles = await comTimeout(frameFandi.$$('.select2-container--open .select2-results__option'), 5000, 'handles_' + campoId).catch(function () { return []; });
+        if (!handles || !handles.length) {
+          return { ok: false, motivo: 'sem_opcoes_renderizadas', qtd: 0 };
+        }
+        let alvoHandle = null;
+        let textoClicado = null;
+        for (const h of handles) {
+          const txt = await h.evaluate(function (el) { return el.textContent.trim(); }).catch(function () { return ''; });
+          if (txt === textoAlvo) { alvoHandle = h; textoClicado = txt; break; }
+        }
+        if (!alvoHandle) {
+          alvoHandle = handles[0];
+          textoClicado = await handles[0].evaluate(function (el) { return el.textContent.trim(); }).catch(function () { return ''; });
+        }
+        await alvoHandle.evaluate(function (el) { el.scrollIntoView({ block: 'center' }); }).catch(function () {});
+        await comTimeout(alvoHandle.click(), 5000, 'clicar_real_' + campoId);
+        return { ok: true, textoClicado: textoClicado, qtd: handles.length, metodo: 'puppeteer_click_trusted' };
+      } catch (eClicar) {
+        return { ok: false, motivo: 'excecao: ' + eClicar.message };
+      }
+    })();
     diag.clique = clique;
 
     await new Promise(function (r) { setTimeout(r, 600); });
