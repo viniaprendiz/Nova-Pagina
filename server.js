@@ -599,7 +599,7 @@ async function digitarCampoPorRotulo(ctx, rotulo, valor) {
 
 
 async function processarFicha(fandi_id, dados) {
-      const MAX_TENTATIVAS = 2;
+      const MAX_TENTATIVAS = 4;
       for (let tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
             let browser;
             try {
