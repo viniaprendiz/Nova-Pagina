@@ -1443,10 +1443,18 @@ async function preencheTextoV5(id, valor) {
             }
 
 const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
+
+            const passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
+            const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
+            const mensagemFinalV5 = passo4SucessoV5
+              ? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
+              : 'Cliente localizado/criado no Fandi (Passo 2 concluido). O robo tentou avancar o Passo 3 e 4 automaticamente com protecao contra travamentos. Verifique erro_tecnico para ver ate onde chegou. Clique em Abrir Fandi pra conferir/terminar (Condicoes da venda + Enviar), ja logado.';
+
             await pool.query(
-              "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
+              "UPDATE fichas SET status=$1, erro=$2, erro_tecnico=$3, fandi_url=$4 WHERE fandi_id=$5",
               [
-                'Cliente localizado/criado no Fandi (Passo 2 concluido). O robo tentou avancar o Passo 3 automaticamente com protecao contra travamentos. Verifique erro_tecnico para ver ate onde chegou. Clique em Abrir Fandi pra conferir/terminar (Condicoes da venda + Enviar), ja logado.',
+                statusFinalV5,
+                mensagemFinalV5,
                 'DIAGNOSTICO_V5: ' + diagnosticoTxt,
                 urlParada,
                 fandi_id
