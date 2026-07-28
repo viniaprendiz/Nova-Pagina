@@ -1515,28 +1515,7 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
 
 
               	// DETECCAO DE SUCESSO DO PASSO 4 (v26.0) - 28/07/2026
-              	// Se resultadoPasso4V5 nao tiver sucesso claro, tenta detectar olhando a pagina	if (!passo4SucessoV5) {
-              		let sucessoDetectado = false;
-              		const inicioDeteccao = Date.now();
-              		while (!sucessoDetectado && (Date.now() - inicioDeteccao) < 35000) {
-                    			try {
-                            				const urlAtual = frameFandi.url();
-                            				const conteudoPagina = await frameFandi.evaluate(() => document.body.innerText);
-                            				// Se a URL mudou de /operacao/novo (formulario) para algo diferente,operacao foi criada
-                            				// OU se tem mensagem de sucesso				if ((urlAtual && !urlAtual.includes('/operacao/novo') && urlAtual.includes('/operacao/')) ||
-                            					(conteudoPagina && (conteudoPagina.includes('sucesso') || conteudoPagina.includes('Operação cadastrada') || conteudoPagina.includes('Resumo da operação')))) {
-                                        					sucessoDetectado = true;
-                                        					console.log('[PASSO4 DETECCAO] Sucesso detectado no Passo 4 via analise de pagina');
-                                      }
-                          } catch (eDeteccao) {
-                            				console.log('[PASSO4 DETECCAO ERRO] ' + eDeteccao.message);
-                          }
-                    			if (!sucessoDetectado) await new Promise(r => setTimeout(r, 2000));
-                  }
-              		if (sucessoDetectado) {
-                    			passo4SucessoV5 = true;
-                  }
-            }
+
             const passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
             const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
             const mensagemFinalV5 = passo4SucessoV5
