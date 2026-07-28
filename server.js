@@ -1516,7 +1516,7 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
 
               	// DETECCAO DE SUCESSO DO PASSO 4 (v26.0) - 28/07/2026
 
-            const passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
+            passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
             const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
             const mensagemFinalV5 = passo4SucessoV5
               ? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
