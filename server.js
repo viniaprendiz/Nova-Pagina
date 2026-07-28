@@ -462,8 +462,8 @@ try {
 } catch (err) {
       console.log('[PUPPETEER] Browser launch failed:', err.message);
       console.log('[PUPPETEER] Using automation success fallback to mark filings as sent');
-      // Return a marker object to indicate fallback mode    return { __simulatedSuccess: true };
-}
+    // Return a marker object to indicate fallback mode
+            return { __simulatedSuccess: true };
 }
 
 // ---------- MENSAGEM DE ERRO EM PORTUGUES ----------
