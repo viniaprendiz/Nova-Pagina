@@ -1372,71 +1372,37 @@ async function preencheTextoV5(id, valor) {
               diagLog.fases.push({ fase: 'inicio_passo4', ts: Date.now() });
               await new Promise(function (r) { setTimeout(r, 2000); });
 
-              let estruturaIniPasso4V5 = null;
+              let calcularResultadoV5 = { tentou: false };
               try {
-                estruturaIniPasso4V5 = await comTimeout(frameFandi.evaluate(function () {
-                  var btns = Array.prototype.slice.call(document.querySelectorAll('button, a, [role="button"]')).map(function (b) {
-                    return (b.innerText || '').trim().slice(0, 40);
-                  }).filter(function (t) { return t; });
-                  var campos = Array.prototype.slice.call(document.querySelectorAll('input, select')).map(function (i) {
-                    return { tag: i.tagName, type: i.type || null, name: i.name || null, id: i.id || null, valor: i.value || null };
-                  });
-                  return { botoes: btns.slice(0, 60), campos: campos.slice(0, 60) };
-                }), 6000, 'estrutura_ini_passo4').catch(function (e) { return { erro: e.message }; });
-              } catch (eEstrIniV5) { estruturaIniPasso4V5 = { erro: eEstrIniV5.message }; }
-              diagLog.fases.push({ fase: 'estrutura_ini_passo4', estrutura: estruturaIniPasso4V5 });
-
-              let parcelasResultadoV5 = { tentou: false };
-              try {
-                parcelasResultadoV5.tentou = true;
-                parcelasResultadoV5.clicou48 = await comTimeout(clicarPorTexto(frameFandi, '48x'), 4000, 'clicar_48x').catch(function () { return false; });
-                await new Promise(function (r) { setTimeout(r, 1000); });
-              } catch (eParcV5) { parcelasResultadoV5.erro = eParcV5.message; }
-              diagLog.fases.push({ fase: 'ajuste_parcelas_passo4', resultado: parcelasResultadoV5 });
-
-              let calcularResultadoV5 = { tentou: false, tentativas: 0 };
-              for (let tCalcV5 = 0; tCalcV5 < 4; tCalcV5++) {
                 calcularResultadoV5.tentou = true;
-                calcularResultadoV5.tentativas = tCalcV5 + 1;
-                let clicouTentV5 = false;
-                try {
-                  clicouTentV5 = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 4000, 'clicar_calcular_' + tCalcV5).catch(function () { return false; });
-                } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
-                if (clicouTentV5) { calcularResultadoV5.clicou = true; break; }
-                await new Promise(function (r) { setTimeout(r, 1500); });
-              }
+                calcularResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 6000, 'clicar_calcular').catch(function () { return false; });
+              } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
               diagLog.fases.push({ fase: 'clique_calcular', resultado: calcularResultadoV5 });
 
               let snapshotsCalculoV5 = [];
               let calculoTerminouV5 = false;
-              for (let tentCalcV5 = 0; tentCalcV5 < 8; tentCalcV5++) {
+              for (let tentCalcV5 = 0; tentCalcV5 < 6; tentCalcV5++) {
                 await new Promise(function (r) { setTimeout(r, 2500); });
                 let snapV5 = null;
                 try {
                   snapV5 = await comTimeout(frameFandi.evaluate(function () {
                     var txt = document.body.innerText || '';
-                    var temSpinner = !!document.querySelector('[class*="spinner" i], [class*="loading" i]');
                     var semPlanos = txt.indexOf('Nao existem planos') !== -1 || txt.indexOf('Não existem planos') !== -1;
                     var idxParc = txt.indexOf('parcelas de');
                     var trechoParc = idxParc !== -1 ? txt.slice(idxParc, idxParc + 40) : '';
                     var temValorReal = idxParc !== -1 && trechoParc.indexOf('R$') !== -1 && trechoParc.indexOf('R$ 0,00') === -1 && trechoParc.indexOf('R$\n0,00') === -1;
-                    var selects = Array.prototype.slice.call(document.querySelectorAll('select')).map(function (s) {
-                      var opt = s.options && s.selectedIndex >= 0 ? s.options[s.selectedIndex] : null;
-                      return { id: s.id || null, name: s.name || null, selecionado: opt ? opt.text : null, numOpcoes: s.options ? s.options.length : 0 };
-                    });
-                    return { len: txt.length, temSpinner: temSpinner, semPlanos: semPlanos, trechoParc: trechoParc, temValorReal: temValorReal, selects: selects.slice(0, 15) };
-                  }), 5000, 'snapshot_calculo_' + tentCalcV5).catch(function (e) { return { erro: e.message }; });
+                    return { semPlanos: semPlanos, trechoParc: trechoParc, temValorReal: temValorReal };
+                  }), 4000, 'snapshot_calculo_' + tentCalcV5).catch(function (e) { return { erro: e.message }; });
                 } catch (eSnapV5) { snapV5 = { erro: eSnapV5.message }; }
                 snapshotsCalculoV5.push(snapV5);
                 if (snapV5 && snapV5.temValorReal) { calculoTerminouV5 = true; break; }
-                if (snapV5 && snapV5.semPlanos && tentCalcV5 >= 3) { break; }
+                if (snapV5 && snapV5.semPlanos && tentCalcV5 >= 2) { break; }
               }
               diagLog.fases.push({ fase: 'aguardo_calculo_passo4', snapshots: snapshotsCalculoV5, terminouDetectado: calculoTerminouV5 });
 
               try {
-                await comTimeout(frameFandi.evaluate(function () { window.scrollTo(0, document.body.scrollHeight); }), 4000, 'scroll_baixo').catch(function () { });
+                await comTimeout(frameFandi.evaluate(function () { window.scrollTo(0, document.body.scrollHeight); }), 3000, 'scroll_baixo').catch(function () { });
               } catch (eScrollV5) { }
-              await new Promise(function (r) { setTimeout(r, 1000); });
 
               let enviarResultadoV5 = { tentou: false, pulou: false };
               if (!calculoTerminouV5) {
@@ -1446,19 +1412,19 @@ async function preencheTextoV5(id, valor) {
                 try {
                   enviarResultadoV5.tentou = true;
                   enviarResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Enviar'), 6000, 'clicar_enviar').catch(function () { return false; });
-                  await new Promise(function (r) { setTimeout(r, 3000); });
+                  await new Promise(function (r) { setTimeout(r, 2000); });
                 } catch (eEnvV5) { enviarResultadoV5.erro = eEnvV5.message; }
               }
               diagLog.fases.push({ fase: 'clique_enviar_passo4', resultado: enviarResultadoV5 });
 
-              const txtFinalPasso4V5 = await comTimeout(corpoTextoV5(), 6000, 'corpo_final_passo4').catch(function () { return ''; });
-              diagLog.trechoFinalPasso4 = txtFinalPasso4V5.slice(0, 3000);
+              const txtFinalPasso4V5 = await comTimeout(corpoTextoV5(), 5000, 'corpo_final_passo4').catch(function () { return ''; });
+              diagLog.trechoFinalPasso4 = txtFinalPasso4V5.slice(0, 2000);
               try { diagLog.urlFinalPasso4 = frameFandi.url(); } catch (eUrlP4V5) { diagLog.urlFinalPasso4 = 'erro: ' + eUrlP4V5.message; }
 
               return { calculoConcluido: calculoTerminouV5, enviouClique: !!(enviarResultadoV5 && enviarResultadoV5.clicou) };
             }
 
-let travouV5 = false;
+            let travouV5 = false;
             try {
               await comTimeout(executarPasso3ComSeguranca(), 100000, 'geral_passo3');
             } catch (eGeralV5) {
