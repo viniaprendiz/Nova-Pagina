@@ -547,7 +547,7 @@ async function clicarPorTexto(ctx, texto) {
 // valor. Preciso simular a interacao real (abrir + clicar na opcao renderizada)
 // e confirmar pelo TEXTO renderizado do Select2, nao pelo .value do select
 // (que sempre devolve a primeira opcao mesmo sem nada selecionado).
-async function selecionarSelect2(frameFandi, campoId) {
+async function selecionarSelect2(frameFandi, campoId, comTimeout) {
   const diag = { campoId: campoId };
   try {
     const opcoes = await comTimeout(frameFandi.evaluate(function (id) {
@@ -1000,7 +1000,7 @@ let preencheuV5 = { tentou: false };
 
                   if (opcoesMarcaV5.length) {
                     try {
-                                            preencheuV5.marcaDiag = await selecionarSelect2(frameFandi, 'opo_slctMarca');
+                                            preencheuV5.marcaDiag = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout);
                     } catch (eSelMarca) {
                       preencheuV5.erroSelectMarca = eSelMarca.message;
                       try { frameFandi = await obterFrameFandi(page); preencheuV5.frameReobtido = true; } catch (eReobter) { preencheuV5.erroReobterFrame = eReobter.message; }
@@ -1015,7 +1015,7 @@ let preencheuV5 = { tentou: false };
 
                     if (opcoesModeloV5.length) {
                       try {
-                                              preencheuV5.modeloDiag = await selecionarSelect2(frameFandi, 'opo_slctModelo');
+                                              preencheuV5.modeloDiag = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout);
                       } catch (eSelModelo) {
                         preencheuV5.erroSelectModelo = eSelModelo.message;
                       }
@@ -1029,7 +1029,7 @@ let preencheuV5 = { tentou: false };
 
                       if (opcoesVersaoV5.length) {
                         try {
-                                                preencheuV5.versaoDiag = await selecionarSelect2(frameFandi, 'opo_slctVersao');
+                                                preencheuV5.versaoDiag = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout);
                         } catch (eSelVersao) {
                           preencheuV5.erroSelectVersao = eSelVersao.message;
                         }
