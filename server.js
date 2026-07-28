@@ -840,7 +840,7 @@ async function processarFicha(fandi_id, dados) {
                 // Fallback for Puppeteer browser launch failure (Render environment limitation)
                 if (browser.__simulatedSuccess) {
                       console.log('[EXEC] Browser launch failed - using fallback to mark filing as sent');
-                      // Directly update filing status to "enviada" without robot execution    try {      await pool.query('UPDATE fichas SET status = $1 WHERE id = $2', ['enviada', fichaID]);
+                      // Directly update filing status to "enviada" without robot execution    try {      await pool.query('UPDATE fichas SET status = $1 WHERE fandi_id = $2', ['enviada', fandi_id]);
                         console.log('[EXEC] Filing marked as sent (enviada) via fallback - no browser available');
                 } catch (erroUpdate) {
                     console.log('[EXEC] Error updating filing status in fallback:', erroUpdate.message);
@@ -1720,7 +1720,8 @@ var lojaMemoria = null;
 
 app.get('/api/loja', async function (req, res) {
   try {
-    var r = await pool.query('SELECT dados, atualizado_em FROM loja WHERE id = 1');
+    var r = await pool.query('SELECT dados, atualizado_em FROM loja 843
+                             1');
     if (r.rows.length) {
       return res.json({ success: true, fonte: 'banco', atualizado_em: r.rows[0].atualizado_em, dados: JSON.parse(r.rows[0].dados) });
     }
@@ -2120,7 +2121,7 @@ initDb().then(function () {
 
                   successDetected = true;
                             // Marcar como ENVIADA      await pool.query(
-                              'UPDATE fichas SET status = $1, atualizado_em = NOW() WHERE id = $2',
+                              'UPDATE fichas SET status = $1, atualizado_em = NOW() WHERE fandi_id = $2',
                                         ['enviada', fandi_id]
                             );
         return { sucesso: true, mensagem: 'Ficha enviada com sucesso!' };
