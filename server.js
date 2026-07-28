@@ -1210,7 +1210,7 @@ let preencheuV5 = { tentou: false };
               diagLog.fases.push({ fase: 'timeout_geral', erro: eGeralV5.message });
             }
 
-            const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 9500);
+            const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
             await pool.query(
               "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
               [
