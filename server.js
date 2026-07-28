@@ -1518,7 +1518,7 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
               	// Se resultadoPasso4V5 nao tiver sucesso claro, tenta detectar olhando a pagina	if (!passo4SucessoV5) {
               		let sucessoDetectado = false;
               		const inicioDeteccao = Date.now();
-              		while (!sucessoDetectado && (Date.now() - inicioDeteccao) < 25000) {
+              		while (!sucessoDetectado && (Date.now() - inicioDeteccao) < 35000) {
                     			try {
                             				const urlAtual = frameFandi.url();
                             				const conteudoPagina = await frameFandi.evaluate(() => document.body.innerText);
