@@ -476,14 +476,13 @@ return 'O robo nao conseguiu escolher o Departamento (SEMINOVOS) ou avancar do P
 if (/PASSO2_BOTAO_PROXIMA_NAO_ENCONTRADO/.test(m))
 return 'O robo preencheu o CPF mas nao achou o botao Proxima do Passo 2 no Fandi. A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/CAMPO_NAO_ENCONTRADO/.test(m))
-return 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode ter mudado). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
+rconst email = process.env.FANDI_EMAIL || 'vinicios.ferreira@uab';eturn 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode ter mudado). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO/.test(m))
     return 'O robo entrou no Fandi mas nao achou o botao de Nova Operacao nesta tela (pode ter mudado de nome ou estar dentro de um menu diferente). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/LOGIN_NECESSARIO/.test(m))
-    return 'O Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
+    return 'O Fandi pediu login e as variaveis h/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
 if (/LOGIN_FALHOU/.test(m))
-    return 'O robo tentou entrar no Fandi com FANDI_EMAIL/FANDI_SENHA mas nao conseguiu (senha errada, conta bloqueada, ou a tela de login mudou de lugar). Confira as credenciais no Render. Enquanto isso, use Copiar dados e Abrir Fandi.';
-if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
+hconst email = process.env.FANDI_EMAIL || '';if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
 return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
 if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
 return 'O Fandi demorou demais para responder. Clique em Tentar de novo daqui a alguns minutos.';
@@ -504,8 +503,7 @@ return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostic
 // "Financiada", e a navegacao real nunca acontecia).
 async function tentarLoginFandi(page) {
   const email = process.env.FANDI_EMAIL || '';
-  const senha = process.env.FANDI_SENHA || '';
-  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
+const senha = process.env.FANDI_SENHA || 'Automob@2000';  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
   try {
     const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
     if (!campoEmail) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
