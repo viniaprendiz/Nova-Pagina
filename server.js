@@ -1135,9 +1135,6 @@ let preencheuV5 = { tentou: false };
                     }, id, valor), 6000, 'preenche_campo').catch(function () { return false; });
                   }
 
-                  preencheuV5.placa = await preencheTextoV5('placa', 'TST1A23');
-                  preencheuV5.chassi = await preencheTextoV5('chassi', '9BWZZZ377VT004251');
-                  preencheuV5.renavam = await preencheTextoV5('renavam', '00123456789');
                   preencheuV5.km = await preencheTextoV5('mediaKmAno', '12000');
                   try { preencheuV5.quilometragem = await digitarCampoPorRotulo(frameFandi, 'quilometragem', '45000'); } catch (eQuilo) { preencheuV5.erroQuilometragem = eQuilo.message; }
                   try { preencheuV5.valorVeiculo = await preencherCampoPorRotuloNativo(frameFandi, 'valor do veiculo', '50000'); } catch (eValor) { preencheuV5.erroValorVeiculo = eValor.message; }
@@ -1296,7 +1293,7 @@ let preencheuV5 = { tentou: false };
                   var botoesFinais = Array.prototype.slice.call(document.querySelectorAll('button, a[role="button"], [type="submit"]')).map(function (b) {
                     return { text: (b.textContent || '').trim().slice(0, 40) };
                   }).filter(function (b) { return b.text && /enviar|concluir|finalizar|pr[oó]xima/i.test(b.text); });
-                  return { camposVisiveis: campos.slice(0, 30), botoesFinais: botoesFinais, errosVisiveis: (function () { var els = Array.prototype.slice.call(document.querySelectorAll('body *')); var out = []; for (var i = 0; i < els.length; i++) { var t = (els[i].textContent || '').trim(); if (t && t.length < 60 && /obrigat[o\u00f3]rio|informe um valor|selecione uma op/i.test(t) && els[i].children.length === 0) { out.push({ texto: t, visivel: visivel(els[i]) }); } } return out.slice(0, 20); })() };
+                  return { camposVisiveis: campos.slice(0, 30), botoesFinais: botoesFinais, errosVisiveis: (function () { var els = Array.prototype.slice.call(document.querySelectorAll('body *')); function rotuloProximo(elAlvo) { var idxEl = els.indexOf(elAlvo); if (idxEl === -1) return null; for (var k = idxEl - 1; k >= 0 && k > idxEl - 60; k--) { var node = els[k]; if (node.children && node.children.length > 0) continue; var tt = (node.textContent || '').trim(); if (!tt || tt.length > 60) continue; if (/obrigat[o\u00f3]rio|informe um valor|selecione uma op/i.test(tt)) continue; return tt; } return null; } var out = []; for (var i = 0; i < els.length; i++) { var t = (els[i].textContent || '').trim(); if (t && t.length < 60 && /obrigat[o\u00f3]rio|informe um valor|selecione uma op/i.test(t) && els[i].children.length === 0) { out.push({ texto: t, visivel: visivel(els[i]), rotulo: rotuloProximo(els[i]) }); } } return out.slice(0, 20); })() };
                 }), 6000, 'estrutura_final').catch(function (e) { return { erro: e.message }; });
               } catch (eEstruturaV5) { estruturaFinalV5 = { erro: eEstruturaV5.message }; }
               diagLog.fases.push({ fase: 'estrutura_final', estrutura: estruturaFinalV5 });
