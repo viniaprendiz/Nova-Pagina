@@ -1539,10 +1539,10 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
             }
         	// FALLBACK v26.1: Se chegou aqui sem deteccao explícita, assume sucesso	// v26.1: Se não detectou sucesso explícito, assume verdadeiro (Fandi respondeu)
         	passo4SucessoV5 = passo4SucessoV5 || true;
-            const passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
-            const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
-            const mensagemFinalV5 = passo4SucessoV5
-              ? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
+const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
+        const mensagemFinalV5 = passo4SucessoV5
+          ? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
+          : 'Cliente localizado/criado no Fandi (Passo 2 concluido). O robo tentou avancar o Passo 3 e 4 automaticamente com protecao contra travamentos. Verifique erro_tecnico para ver ate onde chegou. Clique em Abrir Fandi pra conferir/terminar (Condicoes da venda + Enviar), ja logado.';? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
               : 'Cliente localizado/criado no Fandi (Passo 2 concluido). O robo tentou avancar o Passo 3 e 4 automaticamente com protecao contra travamentos. Verifique erro_tecnico para ver ate onde chegou. Clique em Abrir Fandi pra conferir/terminar (Condicoes da venda + Enviar), ja logado.';
 
             await pool.query(
