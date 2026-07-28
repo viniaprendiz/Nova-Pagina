@@ -1296,9 +1296,32 @@ async function preencheTextoV5(id, valor) {
                     if (reforcoCheckV5 && (!reforcoCheckV5.marca || !reforcoCheckV5.modelo || !reforcoCheckV5.versao)) {
                       reforcoResultadoV5.reselecionou = true;
                       try {
-                        if (!reforcoCheckV5.marca) { reforcoResultadoV5.marcaDiag2 = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
-                        if (!reforcoCheckV5.modelo) { reforcoResultadoV5.modeloDiag2 = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
-                        if (!reforcoCheckV5.versao) { reforcoResultadoV5.versaoDiag2 = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout); await new Promise(function (r) { setTimeout(r, 1200); }); }
+                        async function esperarOpcoesV5(idCampo, tentativasMax) {
+                          for (let tOp = 0; tOp < tentativasMax; tOp++) {
+                            const qtd = await comTimeout(frameFandi.evaluate(function (idC) {
+                              var sel = document.getElementById(idC);
+                              return sel ? sel.options.length : 0;
+                            }, idCampo), 3000, 'esperar_opcoes').catch(function () { return 0; });
+                            if (qtd > 1) return qtd;
+                            await new Promise(function (r) { setTimeout(r, 1000); });
+                          }
+                          return 0;
+                        }
+                        if (!reforcoCheckV5.marca) {
+                          reforcoResultadoV5.qtdOpcoesMarcaAntes = await esperarOpcoesV5('opo_slctMarca', 6);
+                          reforcoResultadoV5.marcaDiag2 = await selecionarSelect2(frameFandi, 'opo_slctMarca', comTimeout);
+                          await new Promise(function (r) { setTimeout(r, 1500); });
+                        }
+                        if (!reforcoCheckV5.modelo) {
+                          reforcoResultadoV5.qtdOpcoesModeloAntes = await esperarOpcoesV5('opo_slctModelo', 6);
+                          reforcoResultadoV5.modeloDiag2 = await selecionarSelect2(frameFandi, 'opo_slctModelo', comTimeout);
+                          await new Promise(function (r) { setTimeout(r, 1500); });
+                        }
+                        if (!reforcoCheckV5.versao) {
+                          reforcoResultadoV5.qtdOpcoesVersaoAntes = await esperarOpcoesV5('opo_slctVersao', 6);
+                          reforcoResultadoV5.versaoDiag2 = await selecionarSelect2(frameFandi, 'opo_slctVersao', comTimeout);
+                          await new Promise(function (r) { setTimeout(r, 1500); });
+                        }
                       } catch (eReforcoV5) { reforcoResultadoV5.erroReforco = eReforcoV5.message; }
                     } else {
                       reforcoResultadoV5.reselecionou = false;
