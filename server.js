@@ -1367,7 +1367,80 @@ async function preencheTextoV5(id, valor) {
               try { diagLog.urlFinal = frameFandi.url(); } catch (eUrlV5) { diagLog.urlFinal = 'erro: ' + eUrlV5.message; }
             }
 
-            let travouV5 = false;
+            
+            async function executarPasso4ComSeguranca() {
+              diagLog.fases.push({ fase: 'inicio_passo4', ts: Date.now() });
+              await new Promise(function (r) { setTimeout(r, 2000); });
+
+              let estruturaIniPasso4V5 = null;
+              try {
+                estruturaIniPasso4V5 = await comTimeout(frameFandi.evaluate(function () {
+                  var btns = Array.prototype.slice.call(document.querySelectorAll('button, a, [role="button"]')).map(function (b) {
+                    return (b.innerText || '').trim().slice(0, 40);
+                  }).filter(function (t) { return t; });
+                  var campos = Array.prototype.slice.call(document.querySelectorAll('input, select')).map(function (i) {
+                    return { tag: i.tagName, type: i.type || null, name: i.name || null, id: i.id || null, valor: i.value || null };
+                  });
+                  return { botoes: btns.slice(0, 60), campos: campos.slice(0, 60) };
+                }), 6000, 'estrutura_ini_passo4').catch(function (e) { return { erro: e.message }; });
+              } catch (eEstrIniV5) { estruturaIniPasso4V5 = { erro: eEstrIniV5.message }; }
+              diagLog.fases.push({ fase: 'estrutura_ini_passo4', estrutura: estruturaIniPasso4V5 });
+
+              let parcelasResultadoV5 = { tentou: false };
+              try {
+                parcelasResultadoV5.tentou = true;
+                parcelasResultadoV5.clicou48 = await comTimeout(clicarPorTexto(frameFandi, '48x'), 4000, 'clicar_48x').catch(function () { return false; });
+                await new Promise(function (r) { setTimeout(r, 1000); });
+              } catch (eParcV5) { parcelasResultadoV5.erro = eParcV5.message; }
+              diagLog.fases.push({ fase: 'ajuste_parcelas_passo4', resultado: parcelasResultadoV5 });
+
+              let calcularResultadoV5 = { tentou: false };
+              try {
+                calcularResultadoV5.tentou = true;
+                calcularResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Calcular'), 6000, 'clicar_calcular').catch(function () { return false; });
+              } catch (eCalcV5) { calcularResultadoV5.erro = eCalcV5.message; }
+              diagLog.fases.push({ fase: 'clique_calcular', resultado: calcularResultadoV5 });
+
+              let snapshotsCalculoV5 = [];
+              let calculoTerminouV5 = false;
+              for (let tentCalcV5 = 0; tentCalcV5 < 8; tentCalcV5++) {
+                await new Promise(function (r) { setTimeout(r, 2500); });
+                let snapV5 = null;
+                try {
+                  snapV5 = await comTimeout(frameFandi.evaluate(function () {
+                    var txt = document.body.innerText || '';
+                    var temSpinner = !!document.querySelector('[class*="spinner" i], [class*="loading" i]');
+                    var temEnviar = txt.indexOf('Enviar') !== -1;
+                    var temValorParcela = txt.indexOf('R$') !== -1;
+                    return { len: txt.length, temSpinner: temSpinner, temEnviar: temEnviar, temValorParcela: temValorParcela };
+                  }), 5000, 'snapshot_calculo_' + tentCalcV5).catch(function (e) { return { erro: e.message }; });
+                } catch (eSnapV5) { snapV5 = { erro: eSnapV5.message }; }
+                snapshotsCalculoV5.push(snapV5);
+                if (snapV5 && !snapV5.temSpinner && snapV5.temValorParcela) { calculoTerminouV5 = true; break; }
+              }
+              diagLog.fases.push({ fase: 'aguardo_calculo_passo4', snapshots: snapshotsCalculoV5, terminouDetectado: calculoTerminouV5 });
+
+              try {
+                await comTimeout(frameFandi.evaluate(function () { window.scrollTo(0, document.body.scrollHeight); }), 4000, 'scroll_baixo').catch(function () { });
+              } catch (eScrollV5) { }
+              await new Promise(function (r) { setTimeout(r, 1000); });
+
+              let enviarResultadoV5 = { tentou: false };
+              try {
+                enviarResultadoV5.tentou = true;
+                enviarResultadoV5.clicou = await comTimeout(clicarPorTexto(frameFandi, 'Enviar'), 6000, 'clicar_enviar').catch(function () { return false; });
+                await new Promise(function (r) { setTimeout(r, 3000); });
+              } catch (eEnvV5) { enviarResultadoV5.erro = eEnvV5.message; }
+              diagLog.fases.push({ fase: 'clique_enviar_passo4', resultado: enviarResultadoV5 });
+
+              const txtFinalPasso4V5 = await comTimeout(corpoTextoV5(), 6000, 'corpo_final_passo4').catch(function () { return ''; });
+              diagLog.trechoFinalPasso4 = txtFinalPasso4V5.slice(0, 3000);
+              try { diagLog.urlFinalPasso4 = frameFandi.url(); } catch (eUrlP4V5) { diagLog.urlFinalPasso4 = 'erro: ' + eUrlP4V5.message; }
+
+              return { calculoConcluido: calculoTerminouV5, enviouClique: !!(enviarResultadoV5 && enviarResultadoV5.clicou) };
+            }
+
+let travouV5 = false;
             try {
               await comTimeout(executarPasso3ComSeguranca(), 100000, 'geral_passo3');
             } catch (eGeralV5) {
@@ -1375,7 +1448,17 @@ async function preencheTextoV5(id, valor) {
               diagLog.fases.push({ fase: 'timeout_geral', erro: eGeralV5.message });
             }
 
-            const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
+            
+            let resultadoPasso4V5 = null;
+            if (!travouV5) {
+              try {
+                resultadoPasso4V5 = await comTimeout(executarPasso4ComSeguranca(), 90000, 'geral_passo4');
+              } catch (eGeralP4V5) {
+                diagLog.fases.push({ fase: 'timeout_geral_passo4', erro: eGeralP4V5.message });
+              }
+            }
+
+const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
             await pool.query(
               "UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2, fandi_url=$3 WHERE fandi_id=$4",
               [
