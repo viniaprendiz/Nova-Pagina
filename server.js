@@ -8,6 +8,23 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
+
+// ---------- REDE DE SEGURANCA GLOBAL (v24.45) ----------
+// Causa raiz encontrada nesta sessao: o UPDATE de erro dentro do catch de
+// processarFicha (ultima tentativa) NAO tinha try/catch proprio. Se esse UPDATE
+// falhasse por qualquer motivo (banco instavel, timeout), a excecao virava uma
+// promise rejeitada sem .catch() no chamador (processarFicha(fandi_id, dados) e
+// chamado sem await/catch em /api/submit-fandi e /api/retry). Node 15+ DERRUBA
+// O PROCESSO INTEIRO por padrao quando uma promise rejeitada fica sem catch.
+// Isso explica fichas presas em 'enviando' para sempre e varias ao mesmo tempo
+// (o servidor caia e reiniciava sozinho no Render; so a limpeza de boot
+// arrumava, e so quando alguem fazia outro deploy).
+process.on('unhandledRejection', function (motivo) {
+  console.error('[UNHANDLED REJECTION] capturado para NAO derrubar o servidor: ' + (motivo && motivo.message ? motivo.message : motivo));
+});
+process.on('uncaughtException', function (erro) {
+  console.error('[UNCAUGHT EXCEPTION] capturado para NAO derrubar o servidor: ' + (erro && erro.message ? erro.message : erro));
+});
 const PORT = process.env.PORT || 3000;
 
 const pool = new Pool({
@@ -141,6 +158,25 @@ console.error('[AUTH] erro ao checar/criar admin inicial: ' + eAdmin.message);
 
 const agente = require('./agente');
 app.use(express.json());
+
+// ---------- LIMPEZA PERIODICA DE FICHAS TRAVADAS (v24.45) ----------
+// A limpeza antiga so rodava 1x no boot (deploy/reinicio). Com a rede de
+// seguranca acima o servidor nao deve mais cair, entao precisamos de uma
+// limpeza que rode sozinha, periodicamente, mesmo com o servidor no ar o
+// tempo todo. Reduzido de 15 para 10 minutos e roda a cada 5 minutos.
+setInterval(async function () {
+  try {
+    var limpezaPeriodica = await pool.query(
+      "UPDATE fichas SET status='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '10 minutes' RETURNING fandi_id",
+      ["Ficha ficou travada em 'enviando' por mais de 10 minutos (provavel queda do robo) e foi marcada automaticamente pela limpeza periodica."]
+    );
+    if (limpezaPeriodica.rows.length) {
+      console.log('[LIMPEZA PERIODICA] ' + limpezaPeriodica.rows.length + ' ficha(s) marcadas: ' + limpezaPeriodica.rows.map(function (r) { return r.fandi_id; }).join(', '));
+    }
+  } catch (eLimpezaPeriodica) {
+    console.error('[LIMPEZA PERIODICA ERRO] ' + eLimpezaPeriodica.message);
+  }
+}, 5 * 60 * 1000);
 
 // ---------- LOGIN: helpers de senha, cookie e sessao (v15.0) ----------
 // Sem pacote novo no package.json (licao ja aprendida: dependencia extra ja
@@ -285,7 +321,12 @@ const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('he
                   [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood, (req.usuario && req.usuario.id) || null]
                   );
             res.json({ success: true, fandi_id: fandi_id, message: 'Ficha recebida, enviando ao Fandi...' });
-            processarFicha(fandi_id, dados);
+            processarFicha(fandi_id, dados).catch(async function (eProcessarV5) {
+              console.error('[ERRO GRAVE] processarFicha rejeitou (nao deveria mais acontecer) para ' + fandi_id + ': ' + eProcessarV5.message);
+              try {
+                await pool.query("UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3 AND status='enviando'", ['O robo travou de um jeito inesperado antes de terminar. Tente de novo ou finalize manualmente com Copiar dados e Abrir Fandi.', String(eProcessarV5 && eProcessarV5.message), fandi_id]);
+              } catch (eSalvarV5) { console.error('[ERRO GRAVE] nem isso salvou: ' + eSalvarV5.message); }
+            });
       } catch (err) {
             console.error('[DB ERRO ao salvar ficha]', err.message);
             res.json({ success: false, message: 'Erro ao salvar ficha: ' + err.message });
@@ -1499,7 +1540,11 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
                   console.error('[ERRO] tentativa ' + tentativa + ' - ' + fandi_id + ': ' + err.message);
                   if (browser) { try { await browser.close(); } catch (e) {} }
                   if (tentativa === MAX_TENTATIVAS) {
-                        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3', [erroAmigavel(err.message), err.message, fandi_id]);
+                        try {
+        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3', [erroAmigavel(err.message), err.message, fandi_id]);
+      } catch (errSalvarErroFinal) {
+        console.error('[ERRO GRAVE] nao consegui nem gravar o erro final da ficha ' + fandi_id + ': ' + errSalvarErroFinal.message);
+      }
                   } else {
                         await new Promise(function (r) { setTimeout(r, 3000); });
                   }
@@ -1620,7 +1665,12 @@ res.json({ success: true, message: 'Tentando de novo...' });
 processarFicha(f.fandi_id, {
 cpf: f.cpf, name: f.name, mother: f.mother, phone: f.phone,
 salary: f.salary, cep: f.cep, address: f.address, neighborhood: f.neighborhood
-});
+}).catch(async function (eProcessarRetryV5) {
+      console.error('[ERRO GRAVE] processarFicha (retry) rejeitou para ' + f.fandi_id + ': ' + eProcessarRetryV5.message);
+      try {
+        await pool.query("UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3 AND status='enviando'", ['O robo travou de um jeito inesperado antes de terminar. Tente de novo ou finalize manualmente com Copiar dados e Abrir Fandi.', String(eProcessarRetryV5 && eProcessarRetryV5.message), f.fandi_id]);
+      } catch (eSalvarRetryV5) { console.error('[ERRO GRAVE] nem isso salvou: ' + eSalvarRetryV5.message); }
+    });
 } catch (err) {
 res.json({ success: false, message: err.message });
 }
