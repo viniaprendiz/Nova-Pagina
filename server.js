@@ -1131,7 +1131,15 @@ let preencheuV5 = { tentou: false };
                     }
                   }
 
-                  async function preencheTextoV5(id, valor) {
+                                    try {
+                    const checkPosSelecaoV5 = await comTimeout(frameFandi.evaluate(function () {
+                      function valorDe(id) { var el = document.getElementById(id); return el ? el.value : undefined; }
+                      return { marca: valorDe('opo_slctMarca'), modelo: valorDe('opo_slctModelo'), versao: valorDe('opo_slctVersao') };
+                    }), 4000, 'check_pos_selecao').catch(function (e) { return { erro: e.message }; });
+                    diagLog.fases.push({ fase: 'check_pos_selecao_veiculo', valores: checkPosSelecaoV5 });
+                  } catch (eCheckPos) {}
+
+async function preencheTextoV5(id, valor) {
                     return await comTimeout(frameFandi.evaluate(function (id2, valor2) {
                       var el = document.getElementById(id2);
                       if (!el) return false;
