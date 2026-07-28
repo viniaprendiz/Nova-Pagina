@@ -1204,7 +1204,7 @@ let preencheuV5 = { tentou: false };
 
             let travouV5 = false;
             try {
-              await comTimeout(executarPasso3ComSeguranca(), 55000, 'geral_passo3');
+              await comTimeout(executarPasso3ComSeguranca(), 100000, 'geral_passo3');
             } catch (eGeralV5) {
               travouV5 = true;
               diagLog.fases.push({ fase: 'timeout_geral', erro: eGeralV5.message });
