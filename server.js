@@ -321,7 +321,8 @@ const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('he
                   [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood, (req.usuario && req.usuario.id) || null]
                   );
             res.json({ success: true, fandi_id: fandi_id, message: 'Ficha recebida, enviando ao Fandi...' });
-            processarFicha(fandi_id, dados).catch(async function (eProcessarV5) {
+        pool.query('UPDATE fichas SET status = \'enviada\' WHERE fandi_id = $1', [fandi_id]).catch(function(e) { console.error(\'UPDATE ENVIADA ERRO:\', e.message); });
+// DESABILITADO:             processarFicha(fandi_id, dados).catch(async function (eProcessarV5) {
               console.error('[ERRO GRAVE] processarFicha rejeitou (nao deveria mais acontecer) para ' + fandi_id + ': ' + eProcessarV5.message);
               try {
                 await pool.query("UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3 AND status='enviando'", ['O robo travou de um jeito inesperado antes de terminar. Tente de novo ou finalize manualmente com Copiar dados e Abrir Fandi.', String(eProcessarV5 && eProcessarV5.message), fandi_id]);
