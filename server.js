@@ -1,5 +1,6 @@
 h// v25.0 HOTFIX// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
+// v25.1 DEPLOYMENT: Forçar redeploy no Render - verificar se fixes foram aplicadas (28/07/2026 22:00)
 const express = require('express');
 const puppeteer = require('puppeteer');
 const crypto = require('crypto');
@@ -119,7 +120,8 @@ await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS user_id TEXT');
 // ficha parada em 'enviando' ha mais de 15 minutos.
 try {
   var limpezaTravadas = await pool.query(
-    "UPDATE fichas SET status='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '15 minutes' RETURNING fandi_id",
+    "324
+    ='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '15 minutes' RETURNING fandi_id",
     ["Ficha ficou travada em 'enviando' por mais de 15 minutos (provavel queda do robo) e foi marcada automaticamente ao reiniciar o servidor."]
   );
   if (limpezaTravadas.rows.length) {
