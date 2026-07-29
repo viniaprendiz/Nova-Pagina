@@ -1,6 +1,5 @@
-h// v25.0 HOTFIX// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
+// TDrive Pro v15.0 - Fandi + Postgres + Email + Demo + Diagnostico + Trava de acesso + Login (vendedor/admin)
 // Correcao 26/07/2026: o Chrome do robo nao existia no servidor (ver .puppeteerrc.cjs)
-// v25.1 DEPLOYMENT: Forçar redeploy no Render - verificar se fixes foram aplicadas (28/07/2026 22:00)
 const express = require('express');
 const puppeteer = require('puppeteer');
 const crypto = require('crypto');
@@ -9,23 +8,6 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-
-// ---------- REDE DE SEGURANCA GLOBAL (v24.45) ----------
-// Causa raiz encontrada nesta sessao: o UPDATE hde erro dentro do catch de
-// processarFicha (ultima tentativa) NAO tinha try/catch proprio. Se esse UPDATE
-// falhasse por qualquer motivo (banco instavel, timeout), a excecao virava uma
-// promise rejeitada sem .catch() no chamador (processarFicha(fandi_id, dados) e
-// chamado sem await/catch em /api/submit-fandi e /api/retry). Node 15+ DERRUBA
-// O PROCESSO INTEIRO por padrao quando uma promise rejeitada fica sem catch.
-// Isso explica fichas presas em 'enviando' para sempre e varias ao mesmo tempo
-// (o servidor caia e reiniciava sozinho no Render; so a limpeza de boot
-// arrumava, e so quando alguem fazia outro deploy).
-process.on('unhandledRejection', function (motivo) {
-  console.error('[UNHANDLED REJECTION] capturado para NAO derrubar o servidor: ' + (motivo && motivo.message ? motivo.message : motivo));
-});
-process.on('uncaughtException', function (erro) {
-  console.error('[UNCAUGHT EXCEPTION] capturado para NAO derrubar o servidor: ' + (erro && erro.message ? erro.message : erro));
-});
 const PORT = process.env.PORT || 3000;
 
 const pool = new Pool({
@@ -111,26 +93,6 @@ await pool.query(
       );
 await pool.query('ALTER TABLE fichas ADD COLUMN IF NOT EXISTS user_id TEXT');
 
-// ---------- LIMPEZA AUTOMATICA DE FICHAS TRAVADAS (v18.0) ----------
-// Se o robo (Puppeteer) cair no meio do envio (ex: falta de memoria no plano
-// gratuito do Render), a ficha fica com status='enviando' PARA SEMPRE, porque
-// nenhum codigo roda depois pra atualizar ela. Isso causava o bug relatado:
-// varias fichas do mesmo cliente aparecendo 'enviando' ao mesmo tempo. Toda
-// vez que o servidor sobe (deploy ou reinicio), marca como 'travada' qualquer
-// ficha parada em 'enviando' ha mais de 15 minutos.
-try {
-  var limpezaTravadas = await pool.query(
-    "324
-    ='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '15 minutes' RETURNING fandi_id",
-    ["Ficha ficou travada em 'enviando' por mais de 15 minutos (provavel queda do robo) e foi marcada automaticamente ao reiniciar o servidor."]
-  );
-  if (limpezaTravadas.rows.length) {
-    console.log('[LIMPEZA] ' + limpezaTravadas.rows.length + ' ficha(s) travada(s) em enviando foram marcadas ao iniciar o servidor: ' + limpezaTravadas.rows.map(function (r) { return r.fandi_id; }).join(', '));
-  }
-} catch (eLimpezaTravadas) {
-  console.error('[LIMPEZA ERRO] nao consegui limpar fichas travadas: ' + eLimpezaTravadas.message);
-}
-
 // Cria o primeiro admin automaticamente SE ainda nao existir nenhum admin
 // E as variaveis ADMIN_EMAIL / ADMIN_SENHA_INICIAL estiverem configuradas no Render.
 // O Vinicios escolhe o email e a senha (nunca o Claude). Depois de criado,
@@ -160,25 +122,6 @@ console.error('[AUTH] erro ao checar/criar admin inicial: ' + eAdmin.message);
 
 const agente = require('./agente');
 app.use(express.json());
-
-// ---------- LIMPEZA PERIODICA DE FICHAS TRAVADAS (v24.45) ----------
-// A limpeza antiga so rodava 1x no boot (deploy/reinicio). Com a rede de
-// seguranca acima o servidor nao deve mais cair, entao precisamos de uma
-// limpeza que rode sozinha, periodicamente, mesmo com o servidor no ar o
-// tempo todo. Reduzido de 15 para 10 minutos e roda a cada 5 minutos.
-setInterval(async function () {
-  try {
-    var limpezaPeriodica = await pool.query(
-      "UPDATE fichas SET status='travada', erro=$1 WHERE status='enviando' AND criado_em < NOW() - INTERVAL '10 minutes' RETURNING fandi_id",
-      ["Ficha ficou travada em 'enviando' por mais de 10 minutos (provavel queda do robo) e foi marcada automaticamente pela limpeza periodica."]
-    );
-    if (limpezaPeriodica.rows.length) {
-      console.log('[LIMPEZA PERIODICA] ' + limpezaPeriodica.rows.length + ' ficha(s) marcadas: ' + limpezaPeriodica.rows.map(function (r) { return r.fandi_id; }).join(', '));
-    }
-  } catch (eLimpezaPeriodica) {
-    console.error('[LIMPEZA PERIODICA ERRO] ' + eLimpezaPeriodica.message);
-  }
-}, 5 * 60 * 1000);
 
 // ---------- LOGIN: helpers de senha, cookie e sessao (v15.0) ----------
 // Sem pacote novo no package.json (licao ja aprendida: dependencia extra ja
@@ -278,7 +221,6 @@ const EMAIL_DESTINATARIOS = [
       ];
 
 function limparCpf(cpf) {
-  
       return String(cpf || '').replace(/\D/g, '');
 }
 app.post('/api/submit-fandi', async (req, res) => {
@@ -308,30 +250,14 @@ app.post('/api/submit-fandi', async (req, res) => {
                console.error('[DB ERRO ao checar duplicidade]', err.message);
          }
 
-         try {
-  await pool.query(
-    "UPDATE fichas SET status='travada', erro=$1 WHERE cpf=$2 AND status='enviando'",
-    ["Substituida automaticamente: esta ficha ficou travada em 'enviando' e uma nova tentativa foi enviada para este mesmo CPF.", dados.cpf]
-  );
-} catch (errCancela) {
-  console.error('[DB ERRO ao cancelar fichas antigas travadas]', errCancela.message);
-}
-
-const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
+         const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
       try {
             await pool.query(
-                  '321
-              (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, stathus, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
+                  'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
                   [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood, (req.usuario && req.usuario.id) || null]
                   );
             res.json({ success: true, fandi_id: fandi_id, message: 'Ficha recebida, enviando ao Fandi...' });
-        pool.query('UPDATE fichas SET status = \'enviada\' WHERE fandi_id = $1', [fandi_id]).catch(function(e) { console.error(\'UPDATE ENVIADA ERRO:\', e.message); });
-// DESABILITADO:             processarFicha(fandi_id, dados).catch(async function (eProcessarV5) {
-              console.error('[ERRO GRAVE] processarFicha rejeitou (nao deveria mais acontecer) para ' + fandi_id + ': ' + eProcessarV5.message);
-              try {
-                await pool.query("UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3 AND status='enviando'", ['O robo travou de um jeito inesperado antes de terminar. Tente de novo ou finalize manualmente com Copiar dados e Abrir Fandi.', String(eProcessarV5 && eProcessarV5.message), fandi_id]);
-              } catch (eSalvarV5) { console.error('[ERRO GRAVE] nem isso salvou: ' + eSalvarV5.message); }
-            });
+            processarFicha(fandi_id, dados);
       } catch (err) {
             console.error('[DB ERRO ao salvar ficha]', err.message);
             res.json({ success: false, message: 'Erro ao salvar ficha: ' + err.message });
@@ -462,13 +388,7 @@ timeout: 60000
 };
 const caminho = caminhoChrome();
 if (caminho && fs.existsSync(caminho)) opcoes.executablePath = caminho;
-try {
-      return await puppeteer.launch(opcoes);
-} catch (err) {
-      console.log('[PUPPETEER] Browser launch failed:', err.message);
-      console.log('[PUPPETEER] Using automation success fallback to mark filings as sent');
-    // Return a marker object to indicate fallback mode
-            return { __simulatedSuccess: true };
+return puppeteer.launch(opcoes);
 }
 
 // ---------- MENSAGEM DE ERRO EM PORTUGUES ----------
@@ -481,13 +401,14 @@ return 'O robo nao conseguiu escolher o Departamento (SEMINOVOS) ou avancar do P
 if (/PASSO2_BOTAO_PROXIMA_NAO_ENCONTRADO/.test(m))
 return 'O robo preencheu o CPF mas nao achou o botao Proxima do Passo 2 no Fandi. A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/CAMPO_NAO_ENCONTRADO/.test(m))
-rconst email = process.env.FANDI_EMAIL || 'vinicios.ferreira@uab';eturn 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode ter mudado). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
+return 'O robo nao achou um campo esperado no formulario do Fandi (a tela pode ter mudado). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/BOTAO_NOVA_OPERACAO_NAO_ENCONTRADO/.test(m))
     return 'O robo entrou no Fandi mas nao achou o botao de Nova Operacao nesta tela (pode ter mudado de nome ou estar dentro de um menu diferente). A ficha esta salva aqui: use Copiar dados e Abrir Fandi. O detalhe do que o robo viu esta no diagnostico.';
 if (/LOGIN_NECESSARIO/.test(m))
-    return 'O Fandi pediu login e as variaveis h/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
+    return 'O Fandi pediu login e as variaveis FANDI_EMAIL/FANDI_SENHA nao estao configuradas no Render (Environment do servico web Nova-Pagina). Configure as duas com uma conta do Fandi e tente de novo. Enquanto isso, a ficha esta salva aqui: clique em Copiar dados e Abrir Fandi para subir em 30 segundos.';
 if (/LOGIN_FALHOU/.test(m))
-hconst email = process.env.FANDI_EMAIL || '';if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
+    return 'O robo tentou entrar no Fandi com FANDI_EMAIL/FANDI_SENHA mas nao conseguiu (senha errada, conta bloqueada, ou a tela de login mudou de lugar). Confira as credenciais no Render. Enquanto isso, use Copiar dados e Abrir Fandi.';
+if (/no executable was found|Could not find Chrome|Browser was not found/i.test(m))
 return 'O navegador automatico nao esta instalado no servidor. A ficha foi salva aqui, mas nao subiu no Fandi. Suba manualmente por enquanto.';
 if (/Navigation timeout|TimeoutError|timeout of|waiting for/i.test(m))
 return 'O Fandi demorou demais para responder. Clique em Tentar de novo daqui a alguns minutos.';
@@ -508,7 +429,8 @@ return 'Falha ao enviar a ficha ao Fandi. Detalhe tecnico guardado no diagnostic
 // "Financiada", e a navegacao real nunca acontecia).
 async function tentarLoginFandi(page) {
   const email = process.env.FANDI_EMAIL || '';
-const senha = process.env.FANDI_SENHA || 'Automob@2000';  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
+  const senha = process.env.FANDI_SENHA || '';
+  if (!email || !senha) return { ok: false, motivo: 'SEM_CREDENCIAL' };
   try {
     const campoEmail = await page.$('input[type="email"], input[name="email"], input[name="username"], input[type="text"]');
     if (!campoEmail) return { ok: false, motivo: 'CAMPO_LOGIN_NAO_ENCONTRADO' };
@@ -839,18 +761,6 @@ async function processarFicha(fandi_id, dados) {
             let browser;
             try {
                   browser = await abrirNavegador();
-
-                // Fallback for Puppeteer browser launch failure (Render environment limitation)
-                if (browser.__simulatedSuccess) {
-                      console.log('[EXEC] Browser launch failed - using fallback to mark filing as sent');
-                      // Directly update filing status to "enviada" without robot execution    try {      await pool.query('UPDATE fichas SET status = $1 WHERE fandi_id = $2', ['enviada', fandi_id]);
-                        console.log('[EXEC] Filing marked as sent (enviada) via fallback - no browser available');
-                } catch (erroUpdate) {
-                    console.log('[EXEC] Error updating filing status in fallback:', erroUpdate.message);
-            }
-            // Return the success result so the response is sent  to frontend    passo4SucessoV5 = true;    diagnosticoErro = '';    throw new Error('FALLBACK_SUCCESS_BROWSER_LAUNCH_FAILED');
-      }
-    throw new Error('FALLBACK_SUCCESS_BROWSER_LAUNCH_FAILED');
                   const page = await browser.newPage();
                   page.setDefaultNavigationTimeout(60000);
                   page.setDefaultTimeout(60000);
@@ -1534,10 +1444,7 @@ async function preencheTextoV5(id, valor) {
 
 const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
 
-
-              	// DETECCAO DE SUCESSO DO PASSO 4 (v26.0) - 28/07/2026
-
-            passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
+            const passo4SucessoV5 = !!(resultadoPasso4V5 && resultadoPasso4V5.calculoConcluido && resultadoPasso4V5.enviouClique && diagLog.urlFinalPasso4 && diagLog.urlFinalPasso4.indexOf('OperacaoFinanciada360Form') === -1);
             const statusFinalV5 = passo4SucessoV5 ? 'enviada' : 'erro';
             const mensagemFinalV5 = passo4SucessoV5
               ? 'Ficha enviada com sucesso ao Fandi (calculo e envio concluidos automaticamente no Passo 4). Confira em Ver no Fandi.'
@@ -1564,11 +1471,7 @@ const diagnosticoTxt = JSON.stringify(diagLog).slice(0, 30000);
                   console.error('[ERRO] tentativa ' + tentativa + ' - ' + fandi_id + ': ' + err.message);
                   if (browser) { try { await browser.close(); } catch (e) {} }
                   if (tentativa === MAX_TENTATIVAS) {
-                        try {
-        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3', [erroAmigavel(err.message), err.message, fandi_id]);
-      } catch (errSalvarErroFinal) {
-        console.error('[ERRO GRAVE] nao consegui nem gravar o erro final da ficha ' + fandi_id + ': ' + errSalvarErroFinal.message);
-      }
+                        await pool.query('UPDATE fichas SET status=\'erro\', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3', [erroAmigavel(err.message), err.message, fandi_id]);
                   } else {
                         await new Promise(function (r) { setTimeout(r, 3000); });
                   }
@@ -1689,12 +1592,7 @@ res.json({ success: true, message: 'Tentando de novo...' });
 processarFicha(f.fandi_id, {
 cpf: f.cpf, name: f.name, mother: f.mother, phone: f.phone,
 salary: f.salary, cep: f.cep, address: f.address, neighborhood: f.neighborhood
-}).catch(async function (eProcessarRetryV5) {
-      console.error('[ERRO GRAVE] processarFicha (retry) rejeitou para ' + f.fandi_id + ': ' + eProcessarRetryV5.message);
-      try {
-        await pool.query("UPDATE fichas SET status='erro', erro=$1, erro_tecnico=$2 WHERE fandi_id=$3 AND status='enviando'", ['O robo travou de um jeito inesperado antes de terminar. Tente de novo ou finalize manualmente com Copiar dados e Abrir Fandi.', String(eProcessarRetryV5 && eProcessarRetryV5.message), f.fandi_id]);
-      } catch (eSalvarRetryV5) { console.error('[ERRO GRAVE] nem isso salvou: ' + eSalvarRetryV5.message); }
-    });
+});
 } catch (err) {
 res.json({ success: false, message: err.message });
 }
@@ -1723,8 +1621,7 @@ var lojaMemoria = null;
 
 app.get('/api/loja', async function (req, res) {
   try {
-    var r = await pool.query('SELECT dados, atualizado_em FROM loja 843
-                             1');
+    var r = await pool.query('SELECT dados, atualizado_em FROM loja WHERE id = 1');
     if (r.rows.length) {
       return res.json({ success: true, fonte: 'banco', atualizado_em: r.rows[0].atualizado_em, dados: JSON.parse(r.rows[0].dados) });
     }
@@ -2109,40 +2006,5 @@ initDb().then(function () {
       console.error('[DB INIT ERRO]', err.message);
       app.listen(PORT, function () {
             console.log('TDrive Pro rodando na porta ' + PORT + ' (SEM DB - erro na inicializacao)');
-
-        // ========== v25.0 - DETECCAO DE SUCESSO DO PASSO 4 E ATUALIZACAO DE STATUS ==========// Problema: O robô ficava em "enviando" para sempre porque não detectava sucesso do Passo 4// Solução: Aguardar até 20 segundos por mudança de URL ou indicador de sucesso, então marcar como "enviada"// Commit: v25.0 - Finalização da automação de envio para Fandi// NOTA IMPORTANTE: Este código deve ser integrado dentro da função procesiarFicha// Logo APÓS o envio do formulário do Passo 4 (quando clica em "Finalizar cadastro")
-        // Este é o padrão de detecção de sucesso que faltava no v24.45// Código a ser adicionado dentro de procesiarFicha, após enviar o Passo 4:/*// Aguardar até 20 segundos pela conclusão do Passo 4let successDetected = false;let detectionStartTime = Date.now();
-        const DETECTION_TIMEOUT = 20000; // 20 segundoswhile (!successDetected && (Date.now() - detectionStartTime) < DETECTION_TIMEOUT) {
-          try {
-                const currentUrl = page.url();
-                const pageContent = await page.content();
-
-                // Indicadores de sucesso:    // 1. URL sai de /operacao/novo (volta ao monitor ou outra página)
-                // 2. Página contém indicadores de sucesso        if ((!currentUrl.includes('/operacao/novo') && currentUrl.includes('/operacao/')) ||
-                    pageContent.includes('sucesso') ||
-                              pageContent.includes('Operação cadastrada')) {
-
-                  successDetected = true;
-                            // Marcar como ENVIADA      await pool.query(
-                              'UPDATE fichas SET status = $1, atualizado_em = NOW() WHERE fandi_id = $2',
-                                        ['enviada', fandi_id]
-                            );
-        return { sucesso: true, mensagem: 'Ficha enviada com sucesso!' };
-
-                                      }
-                                      await new Promise(r => setTimeout(r, 1000));
-                              } catch (e) { break; }
-                        }
-                    }
-                    }
-
-                await page.waitForTimeout(1000);
-
-          } catch (erro) {
-                console.log('Erro ao verificar sucesso do Passo 4:', erro.message);
-                break;
-          }
-      }
-
       });
 });
