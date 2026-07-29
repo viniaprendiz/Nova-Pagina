@@ -278,6 +278,7 @@ const EMAIL_DESTINATARIOS = [
       ];
 
 function limparCpf(cpf) {
+  
       return String(cpf || '').replace(/\D/g, '');
 }
 app.post('/api/submit-fandi', async (req, res) => {
@@ -319,7 +320,8 @@ app.post('/api/submit-fandi', async (req, res) => {
 const fandi_id = 'PROP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex');
       try {
             await pool.query(
-                  'INSERT INTO fichas (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, status, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
+                  '321
+              (fandi_id, cpf, name, mother, phone, salary, cep, address, neighborhood, stathus, user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,\'enviando\',$10)',
                   [fandi_id, dados.cpf, dados.name, dados.mother, dados.phone, String(dados.salary || ''), dados.cep, dados.address, dados.neighborhood, (req.usuario && req.usuario.id) || null]
                   );
             res.json({ success: true, fandi_id: fandi_id, message: 'Ficha recebida, enviando ao Fandi...' });
